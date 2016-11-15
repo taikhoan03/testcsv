@@ -1,0 +1,3 @@
+﻿version=1.0.0.34
+local_control_site=http://localhost:58949
+upload_file_url=http://localhost:3000/upload/

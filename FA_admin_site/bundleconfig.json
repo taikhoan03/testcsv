@@ -1,0 +1,8 @@
+[
+  {
+    "outputFileName": "Scripts/jquery.pjax.min.js",
+    "inputFiles": [
+      "Scripts/jquery.pjax.js"
+    ]
+  }
+]

@@ -1,0 +1,114 @@
+﻿<script src="~/scripts/custom/app.js"></script>
+<script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
+<script src="~/scripts/custom/filesUpload.js"></script>
+<script type="text/javascript">
+    
+    var pid, state, county, edt, ver;
+    $(document).ready(function () {
+        $('#sel_package tr').click(function () {
+            var row  = $(this).find('td');
+            pid      = $(row[0]).text();
+            state    = $(row[1]).text();
+            county   = $(row[2]).text();
+            edt      = $(row[3]).text();
+            ver      = $(row[4]).text();
+            //pid    = $(this).find('td:first').text();
+            //state  = $(this).find('td:first').text();
+            //county = $(this).find('td:first').text();
+
+            $.get('@Url.Action("allFiles", "WorkingSet")?packid='+pid)
+                .done(function (data) {
+                    $('#tSample #tbody>tr').remove();
+                    $('#tSample #header>th').remove();
+                    var header_arr = data[0];
+                    header_arr['_selected'] = false;
+                    
+                    var js_ = appendSelectedProperty(data);//createJsData(data).splice(0, 10);
+                    createTableFromJsonObj(header_arr, 'tSample');
+                    Tempo.prepare($("#tSample #tbody>tr:first"))
+                        .when(TempoEvent.Types.RENDER_COMPLETE, function (event) {
+                            $('#tSample').show();
+                            $('#tSample #tbody>tr:last').remove();
+                        }).render(js_);
+                }).fail(function (req) {
+                    //console.log("1" + req.responseText);
+                    alert(req.status + " : " + req.responseText);
+                });
+        });
+        createEditionOption("divEdition");
+        createVersionOption("divVersion");
+        $('#confirm-select').click(function () {
+            //verify any item checked
+            var numOfItemSelected = $('#tSample #tbody input[type=checkbox]:checked').length;
+            if (numOfItemSelected <= 0) {
+                alert("No file(s) selected");
+                return;
+                
+            }
+            if (pid == undefined || pid == null || pid == '') return;
+            $('#extraInfo').show();
+            
+        });
+        $('#confirm-save').click(function () {
+            var data = {};
+            data.ws = {
+                State: state,
+                County: county,
+                Edition: $('#edition').val(),
+                Version: $('#version').val()
+            }
+            var selectedrow = $('#tSample #tbody tr:has(input:checked)');
+            var items = [];
+            for (var i = 0; i < selectedrow.length; i++) {
+                var item = {};
+                var row = selectedrow[i];
+                var col = $(row).find('td');
+                item.Filename = $(col[2]).text();
+                items.push(item);
+            }
+            data.items = items;
+
+            $.post('@Url.Action("create", "WorkingSet")', data = data)
+                .done(function (data) {
+
+                }).fail(function (req) {
+                    //console.log("1" + req.responseText);
+                    alert(req.status + " : " + req.responseText);
+                });
+        });
+    });
+</script>
+<table id="sel_package" class="table">
+
+
+    @foreach (var item in ViewBag.packages)
+    {
+        <tr>
+            <td>@item.Id</td>
+            <td>@item.State</td>
+            <td>@item.County</td>
+            <td>@item.Edition</td>
+            <td>@item.Version</td>
+        </tr>
+    }
+</table>
+<table id="files" class="table">
+    <tr></tr>
+</table>
+
+<div id="tSample" class="table" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+    <table class="table">
+        <tr id="header"></tr>
+        <tbody id="tbody"></tbody>
+    </table>
+</div>
+<input type="button" id="confirm-select" value="Confirm" />
+<div id="extraInfo" style="display:none">
+    Edition
+    <span id="divEdition" style="margin-right:20px">
+    </span>
+    Version
+    <span id="divVersion">
+    </span>
+    <input type="button" id="confirm-save" value="Save" />
+</div>

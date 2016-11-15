@@ -1,0 +1,286 @@
+﻿@model BL.file
+<link href="~/Content/css/jquery-ui.min.css" rel="stylesheet" />
+
+<script src="~/Content/js/plugins/jquery/jquery-ui.min.js"></script>
+<script src="~/scripts/angular.min.js"></script>
+<script src="~/scripts/ng-file-upload.min.js"></script>
+<script src="~/TS/filesUpload.js"></script>
+
+<script type="text/javascript">
+    $(function () {
+        var url;
+        var obj = {};
+        $("#txtState").autocomplete({
+            source: '@Config.Get_local_control_site()/JSON/GetState',@*'@Url.Action("GetState","JSON")',*@
+            minLength: 1,
+            select: function (a, b) {
+                alert(b.item.value);
+                //$(this).val(b.item.value);
+                //$(".searchform1").submit()
+            }
+        }).on('input', function () {
+            obj.state = $(this).val();
+            $("#txtCounty").val('');
+        });
+        $("#txtCounty").autocomplete({
+            source: function (request, response) {
+                $.ajax({
+                    url: '@Config.Get_local_control_site()/JSON/GetCounty' + '?state=' + $("#txtState").val(),
+                    dataType: "json",
+                    data: {
+                        term: request.term
+                    },
+                    success: response
+                });
+            },
+            minLength: 1
+        });
+        $("#form").submit(function (e) {
+            e.preventDefault();
+        });
+        createEditionOption("divEdition");
+        createVersionOption("divVersion");
+        $.get('http://localhost:58949/JSON/GetFileInfo?state=State 1&county=Bibb&filename=comm.txt');
+        $.get('http://localhost:58949/JSON/GetSample?state=State 1&county=Bibb&filename=comm.txt')
+        @*$("#form").submit(function (e) {
+            e.preventDefault();
+            var jqxhr = $.ajax({
+                                url: '@Url.Action("PartCreate", "File")',
+                                processData: false,
+                                data: { State: $("#txtState").val(), County: $("#txtCounty").val(), Name: $("#txtName").val() }
+                            })
+                      .done(function () {
+                          alert("success");
+                      })
+                      .fail(function () {
+                          alert("error");
+                         
+                      })
+                      .always(function () {
+                          alert("complete");
+                      });
+            e.preventDefault();
+            return;
+            
+        });*@
+    });
+    //var myObject = {
+    //    one: 1,
+    //    two: 2,
+    //    three: 3
+    //};
+    //var recursiveEncoded = $.param(myObject);
+    //var recursiveDecoded = decodeURIComponent($.param(myObject));
+    //var stateObj = {};//{ foo: "bar" };
+    //history.pushState(stateObj, "page 2", "?abc=123");
+    //history.pushState(stateObj, "page 3", "?fef=13");
+    //history.replaceState(stateObj, "State 3", "?state=3");
+    //history.replaceState(stateObj, "State 3", "&state=5");
+</script>
+<span id="per"></span>
+@using (Html.BeginForm(null, null, FormMethod.Get, new { name = "form", id = "form", ng_controller = "MyCtrl", ng_app = "fileUpload" }))
+{
+    @Html.AntiForgeryToken()
+    
+    <div class="form-horizontal">
+        <h4>file</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        @*<div class="form-group">
+            @Html.LabelFor(model => model.User, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.User, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.User, "", new { @class = "text-danger" })
+            </div>
+        </div>*@
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.State, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.State, new { htmlAttributes = new { @class = "form-control",@id="txtState", @value = ViewBag.State } })
+                @Html.ValidationMessageFor(model => model.State, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.County, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.County, new { htmlAttributes = new { @class = "form-control", @id = "txtCounty", @value = ViewBag.County } })
+                @Html.ValidationMessageFor(model => model.County, "", new { @class = "text-danger" })
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-md-2">Edition</label>
+            <div class="col-md-10" id="divEdition">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-md-2">Version</label>
+            <div class="col-md-10" id="divVersion">
+            </div>
+        </div>
+        
+
+        <div class="form-group">
+            <label class="control-label col-md-2">File</label>
+            <div class="col-md-10">
+                <div ngf-select ng-model="files" ngf-multiple="true" name="file" ngf-pattern="'.txt,.csv'"
+                     ngf-accept="'.txt,.csv'" ngf-max-size="50000MB" ngf-min-height="100"
+                     ngf-resize="{width: 100, height: 100}" 
+                     ngf-change="fileSelected($file)"
+                     class="form-control" style="width:200px;background:#00ff21">Select</div>
+                
+                <input type="button" id="submitUpload" value="" style="display:none" />
+            </div>
+        </div>
+        @*<div class="form-group">
+            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", @id = "txtName", @value = ViewBag.Filename } })
+                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+            </div>
+        </div>*@
+        <div class="form-group">
+            <label class="control-label col-md-2"></label>
+            <div class="col-md-10">
+                <span id="selectedFiles"></span>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input id="btn_submit" type="submit" value="Create" class="btn btn-default" ng-click="submit()"/>
+            </div>
+        </div>
+    </div>
+}
+@*<form ng-app="fileUpload" ng-controller="MyCtrl" name="form">
+    Single Image with validations
+    <div class="button" ngf-select ng-model="file" name="file" ngf-pattern="'image/*'"
+         ngf-accept="'image/*'" ngf-max-size="20MB" ngf-min-height="100"
+         ngf-resize="{width: 100, height: 100}">Select</div>
+    Multiple files
+    <div class="button" ngf-select ng-model="files" ngf-multiple="true">Select</div>
+    Drop files: <div ngf-drop ng-model="files" class="drop-box">Drop</div>
+    <button type="submit" ng-click="submit()">submit</button>
+</form>*@
+<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>
+
+<script src="~/Content/js/plugins/jquery.validate.min.js"></script>
+<script src="~/Content/js/plugins/jquery.validate.unobtrusive.min.js"></script>
+<script type="text/javascript">
+    var $selectedFiles = $("#selectedFiles");
+    //inject directives and services.
+    var app = angular.module('fileUpload', ['ngFileUpload']);
+
+    app.controller('MyCtrl', ['$scope', 'Upload', function ($scope, Upload) {
+        // upload later on form submit or something similar
+
+        $scope.submit = function () {
+            
+            // for multiple files:
+            $scope.uploadFiles = function (files) {
+                var filenames = [];
+                for (var i = 0; i < files.length; i++) {
+                    filenames.push(files[i].name);
+                }
+
+                var jqxhr = $.ajax({
+                    url: '@Url.Action("Create", "File")',
+                    //processData: false,
+                    datatype: 'json',
+                    contentType: "application/json; charset=UTF-8",
+                    method: "POST",
+                    data: JSON.stringify({
+                        State: $("#txtState").val(), County: $("#txtCounty").val(),
+                        Edition: $("#edition").val(),
+                        Version: $("#version").val(),
+                        Filenames: filenames
+                    })
+                })
+                      .done(function () {
+                          //alert("success");
+                          if (files && files.length) {
+                              for (var i = 0; i < files.length; i++) {
+                                  $scope.upload(files[i]);
+                              }
+                              // or send them all together for HTML5 browsers:
+                              //Upload.upload({data: {file: files}});
+                          }
+                      })
+                      .fail(function (request, status, error) {
+                          alert(error);
+
+                      })
+                      .always(function () {
+                          //alert("complete");
+                      });
+                
+            }
+            $scope.upload = function (file) {
+                Upload.upload({
+                    url: '@Config.Data.GetKey("upload_file_url")' + $("#txtState").val() + '/' + $("#txtCounty").val(),@*'@Url.Action("PartCreate", "File")',*@
+                    headers: { 'Content-Type': 'multipart/form-data' },//{ 'Content-Type': 'multipart/form-data' },
+                method: 'POST',
+                withCredentials: false,
+                //data: {
+                //    file: file,
+                //    info: Upload.jsonBlob({ State: $("#txtState").val(), County: $("#txtCounty").val(), rename_to: $("#txtName").val() }),
+                    
+                //    },
+                file:file
+            }).then(function (resp) {
+                //console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
+            }, function (resp) {
+                console.log('Error status: ' + resp.status);
+            }, function (evt) {
+                $('#per').html(parseInt(100.0 * evt.loaded / evt.total));
+                //var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
+                //console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
+            });
+            Upload.setDefaults({ ngfMinSize: 20000, ngfMaxSize: 20000000000 });
+            };
+            $scope.uploadFiles($scope.files);
+            //$scope.upload($scope.file);
+            @*if ($scope.form.file.$valid && $scope.file) {
+                //$scope.upload($scope.file);
+                var jqxhr = $.ajax({
+                    url: '@Url.Action("PartCreate", "File")',
+                    processData: false,
+                    data: { State: $("#txtState").val(), County: $("#txtCounty").val(), Name: $("#txtName").val() }
+                })
+                          .done(function () {
+                              alert("success");
+                              
+                              
+                              //upload file
+                              $scope.upload($scope.file);
+                          })
+                          .fail(function () {
+                              alert("error");
+
+                          })
+                          .always(function () {
+                              alert("complete");
+                          });
+            }*@
+            //if (!$scope.file) {
+            //    alert("Please select file[txt/csv] to upload");
+            //}
+        };
+        $scope.fileSelected = function () {
+            
+            showSelectedFile($scope.files);
+            //alert($scope.files.length + " files selected, Total size: " + formatSizeUnits(totalSize));
+
+            //$("#txtName").val($file.name);
+        };
+        // upload on file select or drop
+        
+        
+        
+        
+    }]);
+    
+</script>

@@ -1,0 +1,67 @@
+﻿@model IEnumerable<BL.package>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+@{
+    ViewBag.Title = "Item Details";
+    WebGrid grid = new WebGrid(Model, rowsPerPage: 3);
+}
+<style type="text/css">
+    .webgrid-table {
+        font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+        font-size: 1.2em;
+        width: 100%;
+        display: table;
+        border-collapse: separate;
+        border: solid 1px #98BF21;
+        background-color: white;
+    }
+
+        .webgrid-table td, th {
+            border: 1px solid #98BF21;
+            padding: 3px 7px 2px;
+        }
+
+    .webgrid-header {
+        background-color: #A7C942;
+        color: #FFFFFF;
+        padding-bottom: 4px;
+        padding-top: 5px;
+        text-align: left;
+    }
+
+    .webgrid-footer {
+    }
+
+    .webgrid-row-style {
+        padding: 3px 7px 2px;
+    }
+
+    .webgrid-alternating-row {
+        background-color: #EAF2D3;
+        padding: 3px 7px 2px;
+    }
+</style>
+
+@grid.GetHtml(
+    tableStyle: "webgrid-table",
+    headerStyle: "webgrid-header",
+    footerStyle:"",
+    rowStyle: "webgrid-row-style",
+    alternatingRowStyle: "webgrid-alternating-row",
+
+    fillEmptyRows: false,
+    mode: WebGridPagerModes.All,
+    columns:grid.Columns(
+        grid.Column("State",header:"State "+ FA_admin_site.Helpers.helpers.SortDirection(null,ref grid,"State")),
+        grid.Column("County", header: "County"),
+        grid.Column("Edition", header: "Edition"),
+        grid.Column("Version", header: "Version"),
+        grid.Column("Createdby", header: "Createdby"),
+        grid.Column("Createddate", header: "Createddate"),
+        grid.Column("Status", header: "Status")
+
+        )
+    )
+

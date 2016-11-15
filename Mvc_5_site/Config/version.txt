@@ -1,0 +1,6 @@
+﻿version=1.0.0.34
+root_folder_process=D:\FA_in_out
+input_folder_process=InputFile
+output_folder_process=OutputFile
+tmp_folder_process=Tmp_data
+flag_clear_queue_path=D:\clear.txt

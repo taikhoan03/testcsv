@@ -1,0 +1,65 @@
+﻿<link href="~/Content/css/jquery-ui.min.css" rel="stylesheet" />
+
+<script src="~/Content/js/plugins/jquery/jquery-ui.min.js"></script>
+<script>
+    $(document).ready(function () {
+        var cbox_state = $("#state");
+        var cbox_county = $("#county");
+        var url = '@Config.Get_local_control_site()/JSON/GetState?term=';
+
+        $.get(url,function(data){
+            //for (var i = 0; i < data.length; i++) {
+            //    cbox_state.append($('<option>').val(data[i]).html(data[i]));
+            //}
+            cbox_state.autocomplete("option", "source", data);
+
+
+
+        });
+
+        cbox_state.autocomplete({
+            source: [],
+            minLength: 0
+        })
+            .bind('focus', function () { $(this).autocomplete("search"); })
+            .on("autocompleteselect", function (event, ui) {
+                console.log(ui);
+                $('#county').val('');
+                url = '@Config.Get_local_control_site()/JSON/GetCounty?term=';
+                var selected_state = cbox_state.val();
+                url = url + '&state=' + selected_state;
+
+
+                $.get(url, function (vdata) {
+                    //cbox_county.find('option').remove();
+                    //for (var i = 0; i < vdata.length; i++) {
+                    //    cbox_county.append($('<option>').val(vdata[i]).html(vdata[i]));
+                    //}
+
+
+                    $('#county').autocomplete("option", "source", vdata);
+            });
+        });
+
+        $('#county').autocomplete({
+            source: [],
+            minLength: 0
+        }).bind('focus', function () { $(this).autocomplete("search"); })
+        .on("autocompleteselect", function (event, ui) {
+
+        });
+        $('#go').click(function () {
+            var county = cbox_county.val();
+            var state = cbox_state.val();
+            window.location.href = '..@Url.Action("Create", "File")?state=' + state + '&county=' + county;
+        });
+    });
+</script>
+<div>
+    <label>State</label>
+    <input id="state"></input>
+    
+    <label>County</label>
+    <input id="county"></input>
+    <input id="go" type="button" value="Next" />
+</div>

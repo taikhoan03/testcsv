@@ -1,0 +1,93 @@
+﻿@model IEnumerable<BL.MergeFileJob>
+<style>
+    .Done{
+        background:green;
+    }
+    .Fail{
+        background:red;
+    }
+    .Running{
+        background:gray;
+    }
+</style>
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.Filenames)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.State)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.County)
+        </th>
+        
+        <th>
+            @Html.DisplayNameFor(model => model.Status)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Rundate)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Finishdate)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Runby)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.ErrorDetail)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.WorkingJobId)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.OutputFilename)
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.Filenames)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.State)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.County)
+        </td>
+        
+        <td class="@item.Status">
+            @Html.DisplayFor(modelItem => item.Status)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Rundate)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Finishdate)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.Runby)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.ErrorDetail)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.WorkingJobId)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.OutputFilename)
+        </td>
+        <td>
+            @Html.ActionLink("Edit", "Edit", new { id=item.Id }) |
+            @Html.ActionLink("Details", "Details", new { id=item.Id }) |
+            @Html.ActionLink("Delete", "Delete", new { id=item.Id })
+        </td>
+    </tr>
+}
+
+</table>

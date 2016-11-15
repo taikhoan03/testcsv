@@ -1,0 +1,194 @@
+﻿@model IEnumerable<BL.JobFileLayout>
+<style>
+    #lblLoading{
+        color:#ff0000;
+        font-size:14pt;
+        
+    }
+    .content-wrapper{
+        overflow:auto;
+    }
+    .table {
+  white-space:nowrap;
+  border-collapse:collapse;
+  border-spacing: 0px;
+  border:solid 1px rgba(48, 44, 44, 0.90);
+  border-radius:4px;
+}
+    .table tr>th,.table tr>td{
+        padding:2px 4px 2px 4px;
+        border-right:solid 1px #818181;
+        
+    }
+</style>
+<script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
+<script src="~/scripts/custom/app.js"></script>
+<script>
+
+    var jobid=@ViewBag.WorkingSetItemId;
+    var state='@ViewBag.WorkingSetInfo.State';
+    var county='@ViewBag.WorkingSetInfo.County';
+    var filename='@ViewBag.Filename';
+    $(document).ready(function () {
+        var loading = $('#lblLoading');
+        var jqxhr = $.get('@Config.Get_local_control_site()/JSON/GetSample?state='+state+'&county='+county+'&filename='+filename)
+            .done(function (data) {
+                _createTableWithArrObj(data,'tSample');
+
+            })
+            .fail(function (request, status, error) {
+                alert(error);
+
+            })
+            .always(function () {
+            });
+
+        $("#fieldname").change(function () {
+            $("#value").val('{'+$(this).val()+'}');
+        });
+
+        $("#btn-test").click(function () {
+
+            loading.html('Loading...');
+            $.get('@Url.Action("GetTestLayoutResult", "JobLayout")/?id='+jobid+'&filename='+filename)
+                .done(function (data) {
+                    loading.html('');
+                    _createTableWithArrObj(data,'tTest');
+
+                }).fail(function (req) {
+                    alert(req.status+" : "+req.responseText);
+                });
+        });
+        $('#add').click(function () {
+            if ($('#fieldname').val() == '') return;
+            if ($('#value').val() == '') return;
+            loading.html('Adding new field...');
+            var name = $('#fieldname').val();
+            var value = $('#value').val();
+            var order = $('#order').val();
+            $('#fieldname').val('');
+            $('#value').val('');
+            $('#order').val('');
+            $.post('@Url.Action("NewField", "JobLayout")', { name: name, value: value, order: order }).done(function (data) {
+
+                loading.html('New Field Added');
+            }).fail(function (req, status, err) {
+
+                loading.html('Add Fail');
+            });
+        })
+        $('#reset').click(function(){
+            if(confirm('Are you sure to reset columns to default, all you work will lose')){
+                var loading = $('#lblLoading');
+                loading.html('Loading...');
+                $.post('@Url.Action("ResetColumns", "JobLayout")', { id: jobid}).done(function (data) {
+                    location.reload();
+                }).fail(function (req, status, err) {
+
+                    loading.html('Fail to reset');
+                });
+            }
+        });
+
+        @*$.post('@Url.Action("addHeader", "File")',
+            {
+                headers:['PAY_ACCT_NUMBER','PAY_ACCT_STATUS','PAY_LEVY_CODE','PAY_OMIT_LEVY_CODE','PAY_TAX_STATUS','PAY_RECEIVABLE_TYPE','PAY_BILL_YEAR','PAY_OMIT_YEAR','PAY_LAND_VALUE','PAY_IMPROVEMENT_VALUE','PAY_FOREST_PATROL_ACRES','PAY_DRAINAGE_DISTRICT','PAY_DRAINAGE_BENEFIT','PAY_DRAINAGE_ACRES','PAY_BILLED_AMOUNT','PAY_PAID_AMOUNT','PAY_MORTAGE_COMPANY','PAY_SENIOR_CIT_EXEMPT','PAY_NEW_CONSTRUCTION_IND','PAY_CHANGE_REASON_IND'],
+                path:'D:\\FA_in_out\\InputFile\\State 1\\King\\Wa17_pay_2015_99.txt___.txt'
+            })
+            .done(function (data) {
+
+        }).fail(function (req, status, err) {
+
+            //loading.html('Delete Fail for field [' + name + ']');
+        });*@
+        /// Init
+        $('#lblState').html(state);
+        $('#lblCounty').html(county);
+        $('#lblFile').html(filename);
+    });
+    function del(id, row, name) {
+        var loading = $('#lblLoading');
+        loading.html('Deleting...');
+        $.post('@Url.Action("DelField", "JobLayout")', { id: id}).done(function (data) {
+            $('#' + row).remove();
+            loading.html('Field ['+name+'] deleted');
+        }).fail(function (req, status, err) {
+
+            loading.html('Delete Fail for field [' + name + ']');
+        });
+    };
+</script>
+<h1 id="lblData">
+    <div>State: <label id="lblState"></label></div>
+    <div>County: <label id="lblCounty"></label></div>
+    <div>File: <label id="lblFile"></label></div>
+</h1>
+<div style="height:300px;width:100%;overflow:scroll;border:solid 1px;background:#ffd;">
+    <table style="width: 90%;margin:5px auto">
+        @foreach (var item in Model)
+        {
+            <tr id="tr_@item.Id">
+                <td >
+                    @Html.DisplayFor(modelItem => item.Id)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Fieldname)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Mapper)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Order)
+                </td>
+                <td>
+                    <a href="javascript:;" onclick="del(@item.Id,'tr_@item.Id','@item.Fieldname')">Del</a>
+                </td>
+            </tr>
+        }
+    </table>
+</div>
+<a href="javascript:;" id="reset">Reset</a>
+<div id="div-new">
+    <h3>New Field</h3>
+    <div>
+        <label>Field name</label>
+        <input id="fieldname" />
+
+        <label>Value</label>
+        <input id="value" />
+
+        <label>Order</label>
+        <input id="order" />
+
+        <input type="button" value="Add" id="add" />
+    </div>
+    
+    
+</div>
+<div>
+    
+    <input type="button" value="Test" id="btn-test" /><label id="lblLoading"></label>
+</div>
+<div id="test-result">
+
+</div>
+<div id="tTest" style="display:none;width: 100%;overflow: scroll;background:#84b6ac">
+    <table class="table">
+        <tr id="header"></tr>
+        <tbody id="tbody"></tbody>
+    </table>
+</div>
+<div id="tSample" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+    <table class="table">
+        <tr id="header">
+            
+        </tr>
+        <tbody id="tbody">
+
+        </tbody>
+    </table>
+</div>
+<div id="testDYN"></div>
+<script>
+    //create_header_form('#testDYN',5);
+</script>

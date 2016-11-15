@@ -1,0 +1,185 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+using Libs;
+using System.Threading.Tasks;
+using System.Net;
+
+namespace FA_admin_site.Controllers
+{
+    public class WorkingSetController : Controller
+    {
+        BL.DA_Model db = new BL.DA_Model();
+        // GET: WorkingSet
+        public ActionResult Index()
+        {
+            
+
+            var packages = db.packages;
+            
+            ViewBag.packages = packages;
+            //ViewBag.jsfiles = Json(allFiles);
+            return View();
+        }
+        public ActionResult Merge()
+        {
+
+
+            var ws = db.workingSets.Where(p=>p.User=="test");
+
+            ViewBag.ws = ws;
+            //ViewBag.jsfiles = Json(allFiles);
+            return View();
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id">wokingSetId</param>
+        /// <returns></returns>
+        public ActionResult Layout(int id)
+        {
+            var allFiles = db.workingSetItems.Where(p => p.WorkingSetId == id);
+            var wsFile = db.workingSets.FirstOrDefault(p => p.Id == id);
+            ViewBag.WorkingSetInfo = wsFile;
+            //ViewBag.Filename = wsiFile.Filename;
+            return View(allFiles);
+        }
+        [HttpGet]
+        public void SavePrimaryKey(int workingSetItemId,string primaryKey)
+        {
+            var item = db.workingSetItems.FirstOrDefault(p => p.Id == workingSetItemId);
+            if (item != null)
+            {
+                item.PrimaryKey = primaryKey;
+                db.SaveChanges();
+            }
+        }
+        [HttpGet]
+        public JsonResult workingSetItem(int packid)
+        {
+            var allFiles = db.workingSetItems.Where(p => p.WorkingSetId == packid && !p.IsMerged);
+            // chỉ lấy những file đã dc layout (có Primary key)
+            allFiles = allFiles.Where(p => !string.IsNullOrEmpty(p.PrimaryKey));
+            return Json(allFiles, JsonRequestBehavior.AllowGet);
+        }
+        [HttpGet]
+        public JsonResult allFiles(int packid)
+        {
+            var allFiles = db.files.Where(p=>p.Packageid==packid);
+            return Json(allFiles,JsonRequestBehavior.AllowGet);
+        }
+        public class WorkingSetData
+        {
+            public BL.WorkingSet ws { get; set; }
+            public BL.WorkingSetItem[] items { get; set; }
+        }
+        [HttpPost]
+        public void create(WorkingSetData wd)
+        {
+            var db = new BL.DA_Model();
+            using (var dbContextTransaction = db.Database.BeginTransaction())
+            {
+                try
+                {
+                    var date_create = DateTime.Now;
+                    //tạo package
+                    var workingSet = new BL.WorkingSet();
+                    workingSet.County = wd.ws.County;
+                    workingSet.State = wd.ws.State;
+                    workingSet.User = "test";
+                    workingSet.Createdate = date_create;
+                    workingSet.Edition = wd.ws.Edition;
+                    workingSet.Version = wd.ws.Version;
+                    //package.Status = "Processing";
+                    db.workingSets.Add(workingSet);
+                    db.SaveChanges();
+                    //throw new Exception("fksljd");
+                    //tạo các files thuộc về package
+                    foreach (var item in wd.items)
+                    {
+                        var wsItem = new BL.WorkingSetItem();
+                        //file.County = json.County;
+                        //file.Create_date = date_create;
+                        wsItem.Filename = item.Filename;
+                        wsItem.PrimaryKey = item.PrimaryKey;
+                        wsItem.SecondaryKeys = item.SecondaryKeys;
+                        wsItem.WorkingSetId = workingSet.Id;
+                        //file. = "test";
+                        db.workingSetItems.Add(wsItem);
+                    }
+
+
+                    db.SaveChanges();
+                    dbContextTransaction.Commit();
+                    //return;// RedirectToAction("Index");
+                    //db.Entry(movie).State = EntityState.Modified;
+                    //db.SaveChanges();
+
+                }
+                catch (Exception exT)
+                {
+                    dbContextTransaction.Rollback();
+                    ModelState.AddModelError("", exT.InnerException.Message);
+                    throw exT;
+                }
+
+
+            }
+        }
+        [HttpPost]
+        public void postMerge(Merge_info mergeInfo)
+        {
+            //first insert to db
+            var db = new BL.DA_Model();
+            var ws = db.workingSets.Where(p => p.Id == mergeInfo.wsId).FirstOrDefault();
+            var _mergeJob = new BL.MergeFileJob();
+            _mergeJob.County = ws.County;
+            _mergeJob.Filenames = string.Join(",", mergeInfo.filenames);
+            var now = DateTime.Now;
+            _mergeJob.Finishdate = now;
+            _mergeJob.MergeDetails = mergeInfo.details.XmlSerialize();
+            _mergeJob.OutputFilename = mergeInfo.output_filename;
+            _mergeJob.Runby = "test";
+            _mergeJob.Rundate = now;
+            _mergeJob.State = ws.State;
+            _mergeJob.WorkingJobId = ws.Id;
+            
+            db.mergeFileJob.Add(_mergeJob);
+            db.SaveChanges();
+            if (mergeInfo.runAfterSave)
+            {
+                var savedId = _mergeJob.Id;
+                var url = Config.Get_local_control_site() + "/JSON/MergeFiles/?id=" + savedId+ "&primaryKey="+mergeInfo.primaryKey;
+                runMergeFromControlSite(url);
+            }
+        }
+        public ActionResult MergeJobs()
+        {
+            var db = new BL.DA_Model();
+            return View(db.mergeFileJob);
+        }
+        public async Task<string> runMergeFromControlSite(string url)
+        {
+            using (WebClient webClient = new WebClient())
+            {
+                return webClient.DownloadString(url);
+            }
+            return "";
+        }
+        public class Merge_info
+        {
+            //public string state { get; set; }
+            //public string county { get; set; }
+            public int wsId { get; set; }
+            public string desc { get; set; }
+            public List<string> filenames { get; set; }
+            public List<BL.MergeDetail> details { get; set; }
+            public string output_filename { get; set; }
+            public string primaryKey { get; set; }
+            public bool runAfterSave { get; set; }
+
+        }
+    }
+}
