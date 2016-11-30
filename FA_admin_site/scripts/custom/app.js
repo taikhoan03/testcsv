@@ -99,6 +99,7 @@ function appendSelectedProperty(js_arr) {
     }
     return js_arr;
 }
+
 function _createTableWithJsonObj(data, tableid, appendSelected, cb) {
     cb(data);
     $('#' + tableid + ' #tbody>tr').remove();
@@ -118,10 +119,12 @@ function _createTableWithJsonObj(data, tableid, appendSelected, cb) {
             $('#' + tableid + ' #tbody>tr:last').remove();
         }).render(js_);
 }
-function _createTableWithJsonObj_withTemplate(data, tableid, appendSelected, cb_before) {
-    cb_before(data);
+function _createTableWithJsonObj_withTemplate(data, tableid, appendSelected, cb_before,cb_after) {
+    if (cb_before!=undefined)
+        cb_before(data);
     //$('#' + tableid + ' #tbody>tr').remove();
     //$('#' + tableid + ' #header>th').remove();
+    
     var js_ = appendSelectedProperty(data);
     $('#' + tableid + ' #tbody>tr:not(:first)').remove();
     Tempo.prepare($('#' + tableid + ' #tbody>tr:first'), { 'escape': false })
@@ -130,11 +133,13 @@ function _createTableWithJsonObj_withTemplate(data, tableid, appendSelected, cb_
             
             $('#' + tableid + ' #tbody>tr:first').hide();
         }).render(js_).clear();
+    if (cb_after != undefined)
+        cb_after(js_);
 }
 function _createTableWithArrObj(data, tableid, appendSelected) {
     
-    //$('#' + tableid + ' #tbody>tr').remove();
-    //$('#' + tableid + ' #header>th').remove();
+    $('#' + tableid + ' #tbody>tr').remove();
+    $('#' + tableid + ' #header>th').remove();
     var header_arr = data[0];
     $('#' + tableid + '').show();
 
@@ -145,4 +150,225 @@ function _createTableWithArrObj(data, tableid, appendSelected) {
             $('#' + tableid + '').show();
             $('#' + tableid + ' #tbody>tr:last').remove();
         }).render(js_).clear();
+}
+
+function isInt(value) {
+    return !isNaN(value) &&
+           parseInt(Number(value)) == value &&
+           !isNaN(parseInt(value, 10));
+}
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : sParameterName[1];
+        }
+    }
+};
+// Rules
+/*
+    
+*/
+var default_limit = 10;//num of parameter limited
+var at = {//rule accept_type
+    number: 'number',
+    string: 'string',
+    bool: 'bool',
+    char: 'char',
+    any:'any'
+}
+var IRule = function (name, str_func, limit, delimiter) {
+    this.name = name;
+    this.F = str_func;//function string, Ex:AND(true,false) -> AND
+    this.limitParam = limit;
+    this.params = [];
+    this.acceptType = [];
+    this.delimiter = delimiter;
+    this.addParam = function (param) {//param.value param.type
+        if (this.params.length > limit) return;
+
+        var nextRuleAcceptType = this.acceptType[this.params.length];
+        if (nextRuleAcceptType == undefined) return;
+
+        if(nextRuleAcceptType==at.any){
+            this.params.push(param.value);
+            return;
+        }
+
+
+        if (typeof nextRuleAcceptType == "string")
+        {
+            if (nextRuleAcceptType != param.type) {
+                alert('Type is not valid');
+                return;
+            }
+            //if char type
+            if (nextRuleAcceptType == 'char') {
+                param.value = param.value[0];
+            }
+        }
+        else {//array
+            for (var i = 0; i < nextRuleAcceptType.length; i++) {
+                
+                var found = false;
+                if (nextRuleAcceptType[i] == param.type) {
+                    found = true;
+                    break;
+                    
+                }
+                if (!found) {
+                    alert('Type is not valid' + nextRuleAcceptType);
+                    return;
+                }
+            }
+        }
+
+        
+        this.params.push(param.value);
+    }
+    this.result = function () {
+        return str_func + '(' + this.params.join(this.delimiter) + ')';
+    }
+    this.showResult = function () {
+        return this.result().replace(/\[\[\]\]/gi, ',');
+    }
+    this.setAcceptTypes = function (acceptTypesArr) {
+        this.acceptType = acceptTypesArr;
+    }
+    this.setAllAcceptType = function (acceptType) {
+        this.acceptType = [];
+        for (var i = 0; i < default_limit; i++) {
+            this.acceptType.push(acceptType);
+        }
+    }
+
+};
+var r_AND = new IRule("AND", "AND", default_limit, ',');
+r_AND.setAcceptTypes([at.bool, at.bool, at.bool, at.bool, at.bool, at.bool, at.bool, at.bool, at.bool, at.bool ]);
+//r_AND.addParam({ value: true, type: at.bool });
+//r_AND.addParam({ value: false, type: at.bool });
+//r_AND.addParam({ value: 3, type: at.integer });
+var r_CONTAINS = new IRule("CONTAINS", "CONTAINS", default_limit, '[[]]');
+r_CONTAINS.setAllAcceptType(at.string);
+
+var r_EQUAL = new IRule("EQUAL", "EQUAL", default_limit, ',');
+r_EQUAL.setAcceptTypes([at.any, at.any]);
+//r_EQUAL.setAcceptTypes([[at.string, at.number], [at.string, at.bool]]);
+var r_GREATER_THAN = new IRule("GREATER_THAN", "GREATER_THAN", default_limit, ',');
+r_GREATER_THAN.setAcceptTypes([at.number, at.number]);
+
+
+var r_GREATER_THAN_OR_EQUAL = new IRule("GREATER_THAN_OR_EQUAL", "GREATER_THAN_OR_EQUAL", default_limit, ',');
+r_GREATER_THAN_OR_EQUAL.setAcceptTypes([at.number, at.number]);
+
+var r_IS_ALPHA = new IRule("IS_ALPHA", "IS_ALPHA", default_limit, ',');
+r_IS_ALPHA.setAcceptTypes([at.string]);
+
+var r_IS_NULL = new IRule("IS_NULL", "IS_NULL", default_limit, ',');
+r_IS_NULL.setAcceptTypes([at.string]);
+
+var r_IS_NUMERIC = new IRule("IS_NUMERIC", "IS_NUMERIC", default_limit, ',');
+r_IS_NUMERIC.setAcceptTypes([at.string,at.number]);
+
+var r_LESS_THAN = new IRule("LESS_THAN", "LESS_THAN", default_limit, ',');
+r_LESS_THAN.setAcceptTypes([at.number, at.number]);
+
+var r_LESS_THAN_OR_EQUAL = new IRule("LESS_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL", default_limit, ',');
+r_LESS_THAN_OR_EQUAL.setAcceptTypes([at.number, at.number]);
+
+var r_NOT = new IRule("NOT", "NOT", default_limit, ',');
+r_NOT.setAcceptTypes([at.bool]);
+
+var r_NOT_CONTAINS = new IRule("NOT_CONTAINS", "NOT_CONTAINS", default_limit, '[[]]');
+r_NOT_CONTAINS.setAllAcceptType([at.string]);
+
+var r_NOT_EQUAL = new IRule("NOT_EQUAL", "NOT_EQUAL", default_limit, ',');
+r_NOT_EQUAL.setAcceptTypes([[at.string, at.number], [at.string, at.number]]);
+
+var r_OR = new IRule("OR", "OR", default_limit, ',');
+r_OR.setAllAcceptType(at.bool);
+
+var r_RANGE = new IRule("RANGE", "RANGE", default_limit, ',');
+r_RANGE.setAcceptTypes([at.number, at.number, at.number]);
+
+var r_STARTS_WITH = new IRule("STARTS_WITH", "STARTS_WITH", default_limit, '[[]]');
+r_STARTS_WITH.setAllAcceptType(at.any);
+
+
+
+/*
+
+
+*/
+var r_CONCATENATE = new IRule("CONCATENATE", "CONCATENATE", default_limit, '[[]]');
+r_CONCATENATE.setAllAcceptType(at.string);
+
+var r_JOIN = new IRule("JOIN", "JOIN", default_limit, '[[]]');
+r_JOIN.setAllAcceptType(at.string);
+
+var r_LEFT_PAD = new IRule("LEFT_PAD", "LEFT_PAD", default_limit, '[[]]');
+r_LEFT_PAD.setAcceptTypes([at.string,at.string,at.number]);
+
+var r_LEFT_TRIM = new IRule("LEFT_TRIM", "LEFT_TRIM", default_limit, '[[]]');
+r_LEFT_TRIM.setAcceptTypes([at.string, at.string]);
+
+var r_REMOVE_CHARACTERS = new IRule("REMOVE_CHARACTERS", "REMOVE_CHARACTERS", default_limit, '[[]]');
+r_REMOVE_CHARACTERS.setAllAcceptType(at.string);
+
+var r_REPLACE_CONTAINS = new IRule("REPLACE_CONTAINS", "REPLACE_CONTAINS", default_limit, '[[]]');
+r_REPLACE_CONTAINS.setAcceptTypes([at.string,at.string]);
+
+var r_RIGHT_PAD = new IRule("RIGHT_PAD", "RIGHT_PAD", default_limit, '[[]]');
+r_RIGHT_PAD.setAcceptTypes([at.string, at.string, at.number]);
+
+var r_RIGHT_TRIM = new IRule("RIGHT_TRIM", "RIGHT_TRIM", default_limit, '[[]]');
+r_RIGHT_TRIM.setAcceptTypes([at.string, at.string]);
+
+var r_SPLIT = new IRule("SPLIT", "SPLIT", default_limit, '[[]]');
+r_SPLIT.setAcceptTypes([at.string, at.string, at.number]);
+
+var r_SUB_STRING = new IRule("SUB_STRING", "SUB_STRING", default_limit, '[[]]');
+r_SUB_STRING.setAcceptTypes([at.string, at.number, at.number]);
+
+var r_UPPER = new IRule("UPPER", "UPPER", default_limit, '[[]]');
+r_UPPER.setAcceptTypes([at.string]);
+var r_ar
+var currentRule = {};
+var app_rules = [r_AND,
+    r_CONTAINS,
+    r_EQUAL,
+r_GREATER_THAN,
+r_GREATER_THAN_OR_EQUAL,
+r_IS_ALPHA,
+r_IS_NULL,
+r_IS_NUMERIC,
+r_LESS_THAN,
+r_LESS_THAN_OR_EQUAL,
+r_NOT,
+r_NOT_CONTAINS,
+r_NOT_EQUAL,
+r_OR,
+r_RANGE,
+r_STARTS_WITH,
+//formatting
+r_CONCATENATE,
+r_JOIN,
+r_LEFT_PAD,
+r_LEFT_TRIM,
+r_REMOVE_CHARACTERS,
+r_REPLACE_CONTAINS,
+r_RIGHT_PAD,
+r_RIGHT_TRIM,
+r_SPLIT,
+r_SUB_STRING
+
+];
+function addRule() {
+    var rule = new IRule();
 }

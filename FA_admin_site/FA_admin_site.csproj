@@ -244,6 +244,8 @@
     <Content Include="Content\js\plugins\input-mask\jquery.inputmask.numeric.extensions.js" />
     <Content Include="Content\js\plugins\input-mask\jquery.inputmask.phone.extensions.js" />
     <Content Include="Content\js\plugins\input-mask\jquery.inputmask.regex.extensions.js" />
+    <Content Include="Content\js\plugins\jquery-sortable.js" />
+    <Content Include="Content\js\plugins\jquery-ui.min.js" />
     <Content Include="Content\js\plugins\jquery.validate.min.js" />
     <Content Include="Content\js\plugins\jquery.validate.unobtrusive.min.js" />
     <Content Include="Content\js\plugins\jquery\jquery-2.2.4.js" />
@@ -1062,6 +1064,7 @@
     <Compile Include="Controllers\FileController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\JobLayoutController.cs" />
+    <Compile Include="Controllers\SortAndActionController.cs" />
     <Compile Include="Controllers\WorkingSetController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -1140,6 +1143,9 @@
     <Content Include="Views\WorkingSet\MergeJobs.cshtml" />
     <Content Include="Views\WorkingSet\Layout.cshtml" />
     <Content Include="Views\WorkingSet\test.cshtml" />
+    <Content Include="Views\SortAndAction\Index.cshtml" />
+    <Content Include="Views\WorkingSet\Layout2.cshtml" />
+    <Content Include="Views\WorkingSet\Manage.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

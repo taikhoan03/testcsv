@@ -1,0 +1,653 @@
+﻿@model IEnumerable<BL.FieldOrderAndAction>
+<style>
+    
+    #lblLoading {
+        color: #ff0000;
+        font-size: 14pt;
+    }
+
+    .content-wrapper {
+        overflow: auto;
+    }
+
+    .table {
+        white-space: nowrap;
+        border-collapse: collapse;
+        border-spacing: 0px;
+        border: solid 1px rgba(48, 44, 44, 0.90);
+        border-radius: 4px;
+    }
+
+        .table tr > th, .table tr > td {
+            padding: 2px 4px 2px 4px;
+            border-right: solid 1px #818181;
+        }
+        #tSample .table td{white-space:pre}
+    .operator{
+        background: #86e120 none repeat scroll 0 0;
+        border: 1px solid;
+        cursor: pointer;
+        float: left;
+        height: 35px;
+        padding: 8px;
+        position: relative;
+        text-align: center;
+        vertical-align: middle;
+        width: 25%;
+    }
+    .f_item,.r_item{
+        background: #d5e63e none repeat scroll 0 0;
+    border-bottom: 1px solid;
+    cursor: pointer;
+    margin: 0;
+    padding: 7px;
+    }
+    .f_item:hover, .r_item:hover{
+        background:#00ffff
+    }
+    .type0{
+        background:blue !important;
+    }
+    .pi{
+        padding:2px;
+        background:#d5e63e
+    }
+    .op{
+        padding:2px;
+        background:#86e120;
+    }
+    .va{
+        padding:2px;
+        background:#e6b750;
+    }
+    .pi,.op,.va{
+        border: 1px solid gray;
+    border-radius: 5px;
+    display: inline-block;
+    margin: 2px;
+    padding: 5px;
+    }
+    .number{
+        background:#e6b750;
+    }
+    .bool{
+        background:#818181;
+    }
+</style>
+<style>
+    #cboxCondition{
+        padding:6px;font-weight:bold;font-size:14pt
+    }
+</style>
+<link href="~/Content/css/jquery-ui.min.css" rel="stylesheet" />
+<script src="~/Content/js/plugins/jquery-ui.min.js"></script>
+<script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
+<script src="~/scripts/custom/app.js"></script>
+<script src="~/Content/js/Underscore1.8.3-min.js"></script>
+<script src="~/Content/js/plugins/jquery-sortable.js"></script>
+<h3 id="lblData">
+    <div>State: <label id="lblState">@ViewBag.WorkingSetInfo.State</label></div>
+    <div>County: <label id="lblCounty">@ViewBag.WorkingSetInfo.County</label></div>
+    <div>File: <label id="lblFile">@ViewBag.Filename</label></div>
+    <div><a href="@Url.Action("Layout2","WorkingSet")/@ViewBag.WorkingSetInfo.Id?fid=@ViewBag.ID">Define Layout</a></div>
+</h3>
+<div id="div-tab">
+    <ul>
+        <li><a href="#div_action">SORT</a></li>
+        <li><a href="#rules">RULES</a></li>
+        <li><a href="#preview">PREVIEW</a></li>
+    </ul>
+    <div id="div_action" style="height:500px;overflow:scroll">
+        <table id="tbl_sort" class="table">
+            <tr style="background:#3ae5e3">
+                <th>
+                    @Html.DisplayNameFor(model => model.Id)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.WorkingSetItemId)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.FieldName)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Order)
+                </th>
+                <th>
+                    Sort
+                </th>
+                <th style="text-align:center">
+                    Duplicate Action
+                    <select style="color:red" class="form-control" onchange="updateAction_all($(this))">
+                        <option value="-1" selected="selected"></option>
+                        <option value="0">Response with Error</option>
+                        <option value="1">PickupFirstValue</option>
+                        <option value="2">PickupLastValue</option>
+                        <option value="3">PickupFirstUn_NULL_value</option>
+                        <option value="4">PickupMaximumValue</option>
+                        <option value="5">PickupMinimumValue</option>
+                        <option value="6">SumAllRow</option>
+                        <option value="7">ConcatenateWithDelimiter</option>
+                        <option value="8">KeepAllRows</option>
+                    </select>
+                </th>
+            </tr>
+
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.WorkingSetItemId)
+                    </td>
+                    <td>
+                        <span>@Html.DisplayFor(modelItem => item.FieldName)</span>
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Order)
+                    </td>
+                    <td>
+                        <select class="form-control" onchange="updateOrderType(@item.Id,$(this).val())">
+                            <option value="0" @(item.OrderType == (int)SortType.None ? "selected=selected" : "")>None</option>
+                            <option value="1" @(item.OrderType == (int)SortType.Asccending ? "selected=selected" : "")>Asccending</option>
+                            <option value="2" @(item.OrderType == (int)SortType.Deccending ? "selected=selected" : "")>Desccending</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-control action" onchange="updateAction(@item.Id,$(this))">
+                            <option value="0" @(item.DuplicatedAction == 0 ? "selected=selected" : "")>Response with Error</option>
+                            <option value="1" @(item.DuplicatedAction == 1 ? "selected=selected" : "")>PickupFirstValue</option>
+                            <option value="2" @(item.DuplicatedAction == 2 ? "selected=selected" : "")>PickupLastValue</option>
+                            <option value="3" @(item.DuplicatedAction == 3 ? "selected=selected" : "")>PickupFirstUn_NULL_value</option>
+                            <option value="4" @(item.DuplicatedAction == 4 ? "selected=selected" : "")>PickupMaximumValue</option>
+                            <option value="5" @(item.DuplicatedAction == 5 ? "selected=selected" : "")>PickupMinimumValue</option>
+                            <option value="6" @(item.DuplicatedAction == 6 ? "selected=selected" : "")>SumAllRow</option>
+                            <option value="7" @(item.DuplicatedAction == 7 ? "selected=selected" : "")>ConcatenateWithDelimiter</option>
+                            <option value="8" @(item.DuplicatedAction == 8 ? "selected=selected" : "")>KeepAllRows</option>
+                        </select>
+                        <div class="concatenate" @(item.DuplicatedAction == 7 ? "style=display:block" : "style=display:none")>
+                            Concatenate With Delimiter
+                            <input type="text" value="@item.ConcatenateWithDelimiter" class="txtDelimeter" maxlength="5" />
+                            <input type="button" value="Save" onclick="updateConcatenate(@item.Id,$(this))" />
+                        </div>
+                    </td>
+                </tr>
+            }
+
+        </table>
+
+    </div>
+
+    <div id="rules">
+        <div id="chose_type">
+            <ul>
+                <li><a href="#ARITHMETICAL_r">ARITHMETICAL</a></li>
+                <li><a href="#CONDITIONAL_r">CONDITIONAL</a></li>
+                <li><a href="#FORMATTING_r">FORMATTING</a></li>
+                <li><a href="#preview">MISCELLANEOUS</a></li>
+            </ul>
+            @*<span id="btn_ARITHMETICAL">ARITHMETICAL</span>
+            <span id="btn_CONDITIONAL">CONDITIONAL</span>
+            <span id="btn_FORMATTING">FORMATTING</span>
+            <span id="btn_MISCELLANEOUS">MISCELLANEOUS</span>*@
+        </div>
+        <div>
+            <div id="rule_left" style="float:left">
+                <div>
+                    <input type="text" id="txt_input" />
+                    <input type="button" id="btn_input" value="Add" onclick="addValue($('#txt_input').val())"/>
+                    <input type="button" id="btn_clear" value="Clear" onclick="$('#txt_input').val('')" />
+                </div>
+                <div style="border-radius:4px" id="ARITHMETICAL_operator">
+                    <div id="plus" class="operator" onclick="addOperator('+')">+</div>
+                    <div id="subtract" class="operator" onclick="addOperator('-')">-</div>
+                    <div id="multifly" class="operator" onclick="addOperator('*')">*</div>
+                    <div id="divide" class="operator" onclick="addOperator('/')">/</div>
+                    <div style="clear:both"></div>
+                </div>
+                <div id="tab-2" style="width:400px;">
+                    <ul>
+                        <li><a href="#r_fields">Fields</a></li>
+                        <li><a href="#r_rules">Rules</a></li>
+                    </ul>
+                    <div id="r_fields" style="border:solid 1px gray;border-radius: 5px;padding: 2px"></div>
+                    <div id="r_rules" style="border:solid 1px gray;border-radius: 5px;padding: 2px"></div>
+                </div>
+            </div>
+            <div id="ARITHMETICAL_r">
+                <div id="rule_right" style="float:left"></div>
+                
+            </div>
+            <div id="CONDITIONAL_r"></div>
+            <div id="FORMATTING_r"></div>
+            <div id="fdf"></div>
+            <div>
+                <input type="button" value="Save" onclick="Save()" />
+                <input type="button" value="Clear" />
+            </div>
+            <div style="clear:both"></div>
+        </div>
+    </div>
+    <div id="preview">
+        <input type="button" value="Preview" onclick="preview(@ViewBag.ID)" />
+        <label style="font-weight:bold; color:bisque;display:none" id="lblLoading">Loading...</label>
+        <div id="tSample" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+            <table class="table">
+                <tr id="header"></tr>
+                <tbody id="tbody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div id="tRules" style="display:block;width: 100%;overflow: scroll;background-color: #fff;">
+    <table class="table">
+        <tr id="header">
+            <th>ID</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th></th>
+        </tr>
+        <tbody id="tbody">
+            <tr>
+                <td>{{Id}}</td>
+                <td>{{Name}}</td>
+                <td>{{ExpValue | replace '\[\[\]\]', ','}}</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<script type="text/javascript">
+    var ls_rs = [];
+    $(document).ready(function () {
+        //var actions = $('#div_action tr:not(:first-child)');
+
+        //$.each(actions, function (i, value) {
+        //    var obj = {};
+        //    var action=$(actions[i]);
+        //    obj.name = action.find('td:eq(2)>span').text();
+        //    obj.duplicateAction = action.find('td:eq(5)>select').val();
+        //    obj.sortType = action.find('td:eq(4)>select').val();
+        //    obj.duplicateActionType = 1;
+        //    obj.str_param = 'param';
+
+        //    ls_rs.push(obj);
+        //});
+        
+        init_field();
+        init_rules();
+        _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
+        $('#tab-2').tabs();
+        $('#div-tab').tabs();
+        showItemForMATH();
+        $('#rules').tabs({
+            beforeActivate: function( event, ui ) {
+                $('#ARITHMETICAL_operator').hide();
+                $('#cboxCondition').hide();
+                $('#cboxFormatting').hide();
+                if($(event.currentTarget).attr('href')=='#ARITHMETICAL_r'){
+                    $('#ARITHMETICAL_operator').show();
+                    showItemForMATH();
+                    //return;
+                }else if($(event.currentTarget).attr('href')=='#CONDITIONAL_r'){
+                    $('#cboxCondition').show();
+                    if($('#cboxCondition').val()=='')
+                        $('#cboxCondition').change();
+                    //return;
+                }else if($(event.currentTarget).attr('href')=='#FORMATTING_r'){
+                    $('#cboxFormatting').show();
+                    if($('#cboxFormatting').val()=='')
+                        $('#cboxFormatting').change();
+                    //return;
+                }
+
+                
+            }
+        });
+
+
+        //
+        //$("#tbl_sort tr").sortable({
+        //    containerSelector: 'table',
+        //    itemPath: '> tbody',
+        //    itemSelector: 'tr',
+        //    placeholder: '<tr class="placeholder"/>'
+        //});
+        generateConditionCombobox();
+        generateFormattingCombobox();
+    });
+    function updateOrderType(id,sort){
+
+        $.post('@Url.Action("UpdateSortType", "SortAndAction")', { id :id,sort:sort})
+            .done(function(data){
+
+            })
+            .fail();
+    }
+    function updateAction_all(c){
+        var value=c.val();
+        if(value==-1) return;
+        var actions=$('#div_action>table tr>td>select.action');
+        $.each(actions,function(idx,item){
+            $(item).val(c.val()).trigger('change');;
+        })
+
+    }
+    function updateAction(id, ac){
+        if (ac.val() == "7") {
+            $(ac).parent().find(".concatenate").show();
+            return;
+        }
+        $(ac).parent().find(".concatenate").hide();
+        $.post('@Url.Action("UpdateAction", "SortAndAction")', { id :id,type:1,action:ac.val()})
+            .done(function(data){
+
+            })
+            .fail();
+    }
+    function updateConcatenate(id,c){
+        var delimeter = $(c).parent().find('.txtDelimeter').val();
+        //$(c).parent().hide();
+        $.post('@Url.Action("UpdateAction_concat", "SortAndAction")', { id: id, type: 2, action: 7, delimeter: delimeter })
+            .done(function(data){
+
+            })
+            .fail();
+    }
+    function post() {
+        $.post('@Url.Action("TestPost", "SortAndAction")', { ls :ls_rs})
+            .done(function(data){
+
+            })
+            .fail();
+    }
+    function preview(id) {
+        $('#lblLoading').show();
+        var jqxhr = $.get('@Config.Get_local_control_site()/JSON/GetSampleWithSortAndDuplicateAction?fileid='+id)
+                .done(function (data) {
+                    
+                    _createTableWithArrObj(data,'tSample');
+
+                })
+                .fail(function (request, status, error) {
+                    try {
+                        var json = $.parseJSON(request.responseText);
+                        alert(json.errorMessage);
+                    } catch(e) { 
+                        alert('something bad happened');
+                    }
+
+                })
+                .always(function () {
+                    $('#lblLoading').hide();
+                });
+
+        ///
+        
+    }
+    var rules=@Html.Raw(ViewBag.Rules);
+    var fields=@Html.Raw(ViewBag.Fields);
+    var fieldTypes=@Html.Raw(ViewBag.FieldTypes);
+
+    function init_field(){
+        var r_fields=$('#r_fields');
+        $.each(fields,function(idx,item){
+            var fieldType=_.findWhere(fieldTypes,{name:item});//{ name="ACCOUNT_NUMBER",  type=1}
+            if(fieldType.type==0){
+                r_fields.append($('<div class="f_item number" onclick="genUI(\''+item+'\',\'number\')">').html(item).append($('<span>'))
+                    );
+            }
+            else if(fieldType.type==1){
+                r_fields.append($('<div class="f_item string" onclick="genUI(\''+item+'\',\'string\')">').html(item).append($('<span>'))
+                    );
+            }
+            //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
+            //    //.append($('<span>').html(fieldType.type))
+            //    );
+        });
+    }
+    function init_rules(){
+        var r_rules=$('#r_rules');
+        $.each(rules,function(idx,item){
+            if(item.Type==0){
+                r_rules.append($('<div class="f_item number" onclick="genUI(\''+item.Name+'\',\'number\')">').html(item.Name).append($('<span>'))
+                    );
+            }
+            else if(item.Type==1){
+                r_rules.append($('<div class="f_item string" onclick="genUI(\''+item.Name+'\',\'string\')">').html(item.Name).append($('<span>'))
+                    );
+            }
+            else if(item.Type==2){
+                r_rules.append($('<div class="f_item bool" onclick="genUI(\''+item.Name+'\',\'bool\')">').html(item.Name).append($('<span>'))
+                    );
+            }
+            //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
+            //    //.append($('<span>').html(fieldType.type))
+            //    );
+        });
+    }
+    function showItemForMATH(){
+        $('#r_fields .f_item.string').hide();
+    }
+    function genUI(value,type){
+        
+        var r_panel=$('#rule_right');
+        var str_rs=r_panel.text();
+        
+        //if(str_rs.indexOf('-')>0 || 
+        //    str_rs.indexOf('*')>0 ||
+        //    str_rs.indexOf('/')>0){
+        //    var fieldType=_.findWhere(fieldTypes,{name:value});//{ name="ACCOUNT_NUMBER",  type=1}
+        //    if(fieldType.type!=0)
+        //    {
+        //        alert("Data type should be numeric value");
+        //        return;
+        //    }
+        //}
+
+        if($( "#rules" ).tabs( "option", "active" )==0){
+            if($('#rule_right').find('div:last-child').hasClass('op')
+                ||
+                $('#rule_right').find('div').length==0)
+                r_panel.append($('<div class="pi '+type+'">').html('{'+value+'}'));
+        }else if($( "#rules" ).tabs( "option", "active" )==1){
+
+            currentRule.addParam({value:'{'+value+'}',type:type});
+            $('#CONDITIONAL_r').html('').append($('<div>').html(currentRule.showResult()));
+        }else if($( "#rules" ).tabs( "option", "active" )==2){
+
+            currentRule.addParam({value:'{'+value+'}',type:type});
+            $('#FORMATTING_r').html('').append($('<div>').html(currentRule.showResult()));
+        }
+    }
+    function addOperator(value){
+        var r_panel=$('#rule_right');
+
+        if(value=='-' || 
+            value=='*' ||
+            value=='/'){
+            var p_items=$('#rule_right .pi');
+            if(p_items.hasClass('string')){
+                alert("Operator is accepted NUMERIC TYPE ONLY");
+                return;
+            }
+        }
+        if($('#rule_right').find('div:last-child').hasClass('pi') ||
+            $('#rule_right').find('div:last-child').hasClass('va'))
+            r_panel.append($('<div class="op">').html(value));
+    }
+    function addValue(value){
+        var r_panel=$('#rule_right');
+        var $display=$('#CONDITIONAL_r');
+        if($( "#rules" ).tabs( "option", "active" )==1){
+            $display=$('#CONDITIONAL_r');
+        }else if($( "#rules" ).tabs( "option", "active" )==2){
+            $display=$('#FORMATTING_r');
+        }
+        if($( "#rules" ).tabs( "option", "active" )==0){
+            if($('#rule_right').find('div:last-child').hasClass('op')
+                ||
+                $('#rule_right').find('div').length==0)
+                r_panel.append($('<div class="va">').html(value));
+        }else{
+            var nextAcceptType=currentRule.acceptType[currentRule.params.length];
+            // simple type 
+            if(typeof nextAcceptType=='string'){
+                if(nextAcceptType=='number'){
+                    if(!$.isNumeric(value)){
+                        alert("A numeric input is required");
+                        return;
+                    }
+                    currentRule.addParam({value:value,type:'number'});
+                    $display.html('').append($('<div>').html(currentRule.showResult()));
+                }else{
+                    currentRule.addParam({value:value,type:nextAcceptType});
+                    $display.html('').append($('<div>').html(currentRule.showResult()));
+                }
+                
+                
+            }else{
+                for (var i = 0; i < nextAcceptType.length; i++) {
+                    var acType=nextAcceptType[i];
+                }
+            }
+            
+        }
+    }
+    function Save(){
+        var str_rs=$('#rule_right').text();
+        var html=$('#rule_right').html();
+        
+        var d={};
+        d.ExpValue=str_rs;
+        d.HTMLBack=html;
+        d.Type=0;
+        if($( "#rules" ).tabs( "option", "active" )!=0){
+            d.ExpValue=currentRule.result();
+            d.HTMLBack=$('#CONDITIONAL_r').html();
+            
+        }
+        if($( "#rules" ).tabs( "option", "active" )==1){
+            d.Type=2;
+        }else if($( "#rules" ).tabs( "option", "active" )==2){
+            d.Type=1;
+        }
+        
+        
+        $.post('@Url.Action("addRuleMath","SortAndAction")',{fileid:@ViewBag.Fileid,rule:d})
+        .done(function (data) {
+            rules.push(data);
+            _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
+            var $rules=$('#r_rules');
+            if($( "#rules" ).tabs( "option", "active" )==0){
+                $rules.append($('<div class="r_item number" _id="'+data.Id+'" onclick="genUI(\'data.Name\',\'number\')">').html(data.Name));
+            }
+            else if($( "#rules" ).tabs( "option", "active" )==2){
+                $rules.append($('<div class="r_item string" _id="'+data.Id+'" onclick="genUI(\'data.Name\',\'string\')">').html(data.Name));
+            }
+            else if($( "#rules" ).tabs( "option", "active" )==1){
+                $rules.append($('<div class="r_item bool" _id="'+data.Id+'" onclick="genUI(\'data.Name\',\'bool\')">').html(data.Name));
+            }
+            
+
+        })
+                .fail(function (request, status, error) {
+                    try {
+                        var json = $.parseJSON(request.responseText);
+                        alert(json.errorMessage);
+                    } catch(e) { 
+                        alert('something bad happened');
+                    }
+
+                })
+                .always(function () {
+                    $('#lblLoading').hide();
+                });;
+    }
+</script>
+<script type="text/javascript">
+    
+    function generateConditionCombobox(){
+        
+        var $select=$('<select id="cboxCondition" style="display:none" onchange="filter($(this).val(),true)" >');
+        var options=[
+            '',
+            'AND',
+            'CONTAINS',
+            'EQUAL',
+            'GREATER_THAN',
+            'GREATER_THAN_OR_EQUAL',
+            'IS_ALPHA',
+            'IS_NULL',
+            'IS_NUMERIC',
+            'LESS_THAN',
+            'LESS_THAN_OR_EQUAL',
+            'NOT',
+            'NOT_CONTAINS',
+            'NOT_EQUAL',
+            'OR',
+            'RANGE',
+            'STARTS_WITH'];
+        for (var i = 0; i < options.length; i++) {
+            $select.append($('<option value="'+options[i]+'">').html(options[i]));
+        }
+        $('#rule_left').prepend($select);
+    }
+    function generateFormattingCombobox(){
+        
+        var $select=$('<select id="cboxFormatting" style="display:none" onchange="filter($(this).val(),true)" >');
+        var options=[
+            '',
+            'CONCATENATE',
+            'JOIN',
+            'LEFT_PAD',
+            'LEFT_TRIM',
+            'REMOVE_CHARACTERS',
+            'REPLACE_CONTAINS',
+            'RIGHT_PAD',
+            'RIGHT_TRIM',
+            'SPLIT',
+            'SUB_STRING'];
+        for (var i = 0; i < options.length; i++) {
+            $select.append($('<option value="'+options[i]+'">').html(options[i]));
+        }
+        $('#rule_left').prepend($select);
+    }
+    function filter(selected_rule,isClear){
+        if(selected_rule==''){
+            $('.f_item').show();
+            return;
+        }
+        for (var i = 0; i < app_rules.length; i++) {
+            var rule=app_rules[i];
+            if(rule.name==selected_rule){
+                currentRule=rule;//set current rule, selected
+                if(isClear)
+                    rule.params=[];//clear params
+                var nextAcceptType=rule.acceptType[rule.params.length];
+                console.log(nextAcceptType);
+                $('.f_item').hide();
+                $(genSeletor('.f_item',nextAcceptType)).show();
+                
+            }
+        }
+    }
+    function genNOTSeletor(type){
+        if(type=='any') return '';
+        return ':not(.'+type+')';
+    }
+    function genSeletor(prefix,type){
+        if(type=='any')
+            return prefix;
+        var arr=[];
+        if(typeof type=="object")
+        {
+            for (var i = 0; i < type.length; i++) {
+                arr.push(prefix+'.'+type[i]);
+            }
+            return arr.join();
+        }
+        return prefix+'.'+type;
+    }
+</script>

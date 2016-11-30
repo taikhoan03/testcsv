@@ -5,7 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
-
+using BL;
 namespace FA_admin_site.Controllers
 {
     public class JobLayoutController : Controller
@@ -36,9 +36,10 @@ namespace FA_admin_site.Controllers
                         var column = new BL.JobFileLayout
                         {
                             WorkingSetItemId = id,
-                            Fieldname = header.Replace(" ", "_"),
-                            Mapper = "{" + header.Replace(" ","_") + "}",
-                            Order = order
+                            Fieldname = header.ReplaceUnusedCharacters(),
+                            Mapper = "{" + header.ReplaceUnusedCharacters() + "}",
+                            Order = order,
+                            Type=1
                         };
                         order++;
                         db.jobFileLayouts.Add(column);

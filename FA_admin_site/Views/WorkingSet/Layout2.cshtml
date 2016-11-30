@@ -1,0 +1,271 @@
+﻿@model IEnumerable<BL.WorkingSetItem>
+<style>
+    .current-row{
+        background:rgba(57, 162, 234, 0.86)
+    }
+    .chk-current{
+        background:rgba(57, 162, 234, 0.86)
+    }
+    .file_class {
+        border-radius: 4px;
+        margin: 2px;
+        padding: 2px 6px;
+    }
+
+    #file_0, .file_0 {
+        background: rgba(57, 162, 234, 0.86);
+    }
+
+    #file_5, .file_5 {
+        background: rgba(59, 222, 233, 0.86);
+    }
+
+    #file_1, .file_1 {
+        background: rgba(58, 235, 98, 0.86);
+    }
+
+    #file_2, .file_2 {
+        background: rgba(219, 228, 67, 0.86);
+    }
+
+    #file_3, .file_3 {
+        background: rgba(174, 96, 237, 0.86);
+    }
+
+    #file_4, .file_4 {
+        background: rgba(200, 82, 111, 0.86);
+    }
+
+    .clear {
+        clear: both;
+    }
+
+    .fields {
+        display: none;
+    }
+
+    .new_field_in_table {
+        font-weight: bold;
+        background: rgba(107, 199, 199, 0.86);
+    }
+
+    #table_rs > tr > th {
+        background: rgba(107, 99, 99, 0.86);
+    }
+
+    #table_rs tr {
+        line-height: 30px;
+    }
+
+        #table_rs tr th, #table_rs tr td {
+            padding: 2px 4px;
+        }
+
+    .chk-current {
+        background: rgba(58, 235, 98, 0.86);
+    }
+    #tSample td{
+        white-space:nowrap
+    }
+    .cboxType{
+        padding: 6px;
+    width: 100px;
+    }
+    .d_type{
+        /*display:table-row;*/
+    }
+</style>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.WorkingSetId)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Filename)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.PrimaryKey)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.SecondaryKeys)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.IsMerged)
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr class="tr-row" style="cursor:pointer" onclick="selectFile(this,@item.Id,'@item.Filename','@item.PrimaryKey')" id="@(item.Id)">
+            <td>
+                @Html.DisplayFor(modelItem => item.WorkingSetId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Filename)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.PrimaryKey)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.SecondaryKeys)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsMerged)
+            </td>
+            <td>
+                
+            </td>
+        </tr>
+    }
+
+</table>
+<script src="~/scripts/custom/app.js"></script>
+<script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
+<script src="~/scripts/custom/filesUpload.js"></script>
+<script src="~/scripts/angular.min.js"></script>
+<script src="~/Content/js/Underscore1.8.3-min.js"></script>
+<script type="text/javascript">
+
+    var selected_data = {};
+
+    var state='@ViewBag.WorkingSetInfo.State';
+    var county='@ViewBag.WorkingSetInfo.County';
+    var url_get_info = '@Config.Get_local_control_site()';
+    var selected_file_row=new Object();
+
+    function selectFile(row, id, filename,pri) {
+        selected_data.selected_filename = filename;
+        selected_data.selected_fileid = id;
+        selected_data.primaryKey = pri;
+        var tr = $(row);
+        selected_file_row = tr;
+        $('.tr-row').removeClass('current-row');
+        tr.addClass('current-row');
+        $.get({
+            url: '@Url.Action("GetLayout", "WorkingSet")?fileid='+id,
+        })
+        .done(function (data) {
+            _createTableWithJsonObj_withTemplate(data, 'tSample', false, function () { }, function (data) {
+                var columns = $('#tbody .lblColumnName');
+                for (var i = 0; i < columns.length; i++) {
+                    var column = columns[i];
+                    if ($(column).text() == selected_data.primaryKey) {
+                        var chk = $(column).parent().find('.chkPrimaryKey');
+                        chk.prop('checked', true);
+                        chk.parent().addClass('chk-current');
+
+                    }
+                }
+                //type
+                columns = $('#tbody .d_type');
+                for (var i = 0; i < columns.length; i++) {
+                    if (i == 0) continue;
+                    var column = columns[i];
+                    var arr = $(column).text().split(',');
+                    var type = arr[0];
+                    var id = arr[1];
+                    var $sel = $('<select onchange="changeType(' + id + ',$(this).val())" class="cboxType">');
+                    $sel.append($('<option value=""></option>'));
+                    $sel.append($('<option value="0">Numeric</option>'));
+                    $sel.append($('<option value="1">String</option>'));
+                    $sel.append($('<option value="2">Boolean</option>'));
+                    $($sel).val(type);
+                    $(column).html('').append($sel);
+                }
+            });
+            
+        }).fail(function (req) {
+            alert(req.status + " : " + req.responseText);
+        }).always(function () {
+
+        });
+    }
+    function save_primaryKey(chk,column) {
+        if (chk.prop('checked')) {
+            $('.chkPrimaryKey').parent().removeClass('chk-current');
+            $('.chkPrimaryKey').prop('checked', false);
+            chk.prop('checked', true);
+            chk.parent().addClass('chk-current');
+        }
+        else {
+            chk.parent().removeClass('chk-current');
+            column = null;
+        }
+        $.get('@Url.Action("SavePrimaryKey", "WorkingSet")?workingSetItemId=' + selected_data.selected_fileid + '&primaryKey=' + column)
+        .done(function (data) {
+            selected_file_row.find('td:eq(2)').html(column);
+        })
+        .fail(function (req) {
+            alert(req.status + " : " + req.responseText);
+        }).always(function () {
+
+        });
+    }
+    function changeType(id, value) {
+        $.get('@Url.Action("ChangeFieldType", "WorkingSet")?workingSetItemId=' + id + '&type=' + value)
+        .done(function (data) {
+        })
+        .fail(function (req) {
+            alert(req.status + " : " + req.responseText);
+        }).always(function () {
+
+        });
+    }
+    $(document).ready(function () {
+        var fid = getUrlParameter('fid');
+        if (fid != undefined) {
+            $('#' + fid).click();
+        }
+    });
+</script>
+
+<table id="files" class="table">
+    <tr></tr>
+</table>
+
+<div id="tSample" class="table" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+    <table class="table">
+        <tr id="header">
+            <th>Field</th>
+            <th>PrimaryKey</th>
+            <th>Type</th>
+        </tr>
+        <tbody id="tbody">
+            <tr>
+                <td class="lblColumnName">{{Fieldname}}</td>
+                <td><input class="chkPrimaryKey"  type="checkbox" onclick="save_primaryKey($(this),'{{Fieldname}}')"/></td>
+                <td class="d_type">{{Type}},{{Id}}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+<input type="button" id="confirm-select" value="Confirm" />
+<div style="display:none;margin:10px 0px 10px 0;padding:5px;border:dotted 2px #a888dc" id="divMainSave">
+    Filename: <input type="text" id="txtFilename" />
+    Description:
+    <textarea type="text" width="150" height="50" id="txtDescription" rows="3" cols="30" style="vertical-align:middle"></textarea>
+    <input type="button" value="Submit" id="btnsubmit" />
+</div>
+@*<div ng-app="myApp" ng-controller="myCtrl">
+    <h2 ng-model="data.selected_filename">abc: {{data.selected_filename}}</h2>
+    <input ng-model="firstName"></input>
+    <h2>{{firstName}}</h2>
+    <div class="clear"></div>
+</div>*@
+
+<script>
+    //var selected_filename='';
+    //    var app = angular.module("myApp", []);
+    //    var fieldadded = [];
+//app.controller("myCtrl", function ($scope) {
+
+//    //$scope.str_file_selected = 'File selected: ' + selected_fileid;
+//    $scope.data = selected_data;
+    //});
+        
+
+
+
+</script>
+

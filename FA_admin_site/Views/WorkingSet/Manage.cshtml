@@ -1,0 +1,449 @@
+﻿<style>
+    .file_class{
+        border-radius: 4px;
+        margin: 2px;
+        padding: 2px 6px;
+    }
+    #file_0,.file_0{
+        background:rgba(57, 162, 234, 0.86);
+    }
+    #file_5,.file_5{
+        background:rgba(59, 222, 233, 0.86);
+    }
+    #file_1,.file_1{
+        background:rgba(58, 235, 98, 0.86);
+    }
+    #file_2,.file_2{
+        background:rgba(219, 228, 67, 0.86);
+    }
+    #file_3,.file_3{
+        background:rgba(174, 96, 237, 0.86);
+    }
+    #file_4,.file_4{
+        background:rgba(200, 82, 111, 0.86);
+    }
+    .clear{
+        clear:both;
+    }
+    .fields{
+        display:none;
+    }
+    .new_field_in_table{
+        font-weight: bold;
+        background:rgba(107, 199, 199, 0.86)
+    }
+    #table_rs>tr>th{
+        background:rgba(107, 99, 99, 0.86)
+    }
+    #table_rs tr{
+        line-height:30px;
+    }
+    #table_rs tr th,#table_rs tr td{
+        padding:2px 4px;
+    }
+    .chk-current{
+        background:rgba(58, 235, 98, 0.86)
+    }
+</style>
+<script src="~/scripts/custom/app.js"></script>
+<script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
+<script src="~/scripts/custom/filesUpload.js"></script>
+<script src="~/scripts/angular.min.js"></script>
+<script src="~/Content/js/Underscore1.8.3-min.js"></script>
+<script type="text/javascript">
+
+    var pid, state, county, edt, ver;
+    var files = [];
+    var currentWs;
+    $(document).ready(function () {
+        var url_get_info = '@Config.Get_local_control_site()';
+        $('#sel_package tr:gt(0)').click(function () {
+            currentWs = $(this);
+            var row  = $(this).find('td');
+            pid      = $(row[0]).text();
+            state    = $(row[1]).text();
+            county   = $(row[2]).text();
+            edt      = $(row[3]).text();
+            ver      = $(row[4]).text();
+            //pid    = $(this).find('td:first').text();
+            //state  = $(this).find('td:first').text();
+            //county = $(this).find('td:first').text();
+
+            $.get('@Url.Action("workingSetItem", "WorkingSet")?checkPrimary=false&packid=' + pid)
+                .done(function (data) {
+                    //console.log(data);
+                    _createTableWithJsonObj_withTemplate(data, 'tSample', true, function (d) {
+                        for (var i = 0; i < d.length; i++) {
+                            d[i].downloadLink = '<a href="' + '@Config.Get_local_control_site()/File/Download?state=' + state + '&county=' + county + '&filename=' + d[i].Filename + '">Download</a>';
+                            d[i].SortAndAction = '<a href="' + '@Url.Action("Index", "SortAndAction")/Index/' + d[i].Id + '">SortAndAction</a>';
+                            d[i].Layout = '<a href="' + '@Url.Action("Layout2", "WorkingSet")/' + d[i].WorkingSetId + '?fid=' + d[i].Id+ '">Layout</a>';
+                        }
+                    });
+                    //$('#tSample #tbody>tr').remove();
+                    //$('#tSample #header>th').remove();
+                    //var header_arr = data[0];
+                    //header_arr['_selected'] = false;
+
+                    //var js_ = appendSelectedProperty(data);//createJsData(data).splice(0, 10);
+                    //createTableFromJsonObj(header_arr, 'tSample');
+                    //Tempo.prepare($("#tSample #tbody>tr:first"))
+                    //    .when(TempoEvent.Types.RENDER_COMPLETE, function (event) {
+                    //        $('#tSample').show();
+                    //        $('#tSample #tbody>tr:last').remove();
+                    //    }).render(js_);
+                }).fail(function (req) {
+                    alert(req.status + " : " + req.responseText);
+                });
+        });
+        $('#confirm-select').click(function () {
+            //verify any item checked
+            var selectedItems = $('#tSample #tbody input[type=checkbox]:checked');
+            var numOfItemSelected = selectedItems.length;
+            if (numOfItemSelected < 2) {
+                //alert("No file(s) selected");
+                alert("At least 2 files must be selected to run Merge Function");
+                return;
+
+            }
+            if (pid == undefined || pid == null || pid == '') return;
+            files = [];
+            var ajaxs = [];
+            for (var i = 0; i < numOfItemSelected; i++) {
+                var chk = $(selectedItems[i]);
+                var row = chk.parent().parent();
+                var filename = row.find('td:eq(2)').text();
+                ajaxs.push($.get({
+                    url: url_get_info + '/JSON/GetFileInfo?state=' + state +
+                        '&county=' + county +
+                        '&filename=' + filename
+                    , filename: filename
+                })
+                .done(function (data) {
+                    var file = { name: $(this).attr('filename'), header: data.header }
+                    files.push(file);
+                }).fail(function (req) {
+                    files = [];
+                    alert(req.status + " : " + req.responseText);
+                }).always(function () {
+                    if (files.length == 0) {
+                        alert('One or more file failed to get info yet')
+                    }
+                })
+                );
+            }
+            $.when.apply(null, ajaxs).done(function () {
+                field_merge_rs = [];
+                $('#table_rs').show();
+                $('#divMainSave').show();
+                $('#div_new_fields_ready').show();
+                $('#reload').click();
+            })
+            //$.when(ajaxs).then(function () {
+
+            //});
+
+
+        });
+        $('#isAppendToField').change(function () {
+            if ($(this).is(':checked')) {
+                $('#divAppendToField').show();
+                $('#new_field_name').hide();
+            } else {
+                $('#divAppendToField').hide();
+                $('#new_field_name').show();
+            }
+        });
+        //set default value
+        $('#isAppendToField').prop('checked', false);
+        $('#btnsubmit').click(function () {
+            if (!confirm("Save and run Merge job")) return;
+            if ($('#txtFilename').val() == '') return;
+            //primaryKey
+            var primaryKey = $('.chk-current>.chkPrimaryKey');
+            if (!primaryKey || !primaryKey.is(':checked')) {
+                return confirm('Continue without set PrimaryKey??');
+            }
+            //if (primaryKey.is(':checked'))
+            var primaryKeyName = null;
+            if (primaryKey.attr('prikeyname') != undefined) {
+                primaryKeyName = primaryKey.attr('prikeyname');
+            }
+            $(this).prop('disabled', true);
+            var d = {};
+            d.wsId = pid;
+            d.primaryKey = primaryKeyName;
+            d.desc = $('#txtDescription').val();
+            d.output_filename = $('#txtFilename').val();
+            d.filenames = [];
+            for (var i = 0; i < files.length; i++) {
+                d.filenames.push(files[i].name);
+            }
+            var details = [];
+            for (var i = 0; i < field_merge_rs.length; i++) {
+                var mergeDetail = field_merge_rs[i];
+                var _mergeDetail = {};
+                _mergeDetail.Order = 0;
+                _mergeDetail.RenameTo = mergeDetail.new_name;
+                var items = [];
+                for (var j = 0; j < mergeDetail.merge_detail.length; j++) {
+                    var detailItem = mergeDetail.merge_detail[j];
+                    var item = {};
+                    item.FileName=detailItem.filename;
+                    item.FieldName = detailItem.fieldname;
+                    items.push(item);
+                }
+                _mergeDetail.Fields = items;
+                details.push(_mergeDetail);
+            }
+            d.details = details;
+            d.runAfterSave = true;
+            var url = '@Url.Action("postMerge", "WorkingSet")';
+            $.post(url, d)
+                .done(function (data) {
+                    currentWs.click();
+                })
+                .fail(function (req) {
+                    //files = [];
+                    alert(req.status + " : " + req.responseText);
+                }).always(function () {
+                    $('#btnsubmit').prop('disabled', false);
+                });
+
+            //console.log(d);
+        });
+    });
+    function selectPrimaryKey(chk) {
+        if (chk.prop('checked')) {
+            $('.chkPrimaryKey').parent().removeClass('chk-current');
+            $('.chkPrimaryKey').prop('checked', false);
+            chk.prop('checked', true);
+            chk.parent().addClass('chk-current');
+        }
+        else {
+            chk.parent().removeClass('chk-current');
+        }
+    }
+</script>
+<table id="sel_package" class="table">
+
+    <tr>
+        <th>ID</th>
+        <th>State</th>
+        <th>County</th>
+        <th>Edition</th>
+        <th>Version</th>
+    </tr>
+    @foreach (var item in ViewBag.ws)
+    {
+        <tr>
+            <td>@item.Id</td>
+            <td>@item.State</td>
+            <td>@item.County</td>
+            <td>@item.Edition</td>
+            <td>@item.Version</td>
+        </tr>
+    }
+</table>
+<table id="files" class="table">
+    <tr></tr>
+</table>
+
+<div id="tSample" class="table" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+    <table class="table">
+        <tr id="header">
+            <th>Id</th>
+            <th>WorkingSetId</th>
+            <th>Filename</th>
+            <th>PrimaryKey</th>
+            <th>SecondaryKeys</th>
+            <th>downloadLink</th>
+            
+            <th>Layout</th>
+            <th>SortAndAction</th>
+            
+        </tr>
+        <tbody id="tbody">
+            <tr>
+                <td>{{Id}}</td>
+                <td>{{WorkingSetId}}</td>
+                <td>{{Filename}}</td>
+                <td>{{PrimaryKey}}</td>
+                <td>{{SecondaryKeys}}</td>
+                <td>
+                    {{downloadLink}}
+                </td>
+                
+                <td>{{Layout}}</td>
+                <td>{{SortAndAction}}</td>
+                
+            </tr>
+        </tbody>
+    </table>
+</div>
+@*<input type="button" id="confirm-select" value="Confirm" />*@
+<div style="display:none;margin:10px 0px 10px 0;padding:5px;border:dotted 2px #a888dc" id="divMainSave">
+    Filename: <input type="text" id="txtFilename" />
+    Description:
+    <textarea type="text" width="150" height="50" id="txtDescription" rows="3" cols="30" style="vertical-align:middle"></textarea>
+    <input type="button" value="Submit" id="btnsubmit" />
+</div>
+<div  ng-app="myApp" ng-controller="myCtrl">
+    <div id="fields_added_result">
+        <table id="table_rs" style="width: 100%;border:solid 1px gray;border-collapse: collapse;display:none" border="1">
+            <tr>
+                <th style="min-width:200px">New_Field_name</th>
+                <th>Details</th>
+                <th>Primary Key</th>
+            </tr>
+            <tr ng-repeat="detail in field_merge_rs" ng-model="detail">
+                <td class="new_field_in_table">{{detail.new_name}}</td>
+                <td><span class="{{detail_item._class}} file_class" ng-repeat="detail_item in detail.merge_detail" ng-click="clear_selection(detail_item)" ng-model="detail_item" style="cursor:pointer">{{detail_item.filename}}|{{detail_item.fieldname}}</span></td>
+                <td>
+                    <input type="checkbox" class="chkPrimaryKey" priKeyName="{{detail.new_name}}" onclick="selectPrimaryKey($(this))"/>
+                </td>
+            </tr>
+        </table>
+        
+    </div>
+    <div class="clear" style="margin-bottom:20px"></div>
+    <div style="float:left;display:none;width:220px" id="div_new_fields_ready">
+        <div style="min-width:200px;min-height:300px;border: dotted 1px #567b81;margin-right: 20px" >
+            <div id="add-to-new-field">
+                <div >
+                    <input type="checkbox" id="isAppendToField"/>
+                    <label for="isAppendToField">Append to field</label>
+                </div>
+                <div><input id="new_field_name" style="display:block" /></div>
+                <div id="divAppendToField" style="display:none">
+                    <select name="repeatSelect" id="selAppendTo">
+                        <option ng-repeat="option in field_merge_rs" value="{{option.new_name}}">{{option.new_name}}</option>
+                    </select>
+                </div>
+                <div ng-repeat="field in fields_add" ng-model="field" class="{{field._class}} file_class">{{field.filename}} | {{field.fieldname}}</div>
+            </div>
+            <div>
+                <input type="button" value="Add" ng-click="add_new_field()" />
+            </div>
+        </div>
+    </div>
+    <div style="float:left;width:80%">
+        <div style="display:inline-block;vertical-align:top;margin:5px;padding:5px;min-width:100px;min-height:100px;border:solid 1px rgba(107, 99, 99, 0.86)" ng-repeat="file in files" id="file_{{$index}}" class="file_{{$index}}">
+            <div style="font-weight:bold;border-bottom:solid 1px #000000;padding:2px;cursor:pointer" ng-click="toggle_show_hide($index)">{{file.name}} <span id="file_{{$index}}_on" style="display:none">∇</span><span id="file_{{$index}}_off">Δ</span></div>
+            <div class="fields">
+                <span style="display:block;padding:2px;" ng-repeat="field in file.header"><span style="margin-right:10px">{{field}}</span> <span style="cursor:pointer;border-bottom:solid 1px;float:right" ng-click="add_this_field(file,field,$parent.$index)">Add</span></span>
+            </div>
+        </div>
+    </div>
+    <input id="reload" style="display:none" type="button" value="reload" ng-click="reload()" />
+    <div class="clear"></div>
+</div>
+@*<div ng-app="myApp" ng-controller="myCtrl">
+
+    <h1 ng-repeat="x in records">
+        <label>{{x.name}}</label>
+        <input type="text" placeholder="{{x.name}}" ng-model="x.name"/>
+    </h1>
+</div>*@
+    <script>
+        //files.push({ name: 'fsdfsd' });
+        //files.push({ name: '2' });
+        var app = angular.module("myApp", []);
+        var fieldadded = [];
+app.controller("myCtrl", function ($scope) {
+
+    $scope.files = files;
+    $scope.reload = function () {
+        $scope.files = files;
+        $scope.fields_add = fieldadded;
+        $scope.field_merge_rs = field_merge_rs;
+    }
+    $scope.toggle_show_hide = function (ind) {
+        var div = 'file_' + ind;
+        var els_to_hide = $('#' + div).find('.fields');//.hide();
+        if (els_to_hide.is(':visible')) {
+            els_to_hide.hide();
+            $('#' + div + '_on').hide();
+            $('#' + div + '_off').show();
+        } else {
+            els_to_hide.show();
+            $('#' + div + '_on').show();
+            $('#' + div + '_off').hide();
+        }
+            
+
+    }
+    $scope.add_this_field = function (file, fieldname, index) {
+        @*//mỗi file chỉ nên thêm vào 1 côt*@
+        var lengthOfThisFile = $('#add-to-new-field .file_' + index).length;
+        if (lengthOfThisFile >= 1) return;
+
+        //$('#new_field_name').show();
+        fieldadded.push({ filename: file.name, fieldname: fieldname, _class: 'file_'+index });
+        file.header = _.without(file.header, fieldname);
+        if ($('#new_field_name').val() == '') {
+            $('#new_field_name').val(fieldname);
+        }
+    }
+    $scope.add_new_field = function () {
+        var isAppend = $('#isAppendToField').is(':checked');
+        if (isAppend) {
+            var appendTo=$('#selAppendTo').val();
+            for (var i = 0; i < field_merge_rs.length; i++) {
+                if (field_merge_rs[i].new_name == appendTo) {
+                    for (var j = 0; j < fieldadded.length; j++) {
+                        field_merge_rs[i].merge_detail.push(fieldadded[j]);
+                    }
+                    break;
+                }
+            }
+        } else {
+            field_merge_rs.push({
+                new_name: $('#new_field_name').val(),
+                merge_detail: _.without(fieldadded, '')
+            });
+            
+        }
+        $('#new_field_name').val('');
+        fieldadded = [];
+        $scope.fields_add = fieldadded;
+        
+    }
+    $scope.clear_selection = function (detail_item) {
+        var found = false;
+        var name, fieldname;
+        for (var i = 0; i < files.length; i++) {
+            if (files[i].name == detail_item.filename) {
+                files[i].header.push(detail_item.fieldname);
+                name = files[i].name;
+                fieldname = detail_item.fieldname;
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            var empty = [];
+            var tmpList = [];
+            var _i=-1, _j=-1;
+            for (var i = 0; i < field_merge_rs.length; i++) {
+                for (var j = 0; j < field_merge_rs[i].merge_detail.length; j++) {
+                    var detail = field_merge_rs[i].merge_detail[j];
+                    if (detail.filename == name && detail.fieldname == fieldname) {
+                        _j = j;
+                        _i = i;
+                        break;
+                    }
+                }
+            }
+            if (_i > -1) {
+                $scope.field_merge_rs[_i].merge_detail.splice(_j, 1);
+                if ($scope.field_merge_rs[_i].merge_detail.length==0)
+                    $scope.field_merge_rs.splice(_i, 1);
+                ($scope.field_merge_rs);
+            }
+        }
+    }
+});
+var myfile = {};
+var field_merge_rs = [];
+
+    </script>

@@ -50,6 +50,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="FieldOrderAndAction.cs" />
+    <Compile Include="FieldRule.cs" />
     <Compile Include="file.cs" />
     <Compile Include="JobFileLayout.cs" />
     <Compile Include="MergeFileFromWorkingSet.cs" />
@@ -63,6 +65,8 @@
     <Compile Include="Model5.cs" />
     <Compile Include="Model6.cs" />
     <Compile Include="Model7.cs" />
+    <Compile Include="Model8.cs" />
+    <Compile Include="Model9.cs" />
     <Compile Include="package.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="WorkingJob.cs" />

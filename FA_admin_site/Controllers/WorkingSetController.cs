@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using Libs;
 using System.Threading.Tasks;
 using System.Net;
+using BL;
 
 namespace FA_admin_site.Controllers
 {
@@ -33,6 +34,16 @@ namespace FA_admin_site.Controllers
             //ViewBag.jsfiles = Json(allFiles);
             return View();
         }
+        public ActionResult Manage()
+        {
+
+
+            var ws = db.workingSets.Where(p => p.User == "test");
+
+            ViewBag.ws = ws;
+            //ViewBag.jsfiles = Json(allFiles);
+            return View();
+        }
         /// <summary>
         /// 
         /// </summary>
@@ -46,22 +57,56 @@ namespace FA_admin_site.Controllers
             //ViewBag.Filename = wsiFile.Filename;
             return View(allFiles);
         }
+        public ActionResult Layout2(int id)
+        {
+            var allFiles = db.workingSetItems.Where(p => p.WorkingSetId == id);
+            var wsFile = db.workingSets.FirstOrDefault(p => p.Id == id);
+            ViewBag.WorkingSetInfo = wsFile;
+            //ViewBag.Filename = wsiFile.Filename;
+            return View(allFiles);
+        }
+        [HttpGet]
+        public JsonResult GetLayout(int fileid)
+        {
+            var columns = db.jobFileLayouts.Where(p => p.WorkingSetItemId == fileid);
+            if(columns.Count()==0)
+            {
+                using (var client = new System.Net.WebClient())
+                {
+                    //var json = client.DownloadString(Config.Get_local_control_site() + "/JSON/GetFileInfo?state=" + job.State + "&county=" + job.County + "&filename=" + job.Filename);
+                    var json = client.DownloadString(Url.Action("Index", "JobLayout", null, this.Request.Url.Scheme) + "?id=" + fileid);
+                }
+            }
+            columns = db.jobFileLayouts.Where(p => p.WorkingSetItemId == fileid);
+            return Json(columns, JsonRequestBehavior.AllowGet);
+        }
         [HttpGet]
         public void SavePrimaryKey(int workingSetItemId,string primaryKey)
         {
             var item = db.workingSetItems.FirstOrDefault(p => p.Id == workingSetItemId);
             if (item != null)
             {
-                item.PrimaryKey = primaryKey;
+                item.PrimaryKey = primaryKey.ReplaceUnusedCharacters();
                 db.SaveChanges();
             }
         }
         [HttpGet]
-        public JsonResult workingSetItem(int packid)
+        public void ChangeFieldType(int workingSetItemId, int type)
+        {
+            var item = db.jobFileLayouts.FirstOrDefault(p => p.Id == workingSetItemId);
+            if (item != null)
+            {
+                item.Type = type;
+                db.SaveChanges();
+            }
+        }
+        [HttpGet]
+        public JsonResult workingSetItem(int packid,bool checkPrimary=true)
         {
             var allFiles = db.workingSetItems.Where(p => p.WorkingSetId == packid && !p.IsMerged);
             // chỉ lấy những file đã dc layout (có Primary key)
-            allFiles = allFiles.Where(p => !string.IsNullOrEmpty(p.PrimaryKey));
+            if(checkPrimary)
+                allFiles = allFiles.Where(p => !string.IsNullOrEmpty(p.PrimaryKey)); //allFiles.FirstOrDefault().Id
             return Json(allFiles, JsonRequestBehavior.AllowGet);
         }
         [HttpGet]
@@ -103,7 +148,7 @@ namespace FA_admin_site.Controllers
                         //file.County = json.County;
                         //file.Create_date = date_create;
                         wsItem.Filename = item.Filename;
-                        wsItem.PrimaryKey = item.PrimaryKey;
+                        wsItem.PrimaryKey = item.PrimaryKey.ReplaceUnusedCharacters();
                         wsItem.SecondaryKeys = item.SecondaryKeys;
                         wsItem.WorkingSetId = workingSet.Id;
                         //file. = "test";

@@ -1,4 +1,5 @@
-﻿using CsvHelper;
+﻿using BL;
+using CsvHelper;
 using Libs;
 using System;
 using System.Collections.Generic;
@@ -112,7 +113,7 @@ namespace Mvc_5_site.Helpers
                 {
                     var dic = new List<IDictionary<string, object>>();
                     csv.ReadHeader();
-                    var fields = csv.FieldHeaders.Select(p => p.Replace(" ", "_")).ToArray();
+                    var fields = csv.FieldHeaders.Select(p => p.ReplaceUnusedCharacters()).ToArray();
                     if (limit == 0)
                         limit = C_Default_limit;
 
