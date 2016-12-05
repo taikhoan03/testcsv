@@ -7,6 +7,7 @@ using System.Web.Mvc;
 
 namespace FA_admin_site.Controllers
 {
+    [Authorize]
     public class DCController : Controller
     {
         // GET: DC

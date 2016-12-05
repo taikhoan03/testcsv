@@ -229,10 +229,11 @@
             <div style="clear:both"></div>
         </div>
     </div>
-    <div id="preview">
+    <div id="preview" style="height:400px;overflow:scroll">
         <input type="button" value="Preview" onclick="preview(@ViewBag.ID)" />
+        <input type="button" value="Download" onclick="download(@ViewBag.ID)" />
         <label style="font-weight:bold; color:bisque;display:none" id="lblLoading">Loading...</label>
-        <div id="tSample" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+        <div id="tSample" style="display:none;width: 100%;background-color: #fff;">
             <table class="table">
                 <tr id="header"></tr>
                 <tbody id="tbody"></tbody>
@@ -274,7 +275,7 @@
 
         //    ls_rs.push(obj);
         //});
-        
+
         init_field();
         init_rules();
         _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
@@ -302,7 +303,7 @@
                     //return;
                 }
 
-                
+
             }
         });
 
@@ -364,17 +365,17 @@
     }
     function preview(id) {
         $('#lblLoading').show();
-        var jqxhr = $.get('@Config.Get_local_control_site()/JSON/GetSampleWithSortAndDuplicateAction?fileid='+id)
+        var jqxhr = $.get('@Config.Get_local_control_site()/JSON/GetSampleWithSortAndDuplicateAction?fileid='+id+'&limit=1000')
                 .done(function (data) {
-                    
-                    _createTableWithArrObj(data,'tSample');
+
+                    _createTableWithArrObj(data,'tSample',false,1000);
 
                 })
                 .fail(function (request, status, error) {
                     try {
                         var json = $.parseJSON(request.responseText);
                         alert(json.errorMessage);
-                    } catch(e) { 
+                    } catch(e) {
                         alert('something bad happened');
                     }
 
@@ -384,7 +385,33 @@
                 });
 
         ///
-        
+
+    }
+    function download(id) {
+        $('#lblLoading').show();
+        var jqxhr = $.get('@Config.Get_local_control_site()/JSON/GetSampleWithSortAndDuplicateAction?fileid='+id+'&limit=20000000000&writeFile=true')
+                .done(function () {
+                    var state='@ViewBag.WorkingSetInfo.State';
+                    var county='@ViewBag.WorkingSetInfo.County';
+                    var filename='@ViewBag.Filename';
+                    window.location.href='@Config.Get_local_control_site()/File/Download_tmp/?state='+state+'&county='+county+'&filename='+filename;
+
+                })
+                .fail(function (request, status, error) {
+                    try {
+                        var json = $.parseJSON(request.responseText);
+                        alert(json.errorMessage);
+                    } catch(e) {
+                        alert('something bad happened');
+                    }
+
+                })
+                .always(function () {
+                    $('#lblLoading').hide();
+                });
+
+        ///
+
     }
     var rules=@Html.Raw(ViewBag.Rules);
     var fields=@Html.Raw(ViewBag.Fields);
@@ -394,6 +421,7 @@
         var r_fields=$('#r_fields');
         $.each(fields,function(idx,item){
             var fieldType=_.findWhere(fieldTypes,{name:item});//{ name="ACCOUNT_NUMBER",  type=1}
+            if(fieldType==undefined) return;
             if(fieldType.type==0){
                 r_fields.append($('<div class="f_item number" onclick="genUI(\''+item+'\',\'number\')">').html(item).append($('<span>'))
                     );
@@ -431,11 +459,11 @@
         $('#r_fields .f_item.string').hide();
     }
     function genUI(value,type){
-        
+
         var r_panel=$('#rule_right');
         var str_rs=r_panel.text();
-        
-        //if(str_rs.indexOf('-')>0 || 
+
+        //if(str_rs.indexOf('-')>0 ||
         //    str_rs.indexOf('*')>0 ||
         //    str_rs.indexOf('/')>0){
         //    var fieldType=_.findWhere(fieldTypes,{name:value});//{ name="ACCOUNT_NUMBER",  type=1}
@@ -464,7 +492,7 @@
     function addOperator(value){
         var r_panel=$('#rule_right');
 
-        if(value=='-' || 
+        if(value=='-' ||
             value=='*' ||
             value=='/'){
             var p_items=$('#rule_right .pi');
@@ -492,7 +520,7 @@
                 r_panel.append($('<div class="va">').html(value));
         }else{
             var nextAcceptType=currentRule.acceptType[currentRule.params.length];
-            // simple type 
+            // simple type
             if(typeof nextAcceptType=='string'){
                 if(nextAcceptType=='number'){
                     if(!$.isNumeric(value)){
@@ -505,20 +533,20 @@
                     currentRule.addParam({value:value,type:nextAcceptType});
                     $display.html('').append($('<div>').html(currentRule.showResult()));
                 }
-                
-                
+
+
             }else{
                 for (var i = 0; i < nextAcceptType.length; i++) {
                     var acType=nextAcceptType[i];
                 }
             }
-            
+
         }
     }
     function Save(){
         var str_rs=$('#rule_right').text();
         var html=$('#rule_right').html();
-        
+
         var d={};
         d.ExpValue=str_rs;
         d.HTMLBack=html;
@@ -526,15 +554,15 @@
         if($( "#rules" ).tabs( "option", "active" )!=0){
             d.ExpValue=currentRule.result();
             d.HTMLBack=$('#CONDITIONAL_r').html();
-            
+
         }
         if($( "#rules" ).tabs( "option", "active" )==1){
             d.Type=2;
         }else if($( "#rules" ).tabs( "option", "active" )==2){
             d.Type=1;
         }
-        
-        
+
+
         $.post('@Url.Action("addRuleMath","SortAndAction")',{fileid:@ViewBag.Fileid,rule:d})
         .done(function (data) {
             rules.push(data);
@@ -549,14 +577,14 @@
             else if($( "#rules" ).tabs( "option", "active" )==1){
                 $rules.append($('<div class="r_item bool" _id="'+data.Id+'" onclick="genUI(\'data.Name\',\'bool\')">').html(data.Name));
             }
-            
+
 
         })
                 .fail(function (request, status, error) {
                     try {
                         var json = $.parseJSON(request.responseText);
                         alert(json.errorMessage);
-                    } catch(e) { 
+                    } catch(e) {
                         alert('something bad happened');
                     }
 

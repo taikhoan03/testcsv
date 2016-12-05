@@ -8,6 +8,7 @@ using System.Web.Mvc;
 using Libs;
 namespace FA_admin_site.Controllers
 {
+    [Authorize]
     public class FileController : Controller
     {
         public string test()

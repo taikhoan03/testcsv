@@ -7,7 +7,7 @@ using Libs;
 using BL;
 namespace FA_admin_site.Controllers
 {
-    
+    [Authorize]
     public class SortAndActionController : Controller
     {
         

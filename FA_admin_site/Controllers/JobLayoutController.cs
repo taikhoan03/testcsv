@@ -8,6 +8,7 @@ using System.Web.Mvc;
 using BL;
 namespace FA_admin_site.Controllers
 {
+    [Authorize]
     public class JobLayoutController : Controller
     {
         // GET: JobLayout

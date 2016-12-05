@@ -18,11 +18,32 @@ namespace Mvc_5_site.Controllers
                                     county
                                     );
             path = path + @"\" + filename;
+            return Download_abs(path);
+            //byte[] fileBytes = System.IO.File.ReadAllBytes(path);
+            //string fileName = filename;// "myfile.ext";
+            //return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileName);
+        }
+        public FileResult Download_tmp(string state, string county, string filename)
+        {
+            var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
+                                    Config.Data.GetKey("tmp_folder_process"),
+                                    state,
+                                    county
+                                    );
+            path = path + @"\" + filename;
+            return Download_abs(path);
+            //byte[] fileBytes = System.IO.File.ReadAllBytes(path);
+            //string fileName = filename;// "myfile.ext";
+            //return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileName);
+        }
+        private FileResult Download_abs(string path)
+        {
+            
             byte[] fileBytes = System.IO.File.ReadAllBytes(path);
-            string fileName = filename;// "myfile.ext";
+            string fileName = Path.GetFileName(path);// "myfile.ext";
             return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileName);
         }
-        
+
         // GET: File
         //public ActionResult Index(string state, string county)
         //{

@@ -59,6 +59,7 @@
     <Compile Include="MergeWorkingSet.cs" />
     <Compile Include="MergeWorkingSetItem.cs" />
     <Compile Include="Model1.cs" />
+    <Compile Include="Model10.cs" />
     <Compile Include="Model2.cs" />
     <Compile Include="Model3.cs" />
     <Compile Include="Model4.cs" />
@@ -69,6 +70,7 @@
     <Compile Include="Model9.cs" />
     <Compile Include="package.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="User.cs" />
     <Compile Include="WorkingJob.cs" />
     <Compile Include="WorkingSet.cs" />
     <Compile Include="WorkingSetItem.cs" />

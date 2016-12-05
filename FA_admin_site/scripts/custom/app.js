@@ -136,14 +136,15 @@ function _createTableWithJsonObj_withTemplate(data, tableid, appendSelected, cb_
     if (cb_after != undefined)
         cb_after(js_);
 }
-function _createTableWithArrObj(data, tableid, appendSelected) {
-    
+function _createTableWithArrObj(data, tableid, appendSelected,limit) {
+    if (limit == undefined) limit = 10;
+    console.log(data.length);
     $('#' + tableid + ' #tbody>tr').remove();
     $('#' + tableid + ' #header>th').remove();
     var header_arr = data[0];
     $('#' + tableid + '').show();
 
-    var js_ = createJsData(data).splice(0, 10);
+    var js_ = createJsData(data).splice(0, limit);
     createTable(header_arr, tableid);
     Tempo.prepare($('#' + tableid + ' #tbody>tr:first'), { 'escape': true })
         .when(TempoEvent.Types.RENDER_COMPLETE, function (event) {

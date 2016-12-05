@@ -10,6 +10,7 @@ using BL;
 
 namespace FA_admin_site.Controllers
 {
+    [Authorize]
     public class WorkingSetController : Controller
     {
         BL.DA_Model db = new BL.DA_Model();

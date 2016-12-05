@@ -4930,3 +4930,7 @@ table.text-center th {
     white-space: normal !important;
   }
 }
+
+.table #tbody > tr:hover{
+    background:#00c0ef;
+}

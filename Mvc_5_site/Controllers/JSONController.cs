@@ -636,7 +636,7 @@ namespace Mvc_5_site.Controllers
             /// </summary>
             public string str_param { get; set; }
         }
-        public JsonResult GetSampleWithSortAndDuplicateAction(int fileid, int limit = 100)
+        public JsonResult GetSampleWithSortAndDuplicateAction(int fileid, decimal limit = 100, bool writeFile=false,int showLimit=1000)
         {
             //int limit = 100;
             var tab = "\t";
@@ -670,6 +670,11 @@ namespace Mvc_5_site.Controllers
             path= path + @"\" + wsFile.Filename;
             var file1 = Helpers.ReadCSV.ReadAsDictionary(path, limit);
             var primaryKey = wsFile.PrimaryKey.ReplaceUnusedCharacters();
+            if(string.IsNullOrEmpty(primaryKey))
+            {
+                throw new Exception("No Primary Key, Please select 1 first");
+            }
+
             var group1 = file1.ToList().GroupBy(p => p[primaryKey]);
 
             var allrecs = new List<IDictionary<string, object>>();
@@ -744,6 +749,13 @@ namespace Mvc_5_site.Controllers
                             //ignoreAll = true;
                             break;
                         }
+                        else if (action == DuplicateAction.KeepAllRows)
+                        {
+                            breakOtherRecords = false;
+                            //record[sortField.Key] = string.Join(",", _group.Select(i => i[sortField.Key]));
+                            //ignoreAll = true;
+                            break;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -758,11 +770,21 @@ namespace Mvc_5_site.Controllers
                     
                     if (ignoreAll)
                         break;
-
+                    rec.Add("isDuplicated", 0);// = 0;
+                    var numOfPrimaryKeyFound = _group.Count();
+                    rec.Add("numOfPrimaryKeyFound", numOfPrimaryKeyFound);
+                    if (numOfPrimaryKeyFound > 1)
+                    {
+                        rec["isDuplicated"] = 1;
+                    }
                     allrecs.Add(rec);
 
                     if (breakOtherRecords)
+                    {
+                        
                         break;
+                    }
+                        
                 }
 
             }
@@ -1043,7 +1065,7 @@ namespace Mvc_5_site.Controllers
 
 
             //generate json data
-
+            
             var rs = new List<string[]>();
             var header = sorted_file1.Count() != 0 ?
                     sorted_file1.FirstOrDefault().Select(p => p.Key) : allrecs.FirstOrDefault().Select(p => p.Key);
@@ -1058,7 +1080,10 @@ namespace Mvc_5_site.Controllers
                 {
                     rs.Add(rec.Select(p => p.Value.ToString()).ToArray());
                 }
-            return Json(rs, JsonRequestBehavior.AllowGet);
+            //write file
+            if(writeFile)
+                Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") +"\\"+Config.Data.GetKey("tmp_folder_process")+"\\"+ws.State+"\\"+ws.County+"\\"+wsFile.Filename, sorted_file1.ToList());
+            return Json(rs.Take(showLimit), JsonRequestBehavior.AllowGet);
             //var sb = new System.Text.StringBuilder("");
             //sb.Append(string.Join(tab, header) + Environment.NewLine);
             //foreach (var rec in allrecs)
