@@ -71,6 +71,7 @@
 
             $.get('@Url.Action("workingSetItem", "WorkingSet")?checkPrimary=false&packid=' + pid)
                 .done(function (data) {
+
                     //console.log(data);
                     _createTableWithJsonObj_withTemplate(data, 'tSample', true, function (d) {
                         for (var i = 0; i < d.length; i++) {
@@ -79,6 +80,8 @@
                             d[i].Layout = '<a href="' + '@Url.Action("Layout2", "WorkingSet")/' + d[i].WorkingSetId + '?fid=' + d[i].Id+ '">Layout</a>';
                         }
                     });
+                    var linkageDownload = $('<a href="@Url.Action("index","Linkage")/?id=' + pid + '">').html('Linkage');
+                    $('#tSample').parent().prepend(linkageDownload);
                     //$('#tSample #tbody>tr').remove();
                     //$('#tSample #header>th').remove();
                     //var header_arr = data[0];

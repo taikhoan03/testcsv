@@ -341,6 +341,7 @@
     <Content Include="scripts\angular-touch.min.js" />
     <Content Include="scripts\angular.js" />
     <Content Include="scripts\angular.min.js" />
+    <Content Include="scripts\custom\app - Copy.js" />
     <Content Include="scripts\custom\app.js" />
     <Content Include="scripts\custom\filesUpload.js" />
     <Content Include="scripts\FileAPI.flash.swf" />
@@ -1110,6 +1111,7 @@
     <Compile Include="Controllers\FileController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\JobLayoutController.cs" />
+    <Compile Include="Controllers\LinkageController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
     <Compile Include="Controllers\SortAndActionController.cs" />
     <Compile Include="Controllers\WorkingSetController.cs" />
@@ -1195,6 +1197,8 @@
     <Content Include="Views\WorkingSet\Manage.cshtml" />
     <Content Include="Views\Login\Index.cshtml" />
     <Content Include="Views\Login\testEdit.cshtml" />
+    <None Include="Properties\PublishProfiles\Ftp198_FASite.pubxml" />
+    <Content Include="Views\Linkage\LinkageIndex.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

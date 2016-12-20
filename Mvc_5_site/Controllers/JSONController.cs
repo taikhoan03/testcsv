@@ -597,19 +597,16 @@ namespace Mvc_5_site.Controllers
         }
         public enum DuplicateAction
         {
-            ResponseWithError = 0,
-            PickupFirstValue = 1,
-            PickupLastValue = 2,
-            PickupFirstUn_NULL_value = 3,
-            PickupMaximumValue = 4,
-            PickupMinimumValue = 5,
-
-            SumAllRow = 6,
-            ConcatenateWithDelimiter = 7,
-
-
-            KeepAllRows = 8,
-            DropAllRows = 9,
+            ResponseWithError        = 0,
+            KeepAllRows              = 1,
+            PickupFirstValue         = 2,
+            PickupLastValue          = 3,
+            PickupFirstUn_NULL_value = 4,
+            PickupMaximumValue       = 5,
+            PickupMinimumValue       = 6,
+            SumAllRow                = 7,
+            ConcatenateWithDelimiter = 8,
+            DropAllRows              = 9,
             
             
         }
@@ -679,7 +676,7 @@ namespace Mvc_5_site.Controllers
 
             var allrecs = new List<IDictionary<string, object>>();
 
-
+            var sortActions = fields_sort.OrderBy(p => p.Value.duplicateAction);
             foreach (var _group in group1)
             {
                 //foreach (var record in _group)
@@ -689,9 +686,11 @@ namespace Mvc_5_site.Controllers
                 var breakOtherRecords = false;
                 var ignoreAll = false;
                 var record = _group.FirstOrDefault();
-                foreach (var sortField in fields_sort)
+                var hasKeepAllRows = sortActions.Where(p => p.Value.duplicateAction == DuplicateAction.KeepAllRows).Count()>0;
+                foreach (var sortField in sortActions)
                 {
                     var action = sortField.Value.duplicateAction;
+                    
                     try
                     {
                         
@@ -701,60 +700,98 @@ namespace Mvc_5_site.Controllers
                         }
                         else if (action == DuplicateAction.PickupFirstValue)
                         {
-                            breakOtherRecords = true;
-                            break;
-                            //ignoreAll = true;
+                            if(!hasKeepAllRows) breakOtherRecords = true;
+                            //record[sortField.Key] = _group.FirstOrDefault()[sortField.Key];
+                            var v = _group.FirstOrDefault()[sortField.Key];
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+                                
+                            }
                             //break;
+                            //ignoreAll = true;
+                            
                         }
                         else if (action == DuplicateAction.PickupLastValue)
                         {
-                            breakOtherRecords = true;
-                            record[sortField.Key] = _group.LastOrDefault()[sortField.Key];
-                            //ignoreAll = true;
-                            break;
+                            if (!hasKeepAllRows) { breakOtherRecords = true; }
+                            //applyAfterKeepAll = true;
+                            //record[sortField.Key] = _group.LastOrDefault()[sortField.Key];
+                            var v = _group.LastOrDefault()[sortField.Key];
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+
                         }
                         else if (action == DuplicateAction.PickupFirstUn_NULL_value)
                         {
-                            breakOtherRecords = true;
-                            record[sortField.Key] = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
-                            //ignoreAll = true;
-                            break;
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            //applyAfterKeepAll = true;
+                            //record[sortField.Key] = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
+                            var v = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
                         }
                         else if (action == DuplicateAction.PickupMaximumValue)
                         {
-                            breakOtherRecords = true;
-                            record[sortField.Key] = _group.Max(p => Convert.ToDecimal(p[sortField.Key]));
-                            //ignoreAll = true;
-                            break;
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            //applyAfterKeepAll = true;
+                            //record[sortField.Key] = _group.Max(p => Convert.ToDecimal(p[sortField.Key]));
+                            var v = _group.Max(p => Convert.ToDecimal(p[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
                         }
                         else if (action == DuplicateAction.PickupMinimumValue)
                         {
-                            breakOtherRecords = true;
-                            record[sortField.Key] = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
-                            //ignoreAll = true;
-                            break;
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            //applyAfterKeepAll = true;
+                            //record[sortField.Key] = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
+                            var v = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
                         }
                         else if (action == DuplicateAction.SumAllRow)
                         {
-                            breakOtherRecords = true;
-                            record[sortField.Key] = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
-                            //ignoreAll = true;
-                            break;
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            //applyAfterKeepAll = true;
+                            //record[sortField.Key] = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
+                            var v = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
                         }
                         //TODO: ConcatenateWithDelimiter phải xác định delimeter
                         else if (action == DuplicateAction.ConcatenateWithDelimiter)
                         {
-                            breakOtherRecords = true;
-                            record[sortField.Key] = string.Join(",", _group.Select(i => i[sortField.Key]));
-                            //ignoreAll = true;
-                            break;
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            //applyAfterKeepAll = true;
+                            //record[sortField.Key] = string.Join(",", _group.Select(i => i[sortField.Key]));
+                            var v = string.Join(",", _group.Select(i => i[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
                         }
                         else if (action == DuplicateAction.KeepAllRows)
                         {
                             breakOtherRecords = false;
                             //record[sortField.Key] = string.Join(",", _group.Select(i => i[sortField.Key]));
                             //ignoreAll = true;
-                            break;
+                            //break;
                         }
                     }
                     catch (Exception ex)
@@ -770,6 +807,7 @@ namespace Mvc_5_site.Controllers
                     
                     if (ignoreAll)
                         break;
+
                     rec.Add("isDuplicated", 0);// = 0;
                     var numOfPrimaryKeyFound = _group.Count();
                     rec.Add("numOfPrimaryKeyFound", numOfPrimaryKeyFound);
@@ -777,6 +815,7 @@ namespace Mvc_5_site.Controllers
                     {
                         rec["isDuplicated"] = 1;
                     }
+
                     allrecs.Add(rec);
 
                     if (breakOtherRecords)
@@ -1091,6 +1130,691 @@ namespace Mvc_5_site.Controllers
             //    sb.Append(string.Join(tab, rec.Select(p => p.Value)) + Environment.NewLine);
             //}
             //return sb.ToString();
+        }
+        private IEnumerable<IDictionary<string,object>> Process(int fileid, decimal limit = 100, bool writeFile = false, int showLimit = 1000, bool addSequence=true,bool applyRules=true)
+        {
+            //int limit = 100;
+            var tab = "\t";
+            var db = new BL.DA_Model();
+            var wsFile = db.workingSetItems.FirstOrDefault(p => p.Id == fileid);
+            var ws = db.workingSets.FirstOrDefault(p => p.Id == wsFile.WorkingSetId);
+
+            var sortAndActions = db.fieldOrderAndActions.Where(p => p.WorkingSetItemId == fileid);
+            var fields_sort = sortAndActions.OrderBy(x => x.Order)
+                .ToDictionary(x => x.FieldName, x => new SortField
+                {
+                    name = x.FieldName,
+                    duplicateAction = (DuplicateAction)x.DuplicatedAction,
+                    sortType = (SortType)x.OrderType,
+                    duplicateActionType = x.DuplicatedActionType
+                }
+                //.Select(x => new SortField
+                //{
+                //    name = x.FieldName,
+                //    duplicateAction = (DuplicateAction)x.DuplicatedAction,
+                //    sortType = (SortType)x.OrderType,
+                //    duplicateActionType = x.DuplicatedActionType
+                //}
+                );//.ToDictionary<string, SortField>(x=>x.fie);
+            var fieldTypes = db.jobFileLayouts.Where(p => p.WorkingSetItemId == fileid).ToDictionary(p => p.Fieldname, p => p.Type);
+            var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
+                                    Config.Data.GetKey("input_folder_process"),
+                                    ws.State,
+                                    ws.County
+                                    );
+            path = path + @"\" + wsFile.Filename;
+            var file1 = Helpers.ReadCSV.ReadAsDictionary(path, limit);
+            var primaryKey = wsFile.PrimaryKey.ReplaceUnusedCharacters();
+            if (string.IsNullOrEmpty(primaryKey))
+            {
+                throw new Exception("No Primary Key, Please select 1 first");
+            }
+
+            var group1 = file1.ToList().GroupBy(p => p[primaryKey]);
+
+            var allrecs = new List<IDictionary<string, object>>();
+
+            var sortActions = fields_sort.OrderBy(p => p.Value.duplicateAction);
+            foreach (var _group in group1)
+            {
+                var breakOtherRecords = false;
+                var ignoreAll = false;
+                var record = _group.FirstOrDefault();
+                var isResponseWithError = false;
+                var hasKeepAllRows = sortActions.Where(p => p.Value.duplicateAction == DuplicateAction.KeepAllRows).Count() > 0;
+                foreach (var sortField in sortActions)
+                {
+                    var action = sortField.Value.duplicateAction;
+
+                    try
+                    {
+
+                        if (action == DuplicateAction.ResponseWithError)
+                        {
+                            //throw new Exception("ResponseWithError");
+                            isResponseWithError = true;
+                        }
+                        else if (action == DuplicateAction.PickupFirstValue)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.FirstOrDefault()[sortField.Key];
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+
+                        }
+                        else if (action == DuplicateAction.PickupLastValue)
+                        {
+                            if (!hasKeepAllRows) { breakOtherRecords = true; }
+                            var v = _group.LastOrDefault()[sortField.Key];
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+
+                        }
+                        else if (action == DuplicateAction.PickupFirstUn_NULL_value)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        else if (action == DuplicateAction.PickupMaximumValue)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.Max(p => Convert.ToDecimal(p[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        else if (action == DuplicateAction.PickupMinimumValue)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        else if (action == DuplicateAction.SumAllRow)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        //TODO: ConcatenateWithDelimiter phải xác định delimeter
+                        else if (action == DuplicateAction.ConcatenateWithDelimiter)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                          
+                            var v = string.Join(",", _group.Select(i => i[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        else if (action == DuplicateAction.KeepAllRows)
+                        {
+                            breakOtherRecords = false;
+                            
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+
+                        throw new Exception("FAIL at: " + sortField.Key
+                            + ", sortType: " + action + Environment.NewLine + "Record: " + Environment.NewLine +
+                            Newtonsoft.Json.JsonConvert.SerializeObject(_group, Newtonsoft.Json.Formatting.Indented));
+                    }
+                }
+                foreach (var rec in _group)
+                {
+
+                    if (ignoreAll)
+                        break;
+
+                    rec.Add("isDuplicated", 0);// = 0;
+                    var numOfPrimaryKeyFound = _group.Count();
+                    rec.Add("numOfPrimaryKeyFound", numOfPrimaryKeyFound);
+                    if (numOfPrimaryKeyFound > 1)
+                    {
+                        if(isResponseWithError)
+                            throw new Exception("ResponseWithError");
+                        rec["isDuplicated"] = 1;
+
+                    }
+
+                    allrecs.Add(rec);
+
+                    if (breakOtherRecords)
+                    {
+
+                        break;
+                    }
+
+                }
+
+            }
+
+            //Sorting
+
+            var sorted_file1 = Enumerable.Empty<IDictionary<string, object>>().OrderBy(x => 1);
+            var sortFieldsNotNONE = fields_sort.Where(p => p.Value.sortType != SortType.None);
+            var firstOrderItem = sortFieldsNotNONE.FirstOrDefault().Value;
+            if (firstOrderItem != null)
+            {
+                if (firstOrderItem.sortType == SortType.Asccending)
+                {
+                    if (fieldTypes.ContainsKey(firstOrderItem.name))
+                    {
+                        if (fieldTypes[firstOrderItem.name] == 0)//int
+                        {
+                            sorted_file1 = allrecs.OrderBy(x => Convert.ToDecimal(x[firstOrderItem.name]));
+                        }
+                        else
+                        {
+                            sorted_file1 = allrecs.OrderBy(x => x[firstOrderItem.name].ToString());
+                        }
+                    }
+                }
+                else if (firstOrderItem.sortType == SortType.Deccending)
+                {
+                    if (fieldTypes.ContainsKey(firstOrderItem.name))
+                    {
+                        if (fieldTypes[firstOrderItem.name] == 0)//int
+                        {
+                            sorted_file1 = allrecs.OrderByDescending(x => Convert.ToDecimal(x[firstOrderItem.name]));
+                        }
+                        else
+                        {
+                            sorted_file1 = allrecs.OrderByDescending(x => x[firstOrderItem.name].ToString());
+                        }
+                    }
+                }
+
+
+                foreach (var item in sortFieldsNotNONE.Skip(1))
+                {
+                    if (item.Value.sortType == SortType.Asccending)
+                    {
+                        if (fieldTypes.ContainsKey(item.Key))
+                        {
+                            if (fieldTypes[item.Key] == 0)//int
+                            {
+                                sorted_file1 = sorted_file1.ThenBy(x => Convert.ToDecimal((decimal)x[item.Key]));
+                            }
+                            else
+                            {
+                                sorted_file1 = sorted_file1.ThenBy(x => x[item.Key].ToString());
+                            }
+                        }
+
+                    }
+                    else if (item.Value.sortType == SortType.Deccending)
+                    {
+                        if (fieldTypes.ContainsKey(item.Key))
+                        {
+                            if (fieldTypes[item.Key] == 0)//int
+                            {
+                                sorted_file1 = sorted_file1.ThenByDescending(x => Convert.ToDecimal((decimal)x[item.Key]));
+                            }
+                            else
+                            {
+                                sorted_file1 = sorted_file1.ThenByDescending(x => x[item.Key].ToString());
+                            }
+                        }
+
+                    }
+                }
+            }
+            else
+            {
+                sorted_file1 = allrecs.OrderBy(x => 1);
+            }
+
+
+            group1 = sorted_file1.ToList().GroupBy(p => p[primaryKey]);
+            //add sequence
+            if(addSequence)
+                foreach (var _group in group1)
+                {
+                    var increasement = 1;
+                    foreach (var record in _group)
+                    {
+                        record.Add("seq", 1);
+                        record.Add("seq2", increasement);
+                        increasement++;
+                    }
+
+                }
+
+
+            //apply rules
+            if (applyRules)
+            {
+                var rules = db.fieldRules.Where(p => p.WorkingSetItemId == fileid).OrderBy(p => p.Order);
+                //update rules as part of fieldType
+                foreach (var rule in rules)
+                {
+                    fieldTypes.Add(rule.Name, rule.Type);
+                }
+                var dyna = new DynaExp();
+                var dt = new System.Data.DataTable();
+                foreach (var rule in rules)
+                {
+                    if (rule.Type == 0)
+                    {
+                        foreach (var rec in sorted_file1)
+                        {
+                            IDictionary<string, object> myUnderlyingObject = rec;
+                            var rule_result = rule.ExpValue.FormatWith(rec);
+                            //TODO: dòng này xữ lý chậm
+                            myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
+
+
+                        }
+                    }
+                    else if (rule.Type == 2)//bool
+                    {
+                        foreach (var rec in sorted_file1)
+                        {
+                            IDictionary<string, object> myUnderlyingObject = rec;
+                            var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+                            //TODO: dòng này xữ lý chậm
+                            myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                        }
+                    }
+                    else if (rule.Type == 1)//string
+                    {
+                        foreach (var rec in sorted_file1)
+                        {
+                            IDictionary<string, object> myUnderlyingObject = rec;
+                            var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                            //TODO: dòng này xữ lý chậm
+                            myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                        }
+                    }
+
+                }
+            }
+            
+            return sorted_file1;
+        }
+        public void testLinkage2(int id)
+        {
+            //var f1 = Process(3011,limit:10,addSequence:false,applyRules:false);
+            //var f2 = Process(3010, limit: 10, addSequence: false, applyRules: false);
+            //var f3 = Process(3009, limit: 10, addSequence: false, applyRules: false);
+
+            //var linkageData = new List<LinkageItem>();
+            //linkageData.Add(new LinkageItem
+            //{
+            //    firstId = 3011,
+            //    firstFilename = "File_1.txt",
+            //    firstField = "PARCEL_NUMBER",
+            //    sndId = 3010,
+            //    sndFilename = "File_2.txt",
+            //    sndField = "PARCEL_NUMBER"
+            //});
+            //linkageData.Add(new LinkageItem
+            //{
+            //    firstId = 3010,
+            //    firstFilename = "File_2.txt",
+            //    firstField = "PARCEL_NUMBER",
+            //    sndId = 3009,
+            //    sndFilename = "File_3.txt",
+            //    sndField = "PARCELNUMBER"
+            //});
+            //linkageData.Add(new LinkageItem
+            //{
+            //    firstId = 3011,
+            //    firstFilename = "File_1.txt",
+            //    firstField = "PARCEL_NUMBER",
+            //    sndId = 3009,
+            //    sndFilename = "File_3.txt",
+            //    sndField = "PARCELNUMBER"
+            //});
+            var db = new BL.DA_Model();
+            var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
+
+            if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
+
+
+            var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
+            var dic = new Dictionary<string, IEnumerable<IDictionary<string, object>>>();
+            var limit = 10000;
+            //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
+            //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
+            
+
+            var files = new List<int>();
+            foreach (var item in linkageData)
+            {
+                if(files.FirstOrDefault(p=>p==item.firstId) == 0)
+                {
+                    files.Add(item.firstId);
+                }
+                if (files.FirstOrDefault(p => p == item.sndId) == 0)
+                {
+                    files.Add(item.sndId);
+                }
+            }
+            var ls = new List<IEnumerable<IDictionary<string, object>>>();
+            var allRec= new List<IDictionary<string, object>>();
+            var insRec = new Dictionary<string, object>();
+            foreach (var item in files)
+            {
+                var loadF1 = Process(item, limit: 1, addSequence: false, applyRules: false);
+                var firstF1 = loadF1.First();
+
+                foreach (var col in firstF1.Keys)
+                {
+                    if (!insRec.ContainsKey(col))
+                    {
+                        insRec.Add(col, "");
+                    }
+                }
+            }
+
+
+
+            foreach (var item in linkageData)
+            {
+                var FF_result = new List<IDictionary<string, object>>();
+                var loadF1 = Process(item.firstId, limit: limit, addSequence: false, applyRules: false);
+
+                var loadF2 = Process(item.sndId, limit: limit, addSequence: false, applyRules: false);
+
+                var firstF1 = loadF1.First();
+                var firstF2 = loadF2.First();
+                
+
+
+                //missing field nếu ko join dc
+                var ff = from p in loadF1
+                         join pp in loadF2
+                         on p[item.firstField] equals pp[item.sndField]
+                         into ps
+                         from g in ps.DefaultIfEmpty()
+                         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
+
+
+                foreach (var gg in ff)
+                {
+                    var new_rec = insRec.ToDictionary(x=>x.Key,x=>x.Value);// new Dictionary<string, object>();
+                    foreach (var col in gg)
+                    {
+                        if (!new_rec.ContainsKey(col.Key))
+                        {
+                            new_rec.Add(col.Key, col.Value);
+                        }
+                        else
+                        {
+                            //if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
+                                new_rec[col.Key] = col.Value;
+                        }
+                    }
+                    //new_rec[col.] = col.Value;
+                    FF_result.Add(new_rec);
+
+                }
+                ls.Add(FF_result);
+                
+            }
+            var result = ls
+                .SelectMany(dict => dict)
+                         .ToLookup(pair => pair["PARCEL_NUMBER"], pair => pair)
+                         .ToDictionary(group => group.Key, group => group.SelectMany(c => c)
+                         //.GroupBy(k => k.Key)
+                         //.Select(k => k.FirstOrDefault(p => !string.IsNullOrEmpty(p[])
+                         //)
+                         //)
+ );
+            var rs = new List<IDictionary<string, object>>();
+            foreach (var rec in result)
+            {
+                var cols = new Dictionary<string, object>();
+                var a = rec.Value;
+                foreach (var col in rec.Value)
+                {
+                    if (!cols.ContainsKey(col.Key))
+                        cols.Add(col.Key, col.Value);
+                    else
+                    {
+                        if(string.IsNullOrEmpty(cols[col.Key].ToString()))
+                            cols[col.Key] = col.Value;
+                    }
+                        
+                }
+                rs.Add(cols);
+            }
+            Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
+                "testLinkage.csv", rs);
+
+        }
+        public void testLinkage(int id)
+        {
+            //var f1 = Process(3011,limit:10,addSequence:false,applyRules:false);
+            //var f2 = Process(3010, limit: 10, addSequence: false, applyRules: false);
+            //var f3 = Process(3009, limit: 10, addSequence: false, applyRules: false);
+
+            //var linkageData = new List<LinkageItem>();
+            //linkageData.Add(new LinkageItem
+            //{
+            //    firstId = 3011,
+            //    firstFilename = "File_1.txt",
+            //    firstField = "PARCEL_NUMBER",
+            //    sndId = 3010,
+            //    sndFilename = "File_2.txt",
+            //    sndField = "PARCEL_NUMBER"
+            //});
+            //linkageData.Add(new LinkageItem
+            //{
+            //    firstId = 3010,
+            //    firstFilename = "File_2.txt",
+            //    firstField = "PARCEL_NUMBER",
+            //    sndId = 3009,
+            //    sndFilename = "File_3.txt",
+            //    sndField = "PARCELNUMBER"
+            //});
+            //linkageData.Add(new LinkageItem
+            //{
+            //    firstId = 3011,
+            //    firstFilename = "File_1.txt",
+            //    firstField = "PARCEL_NUMBER",
+            //    sndId = 3009,
+            //    sndFilename = "File_3.txt",
+            //    sndField = "PARCELNUMBER"
+            //});
+            var db = new BL.DA_Model();
+            var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
+
+            if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
+
+
+            var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
+            var dic = new Dictionary<string,IEnumerable<IDictionary<string, object>>>();
+            var limit = 10000;
+            //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
+            //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
+            var FF_result = new List<IDictionary<string, object>>();
+            foreach (var item in linkageData)
+            {
+                var loadF1 = Process(item.firstId, limit: limit, addSequence: false, applyRules: false);
+
+                var loadF2 = Process(item.sndId, limit: limit, addSequence: false, applyRules: false);
+
+                var firstF1 = loadF1.First();
+                var firstF2 = loadF2.First();
+                foreach (var col in firstF2.Keys)
+                {
+                    if (!firstF1.ContainsKey(col))
+                    {
+                        foreach (var rec in loadF1)
+                        {
+                            //var value = rec[item.firstField];
+                            //rec.Remove(item.sndField);
+                            rec.Add(col, "");
+                        }
+                    }
+                }
+
+                //if (!firstF1.ContainsKey(item.sndField))
+                //{
+                //    foreach (var rec in loadF1)
+                //    {
+                //        //var value = rec[item.firstField];
+                //        //rec.Remove(item.sndField);
+                //        rec.Add(item.sndField, rec[item.firstField]);
+                //    }
+                //}
+                foreach (var col in firstF1.Keys)
+                {
+                    if (!firstF2.ContainsKey(col))
+                    {
+                        foreach (var rec in loadF2)
+                        {
+                            //var value = rec[item.sndField];
+                            //rec.Remove(item.sndField);
+                            rec.Add(col, "");
+                        }
+                    }
+                }
+                //if (!firstF2.ContainsKey(item.firstField))
+                //{
+                //    foreach (var rec in loadF2)
+                //    {
+                //        //var value = rec[item.sndField];
+                //        //rec.Remove(item.sndField);
+                //        rec.Add(item.firstField, rec[item.sndField]);
+                //    }
+                //}
+
+
+                //missing field nếu ko join dc
+                var ff = from p in loadF1
+                         join pp in loadF2
+                         on p[item.firstField] equals pp[item.sndField]
+                         into ps
+                         from g in ps.DefaultIfEmpty()
+                         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() :g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
+
+
+                //FF_result= from p in FF_result
+                //           join pp in loadF1
+                //           on p. equals pp[item.sndField]
+                //           select p.Concat(pp.Where(kvp => !p.ContainsKey(kvp.Key)));
+                
+                foreach (var gg in ff)
+                {
+                    var new_rec = new Dictionary<string, object>();
+                    foreach (var col in gg)
+                    {
+                        if (!new_rec.ContainsKey(col.Key))
+                        {
+                            new_rec.Add(col.Key, col.Value);
+                        }
+                        else
+                        {
+                            if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
+                                new_rec[col.Key] = col.Value;
+                        }
+                    }
+                    
+                    FF_result.Add(new_rec);
+                    
+                }
+
+                //var ff = loadF1.Concat(loadF2);//.GroupBy(d => d.Keys)             .ToDictionary(d => d.Key, d => d.First().Values);
+
+                if (!dic.ContainsKey(item.firstFilename+item.sndFilename))
+                    dic.Add(item.firstFilename + item.sndFilename, FF_result);
+                //if (!dic.ContainsKey(item.sndFilename))
+                //    dic.Add(item.sndFilename, loadF2);
+            }
+ //           var ls = new List<IEnumerable<IDictionary<string, object>>>();
+ //           foreach (var item in dic)
+ //           {
+ //               ls.Add(item.Value);
+ //           }
+ //           //{
+ //           //    f1,f2,f3
+ //           //};
+ //           // left outer join
+ //           var key = linkageData.First().firstField;
+ //           var result = ls
+ //               .SelectMany(dict => dict)
+ //                        .ToLookup(pair => pair[key], pair => pair)
+ //                        .ToDictionary(group => group.Key, group => group.SelectMany(c=>c)
+ //                        .GroupBy(k=>k.Key)
+ //                        .Select(k=>k.FirstOrDefault(p=>!string.IsNullOrEmpty(p.Value.ToString())))
+ //                        //.GroupBy(k => k.Key)
+ ////.Where(g => g.Count() > 1)
+ ////.Select(g => g)
+ //);
+           
+ //           //.ToDictionary(group => group.Key, group => group.SelectMany(c =>c));
+ //           // refilter to left inner join
+ //           //var lsResult = from p in dic[linkageData.First().firstFilename]
+ //           //               join pp in result
+ //           //               on p[key] equals pp.Key
+ //           //               select pp.Value
+ //           //               ;
+ //           var _rs = new List<IDictionary<string, object>>();
+
+ //           //foreach (var rec in lsResult)
+ //           //{
+ //           //    _rs.Add(rec.ToDictionary(x => x.Key, x => x.Value));
+ //           //    //_rs.Add(rec);
+ //           //}
+ //           foreach (var rec in result)
+ //           {
+ //               _rs.Add(rec.Value.ToDictionary(x => x.Key, x => x.Value));
+ //               //_rs.Add(rec);
+ //           }
+
+            Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
+                "testLinkage.csv", FF_result);
+            //foreach (var key in result)
+            //{
+            //    //key.Value.ToDictionary()
+            //    //foreach (var item in key.Value)
+            //    //{
+            //    //    item.Value
+            //    //}
+            //}
+            //var result = f1.Union(f2);
+            //var aa=result.ToDictionary(d => d.Keys, d => d.First().Value);
+            //var j1=from p1 in f1 
+            //       join p2 in f2
+            //       on p1["PARCEL_NUMBER"] equals p2["PARCEL_NUMBER"]
+            //       into a
+            //       from b in a.DefaultIfEmpty()
+            //       select new
+            //       {
+            //           b[""],
+            //           Name = bk.BookNm,
+            //           b.PaymentMode
+            //       };
         }
         public void test_groupby_keySort(int num)
         {

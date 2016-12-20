@@ -73,10 +73,32 @@
     .bool{
         background:#818181;
     }
+    .lbl-arg,.arg {
+    
+    padding: 6px;
+    border: solid 1px gray;
+    margin: 2px;
+    display: inline-block;
+}
+    .lbl-arg{
+        background: #C6C4C4;
+    }
+    .arg{
+        background: #00eeff;
+    }
 </style>
 <style>
-    #cboxCondition{
-        padding:6px;font-weight:bold;font-size:14pt
+    #cboxCondition,#cboxFormatting,#cboxMISCELLANEOUS{
+        background-color: rgba(50, 150, 50, 0.61);
+    border: 1px solid #ffddff;
+    border-radius: 5px;
+    font-size: 14pt;
+    font-weight: bold;
+    padding: 6px;
+    }
+    #CONDITIONAL_r,#FORMATTING_r,#MISCELLANEOUS_r{
+        min-height:300px;
+        
     }
 </style>
 <link href="~/Content/css/jquery-ui.min.css" rel="stylesheet" />
@@ -120,14 +142,15 @@
                     <select style="color:red" class="form-control" onchange="updateAction_all($(this))">
                         <option value="-1" selected="selected"></option>
                         <option value="0">Response with Error</option>
-                        <option value="1">PickupFirstValue</option>
-                        <option value="2">PickupLastValue</option>
-                        <option value="3">PickupFirstUn_NULL_value</option>
-                        <option value="4">PickupMaximumValue</option>
-                        <option value="5">PickupMinimumValue</option>
-                        <option value="6">SumAllRow</option>
-                        <option value="7">ConcatenateWithDelimiter</option>
-                        <option value="8">KeepAllRows</option>
+                        <option value="1">KeepAllRows</option>
+                        <option value="2">PickupFirstValue</option>
+                        <option value="3">PickupLastValue</option>
+                        <option value="4">PickupFirstUn_NULL_value</option>
+                        <option value="5">PickupMaximumValue</option>
+                        <option value="6">PickupMinimumValue</option>
+                        <option value="7">SumAllRow</option>
+                        <option value="8">ConcatenateWithDelimiter</option>
+                        
                     </select>
                 </th>
             </tr>
@@ -157,14 +180,15 @@
                     <td>
                         <select class="form-control action" onchange="updateAction(@item.Id,$(this))">
                             <option value="0" @(item.DuplicatedAction == 0 ? "selected=selected" : "")>Response with Error</option>
-                            <option value="1" @(item.DuplicatedAction == 1 ? "selected=selected" : "")>PickupFirstValue</option>
-                            <option value="2" @(item.DuplicatedAction == 2 ? "selected=selected" : "")>PickupLastValue</option>
-                            <option value="3" @(item.DuplicatedAction == 3 ? "selected=selected" : "")>PickupFirstUn_NULL_value</option>
-                            <option value="4" @(item.DuplicatedAction == 4 ? "selected=selected" : "")>PickupMaximumValue</option>
-                            <option value="5" @(item.DuplicatedAction == 5 ? "selected=selected" : "")>PickupMinimumValue</option>
-                            <option value="6" @(item.DuplicatedAction == 6 ? "selected=selected" : "")>SumAllRow</option>
-                            <option value="7" @(item.DuplicatedAction == 7 ? "selected=selected" : "")>ConcatenateWithDelimiter</option>
-                            <option value="8" @(item.DuplicatedAction == 8 ? "selected=selected" : "")>KeepAllRows</option>
+                            <option value="1" @(item.DuplicatedAction == 1 ? "selected=selected" : "")>KeepAllRows</option>
+                            <option value="2" @(item.DuplicatedAction == 2 ? "selected=selected" : "")>PickupFirstValue</option>
+                            <option value="3" @(item.DuplicatedAction == 3 ? "selected=selected" : "")>PickupLastValue</option>
+                            <option value="4" @(item.DuplicatedAction == 4 ? "selected=selected" : "")>PickupFirstUn_NULL_value</option>
+                            <option value="5" @(item.DuplicatedAction == 5 ? "selected=selected" : "")>PickupMaximumValue</option>
+                            <option value="6" @(item.DuplicatedAction == 6 ? "selected=selected" : "")>PickupMinimumValue</option>
+                            <option value="7" @(item.DuplicatedAction == 7 ? "selected=selected" : "")>SumAllRow</option>
+                            <option value="8" @(item.DuplicatedAction == 8 ? "selected=selected" : "")>ConcatenateWithDelimiter</option>
+                            
                         </select>
                         <div class="concatenate" @(item.DuplicatedAction == 7 ? "style=display:block" : "style=display:none")>
                             Concatenate With Delimiter
@@ -185,7 +209,7 @@
                 <li><a href="#ARITHMETICAL_r">ARITHMETICAL</a></li>
                 <li><a href="#CONDITIONAL_r">CONDITIONAL</a></li>
                 <li><a href="#FORMATTING_r">FORMATTING</a></li>
-                <li><a href="#preview">MISCELLANEOUS</a></li>
+                <li><a href="#MISCELLANEOUS_r">MISCELLANEOUS</a></li>
             </ul>
             @*<span id="btn_ARITHMETICAL">ARITHMETICAL</span>
             <span id="btn_CONDITIONAL">CONDITIONAL</span>
@@ -197,7 +221,7 @@
                 <div>
                     <input type="text" id="txt_input" />
                     <input type="button" id="btn_input" value="Add" onclick="addValue($('#txt_input').val())"/>
-                    <input type="button" id="btn_clear" value="Clear" onclick="$('#txt_input').val('')" />
+                    @*<input type="button" id="btn_clear" value="Clear" onclick="$('#txt_input').val('')" />*@
                 </div>
                 <div style="border-radius:4px" id="ARITHMETICAL_operator">
                     <div id="plus" class="operator" onclick="addOperator('+')">+</div>
@@ -211,7 +235,7 @@
                         <li><a href="#r_fields">Fields</a></li>
                         <li><a href="#r_rules">Rules</a></li>
                     </ul>
-                    <div id="r_fields" style="border:solid 1px gray;border-radius: 5px;padding: 2px"></div>
+                    <div id="r_fields" style="border:solid 1px gray;border-radius: 5px;padding: 2px;min-height:300px"></div>
                     <div id="r_rules" style="border:solid 1px gray;border-radius: 5px;padding: 2px"></div>
                 </div>
             </div>
@@ -221,10 +245,10 @@
             </div>
             <div id="CONDITIONAL_r"></div>
             <div id="FORMATTING_r"></div>
-            <div id="fdf"></div>
-            <div>
+            <div id="MISCELLANEOUS_r"></div>
+            <div style="text-align:right;margin:20px">
                 <input type="button" value="Save" onclick="Save()" />
-                <input type="button" value="Clear" />
+                <input type="button" value="Clear" onclick="Clear_F()" />
             </div>
             <div style="clear:both"></div>
         </div>
@@ -254,7 +278,7 @@
                 <td>{{Id}}</td>
                 <td>{{Name}}</td>
                 <td>{{ExpValue | replace '\[\[\]\]', ','}}</td>
-                <td></td>
+                <td><a href="javascript:;" onclick="deleteRule({{Id}},$(this))">Del</a></td>
             </tr>
         </tbody>
     </table>
@@ -287,6 +311,7 @@
                 $('#ARITHMETICAL_operator').hide();
                 $('#cboxCondition').hide();
                 $('#cboxFormatting').hide();
+                $('#cboxMISCELLANEOUS').hide();
                 if($(event.currentTarget).attr('href')=='#ARITHMETICAL_r'){
                     $('#ARITHMETICAL_operator').show();
                     showItemForMATH();
@@ -300,6 +325,12 @@
                     $('#cboxFormatting').show();
                     if($('#cboxFormatting').val()=='')
                         $('#cboxFormatting').change();
+                    //return;
+                }
+                else if($(event.currentTarget).attr('href')=='#MISCELLANEOUS_r'){
+                    $('#cboxMISCELLANEOUS').show();
+                    if($('#cboxMISCELLANEOUS').val()=='')
+                        $('#cboxMISCELLANEOUS').change();
                     //return;
                 }
 
@@ -317,6 +348,7 @@
         //});
         generateConditionCombobox();
         generateFormattingCombobox();
+        generateMISCELLANEOUSCombobox();
     });
     function updateOrderType(id,sort){
 
@@ -409,9 +441,27 @@
                 .always(function () {
                     $('#lblLoading').hide();
                 });
+    }
+    function deleteRule(id,$btn){
+        var tr=$btn.parent().parent();
+        tr.remove();
+        $('#tRules #tbody tr')
+        @*var jqxhr = $.get('@Config.Get_local_control_site()/JSON/GetSampleWithSortAndDuplicateAction?ruleid='+id)
+                .done(function () {
+                    
+                })
+                .fail(function (request, status, error) {
+                    try {
+                        var json = $.parseJSON(request.responseText);
+                        alert(json.errorMessage);
+                    } catch(e) {
+                        alert('something bad happened');
+                    }
 
-        ///
+                })
+                .always(function () {
 
+                });*@
     }
     var rules=@Html.Raw(ViewBag.Rules);
     var fields=@Html.Raw(ViewBag.Fields);
@@ -479,7 +529,13 @@
                 ||
                 $('#rule_right').find('div').length==0)
                 r_panel.append($('<div class="pi '+type+'">').html('{'+value+'}'));
-        }else if($( "#rules" ).tabs( "option", "active" )==1){
+            return;
+        }
+        if(currentRule==null){
+            alert("Please select A FUNCTION");
+            return;
+        }
+        if($( "#rules" ).tabs( "option", "active" )==1){
 
             currentRule.addParam({value:'{'+value+'}',type:type});
             $('#CONDITIONAL_r').html('').append($('<div>').html(currentRule.showResult()));
@@ -487,6 +543,10 @@
 
             currentRule.addParam({value:'{'+value+'}',type:type});
             $('#FORMATTING_r').html('').append($('<div>').html(currentRule.showResult()));
+        }else if($( "#rules" ).tabs( "option", "active" )==3){
+
+            currentRule.addParam({value:'{'+value+'}',type:type});
+            $('#MISCELLANEOUS_r').html('').append($('<div>').html(currentRule.showResult()));
         }
     }
     function addOperator(value){
@@ -496,6 +556,7 @@
             value=='*' ||
             value=='/'){
             var p_items=$('#rule_right .pi');
+            
             if(p_items.hasClass('string')){
                 alert("Operator is accepted NUMERIC TYPE ONLY");
                 return;
@@ -513,6 +574,9 @@
         }else if($( "#rules" ).tabs( "option", "active" )==2){
             $display=$('#FORMATTING_r');
         }
+        else if($( "#rules" ).tabs( "option", "active" )==3){
+            $display=$('#MISCELLANEOUS_r');
+        }
         if($( "#rules" ).tabs( "option", "active" )==0){
             if($('#rule_right').find('div:last-child').hasClass('op')
                 ||
@@ -520,6 +584,8 @@
                 r_panel.append($('<div class="va">').html(value));
         }else{
             var nextAcceptType=currentRule.acceptType[currentRule.params.length];
+            //console.log(nextAcceptType);
+            if(nextAcceptType==undefined) return;
             // simple type
             if(typeof nextAcceptType=='string'){
                 if(nextAcceptType=='number'){
@@ -536,12 +602,35 @@
 
 
             }else{
-                for (var i = 0; i < nextAcceptType.length; i++) {
-                    var acType=nextAcceptType[i];
-                }
+                //var acType;
+                //var tmpValue=value;
+                //for (var i = 0; i < nextAcceptType.length; i++) {
+                //    var acType=nextAcceptType[i];
+                //    if(acType=='string'){
+
+                //    }else if(acType=='number'){
+                //        tmpValue=
+                //    }
+                    
+                //}
+                //currentRule.addParam({value:value,type:acType});
+                //$display.html('').append($('<div>').html(currentRule.showResult()));
             }
 
         }
+    }
+    function Clear_F(){
+        currentRule.params=[];
+        var $display=$('#CONDITIONAL_r');
+        if($( "#rules" ).tabs( "option", "active" )==1){
+            $display=$('#CONDITIONAL_r');
+        }else if($( "#rules" ).tabs( "option", "active" )==2){
+            $display=$('#FORMATTING_r');
+        }
+        else if($( "#rules" ).tabs( "option", "active" )==3){
+            $display=$('#MISCELLANEOUS_r');
+        }
+        $display.html(currentRule.showResult());
     }
     function Save(){
         var str_rs=$('#rule_right').text();
@@ -561,6 +650,12 @@
         }else if($( "#rules" ).tabs( "option", "active" )==2){
             d.Type=1;
         }
+        else if($( "#rules" ).tabs( "option", "active" )==3){
+            d.Type=3;
+            if($('#cboxMISCELLANEOUS').val()=="AS_IS"){
+                d.Type=4;
+            }
+        }
 
 
         $.post('@Url.Action("addRuleMath","SortAndAction")',{fileid:@ViewBag.Fileid,rule:d})
@@ -577,7 +672,9 @@
             else if($( "#rules" ).tabs( "option", "active" )==1){
                 $rules.append($('<div class="r_item bool" _id="'+data.Id+'" onclick="genUI(\'data.Name\',\'bool\')">').html(data.Name));
             }
-
+            else if($( "#rules" ).tabs( "option", "active" )==3){
+                $rules.append($('<div class="r_item number" _id="'+data.Id+'" onclick="genUI(\'data.Name\',\'number\')">').html(data.Name));
+            }
 
         })
                 .fail(function (request, status, error) {
@@ -632,19 +729,53 @@
             'LEFT_PAD',
             'LEFT_TRIM',
             'REMOVE_CHARACTERS',
+            'REPLACE_STRING',
             'REPLACE_CONTAINS',
             'RIGHT_PAD',
             'RIGHT_TRIM',
             'SPLIT',
-            'SUB_STRING'];
+            'SUB_STRING',
+            'UPPER'
+        ];
+        for (var i = 0; i < options.length; i++) {
+            $select.append($('<option value="'+options[i]+'">').html(options[i]));
+        }
+        $('#rule_left').prepend($select);
+    }
+    function generateMISCELLANEOUSCombobox(){
+        
+        var $select=$('<select id="cboxMISCELLANEOUS" style="display:none" onchange="filter($(this).val(),true)" >');
+        var options=[
+            '',
+            'AS_IS',
+            'LAST_POSITION_OF',
+            'LENGTH',
+            'MAX',
+            'MIN',
+            'POSITION_OF',
+            'ROUND',
+            'STRING_COUNT',
+            'SPLIT',
+            'SUM_ALL'];
         for (var i = 0; i < options.length; i++) {
             $select.append($('<option value="'+options[i]+'">').html(options[i]));
         }
         $('#rule_left').prepend($select);
     }
     function filter(selected_rule,isClear){
+        var $display=$('#CONDITIONAL_r');
+        if($( "#rules" ).tabs( "option", "active" )==1){
+            $display=$('#CONDITIONAL_r');
+        }else if($( "#rules" ).tabs( "option", "active" )==2){
+            $display=$('#FORMATTING_r');
+        }
+        else if($( "#rules" ).tabs( "option", "active" )==3){
+            $display=$('#MISCELLANEOUS_r');
+        }
         if(selected_rule==''){
             $('.f_item').show();
+            currentRule=null;
+            $display.html('');
             return;
         }
         for (var i = 0; i < app_rules.length; i++) {
@@ -654,12 +785,13 @@
                 if(isClear)
                     rule.params=[];//clear params
                 var nextAcceptType=rule.acceptType[rule.params.length];
-                console.log(nextAcceptType);
                 $('.f_item').hide();
                 $(genSeletor('.f_item',nextAcceptType)).show();
                 
             }
         }
+        
+        $display.html(currentRule.showResult());
     }
     function genNOTSeletor(type){
         if(type=='any') return '';

@@ -150,7 +150,7 @@ namespace Mvc_5_site.Helpers
                             dic.Add(line, myUnderlyingObject);
                         else
                         {
-                            dic[line]["ps___comment"]+="record at line:"+ line_number+" removed"+Environment.NewLine;
+                            dic[line]["ps___comment"] += "record at line:" + line_number + " removed[[]]";// +Environment.NewLine;
                         }
 
                     }
@@ -235,24 +235,37 @@ namespace Mvc_5_site.Helpers
             using (StreamWriter sw = new StreamWriter(path))
             {
                 //write header
-                sw.WriteLine(str_line);
-                sw.Flush();
-                //write content
-                //while (!sr.EndOfStream)
-                //{
-                //    string line = sr.ReadLine();
-                //    //do some modifications
-                //    sw.WriteLine(line);
-                //    sw.Flush(); //force line to be written to disk
-                //}
-                foreach (var rec in recs)
+                try
                 {
-                    var line = rec.Select(p => p.Value).ToArray();
-                    str_line = string.Join(delimiter, line);
                     sw.WriteLine(str_line);
                     sw.Flush();
+                    //write content
+                    //while (!sr.EndOfStream)
+                    //{
+                    //    string line = sr.ReadLine();
+                    //    //do some modifications
+                    //    sw.WriteLine(line);
+                    //    sw.Flush(); //force line to be written to disk
+                    //}
+                    foreach (var rec in recs)
+                    {
+                        var line = rec.Select(p => p.Value).ToArray();
+                        str_line = string.Join(delimiter, line);
+                        sw.WriteLine(str_line);
+                        sw.Flush();
+                    }
                 }
+                catch (Exception)
+                {
 
+                    throw;
+                }
+                finally
+                {
+                    sw.Close();
+                    sw.Dispose();
+                }
+                
             }
         }
     }

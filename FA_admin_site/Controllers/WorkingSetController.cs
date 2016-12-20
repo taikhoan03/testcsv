@@ -75,7 +75,7 @@ namespace FA_admin_site.Controllers
                 using (var client = new System.Net.WebClient())
                 {
                     //var json = client.DownloadString(Config.Get_local_control_site() + "/JSON/GetFileInfo?state=" + job.State + "&county=" + job.County + "&filename=" + job.Filename);
-                    var json = client.DownloadString(Url.Action("Index", "JobLayout", null, this.Request.Url.Scheme) + "?id=" + fileid);
+                    var json = client.DownloadString(Url.Action("Index", "JobLayout", null, this.Request.Url.Scheme) + "/?id=" + fileid);
                 }
             }
             columns = db.jobFileLayouts.Where(p => p.WorkingSetItemId == fileid);

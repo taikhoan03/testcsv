@@ -11,6 +11,7 @@ namespace FA_admin_site.Controllers
     [Authorize]
     public class JobLayoutController : Controller
     {
+        [AllowAnonymous]
         // GET: JobLayout
         public ActionResult Index(int id)
         {
