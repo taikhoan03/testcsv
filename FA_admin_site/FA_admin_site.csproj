@@ -36,6 +36,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -213,6 +214,7 @@
     <Content Include="Content\css\icheck\yellow.css" />
     <Content Include="Content\css\icheck\yellow.min.css" />
     <Content Include="Content\css\jquery-ui.min.css" />
+    <Content Include="Content\css\jquery.orderable.min.css" />
     <Content Include="Content\css\select2.css" />
     <Content Include="Content\css\select2.min.css" />
     <Content Include="Content\css\skins\skin-black-light.css" />
@@ -273,6 +275,9 @@
     <Content Include="Content\js\app.min.js" />
     <Content Include="Content\js\bind.min.js" />
     <Content Include="Content\js\init.js" />
+    <Content Include="Content\js\jquery.orderable.js" />
+    <Content Include="Content\js\jquery.orderable.min.js" />
+    <Content Include="Content\js\jquery.tablednd.js" />
     <Content Include="Content\js\jquerymy-1.2.7.min.js" />
     <Content Include="Content\js\plugins\datepicker\bootstrap-datepicker.js" />
     <Content Include="Content\js\plugins\bootstrap\bootstrap.js" />
@@ -311,6 +316,7 @@
     <Content Include="Content\js\plugins\slimscroll\jquery.slimscroll.min.js" />
     <Content Include="Content\js\plugins\tempo\tempo.js" />
     <Content Include="Content\js\plugins\tempo\tempo.min.js" />
+    <Content Include="Content\js\RowSorter.js" />
     <Content Include="Content\js\sugar.1.5.min.js" />
     <Content Include="Content\js\Underscore1.8.3-min.js" />
     <Content Include="Global.asax" />
@@ -1113,6 +1119,7 @@
     <Compile Include="Controllers\JobLayoutController.cs" />
     <Compile Include="Controllers\LinkageController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
+    <Compile Include="Controllers\OutputController.cs" />
     <Compile Include="Controllers\SortAndActionController.cs" />
     <Compile Include="Controllers\WorkingSetController.cs" />
     <Compile Include="Global.asax.cs">
@@ -1199,6 +1206,7 @@
     <Content Include="Views\Login\testEdit.cshtml" />
     <None Include="Properties\PublishProfiles\Ftp198_FASite.pubxml" />
     <Content Include="Views\Linkage\LinkageIndex.cshtml" />
+    <Content Include="Views\Output\Index.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

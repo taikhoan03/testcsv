@@ -103,13 +103,37 @@
     }
     function download(id) {
         $('#lblLoading').show();
-        var jqxhr = $.get('@Config.Get_local_control_site()/JSON/testLinkage2/?id='+id)
+        var jqxhr = $.get('@Config.Get_local_control_site()/JSON/testLinkage3/?id='+id)
                 .done(function () {
                     @*var state='@ViewBag.WorkingSetInfo.State';
                     var county='@ViewBag.WorkingSetInfo.County';
                     var filename='@ViewBag.Filename';*@
                     window.location.href='@Config.Get_local_control_site()/File/Download_tmp/?state=&county=&filename=testLinkage.csv';
 
+                })
+                .fail(function (request, status, error) {
+                    try {
+                        var json = $.parseJSON(request.responseText);
+                        alert(json.errorMessage);
+                    } catch(e) {
+                        alert('something bad happened');
+                    }
+
+                })
+                .always(function () {
+                    $('#lblLoading').hide();
+                });
+    }
+    function deleteAll(id){
+        $('#lblLoading').show();
+        var jqxhr = $.post('@Url.Action("deleteAll", "Linkage")',{id:id})
+                .done(function () {
+                    @*var state='@ViewBag.WorkingSetInfo.State';
+                    var county='@ViewBag.WorkingSetInfo.County';
+                    var filename='@ViewBag.Filename';*@
+                    //window.location.href='@Config.Get_local_control_site()/File/Download_tmp/?state=&county=&filename=testLinkage.csv';
+                    $('#tbody tr:gt(0)').remove();
+                    linkageData=[];
                 })
                 .fail(function (request, status, error) {
                     try {
@@ -140,6 +164,7 @@
 </table>
 <input type="button" value="Add" onclick="add()"/>
 <input type="button" value="Download" onclick="download(@ViewBag.Id)" />
+<input type="button" value="Clear" onclick="deleteAll(@ViewBag.Id)" />
 <div id="lblLoading" style="display:none">Loading...</div>
 <div id="tSample" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
     <table class="table">

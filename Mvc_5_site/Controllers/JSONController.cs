@@ -10,6 +10,8 @@ using System.Web;
 using System.Web.Mvc;
 using System.Linq.Dynamic;
 using BL;
+using System.Data;
+
 namespace Mvc_5_site.Controllers
 {
     [AllowCrossSiteJson]
@@ -1459,40 +1461,9 @@ namespace Mvc_5_site.Controllers
             
             return sorted_file1;
         }
-        public void testLinkage2(int id)
+        public void testLinkage3(int id)
         {
-            //var f1 = Process(3011,limit:10,addSequence:false,applyRules:false);
-            //var f2 = Process(3010, limit: 10, addSequence: false, applyRules: false);
-            //var f3 = Process(3009, limit: 10, addSequence: false, applyRules: false);
 
-            //var linkageData = new List<LinkageItem>();
-            //linkageData.Add(new LinkageItem
-            //{
-            //    firstId = 3011,
-            //    firstFilename = "File_1.txt",
-            //    firstField = "PARCEL_NUMBER",
-            //    sndId = 3010,
-            //    sndFilename = "File_2.txt",
-            //    sndField = "PARCEL_NUMBER"
-            //});
-            //linkageData.Add(new LinkageItem
-            //{
-            //    firstId = 3010,
-            //    firstFilename = "File_2.txt",
-            //    firstField = "PARCEL_NUMBER",
-            //    sndId = 3009,
-            //    sndFilename = "File_3.txt",
-            //    sndField = "PARCELNUMBER"
-            //});
-            //linkageData.Add(new LinkageItem
-            //{
-            //    firstId = 3011,
-            //    firstFilename = "File_1.txt",
-            //    firstField = "PARCEL_NUMBER",
-            //    sndId = 3009,
-            //    sndFilename = "File_3.txt",
-            //    sndField = "PARCELNUMBER"
-            //});
             var db = new BL.DA_Model();
             var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
 
@@ -1501,7 +1472,183 @@ namespace Mvc_5_site.Controllers
 
             var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
             var dic = new Dictionary<string, IEnumerable<IDictionary<string, object>>>();
-            var limit = 10000;
+            var limit = 200000;// 2*1000*1000*1000;
+                               //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
+                               //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
+
+
+            var files = new List<int>();
+            foreach (var item in linkageData)
+            {
+                if (files.FirstOrDefault(p => p == item.firstId) == 0)
+                {
+                    files.Add(item.firstId);
+                }
+                if (files.FirstOrDefault(p => p == item.sndId) == 0)
+                {
+                    files.Add(item.sndId);
+                }
+            }
+            var ls = new List<IEnumerable<IDictionary<string, object>>>();
+            var allRec = new List<IDictionary<string, object>>();
+            //var insRec = new Dictionary<string, object>();
+
+            //foreach (var item in files)
+            //{
+            //    var loadF1 = Process(item, limit: 1, addSequence: false, applyRules: false);
+            //    var firstF1 = loadF1.First();
+
+            //    foreach (var col in firstF1.Keys)
+            //    {
+            //        if (!insRec.ContainsKey(col))
+            //        {
+            //            insRec.Add(col, "");
+            //        }
+            //    }
+            //}
+
+            var groupLinkageData = linkageData.GroupBy(p => p.firstId + p.sndId);
+            string key = groupLinkageData.First().First().firstField;
+            string sndKey = groupLinkageData.First().Last().firstField;
+            foreach (var item in groupLinkageData)
+            {
+                var FF_result = new List<IDictionary<string, object>>();
+                var loadF1 = Process(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
+
+                var loadF2 = Process(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
+
+                var firstF1 = loadF1.First();
+                var firstF2 = loadF2.First();
+
+
+
+                //missing field nếu ko join dc
+                var ff = from p in loadF1
+                         join pp in loadF2
+                         on new { a = p[item.First().firstField], b = p[item.Last().firstField] } equals new { a = pp[item.First().sndField], b = pp[item.Last().sndField] }
+                         into ps
+                         from g in ps//.DefaultIfEmpty()
+                         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
+
+
+                foreach (var gg in ff)
+                {
+                    var new_rec = new Dictionary<string,object>(); //insRec.ToDictionary(x => x.Key, x => x.Value);// 
+                    foreach (var col in gg)
+                    {
+
+                        if (!new_rec.ContainsKey(col.Key))
+                        {
+                            new_rec.Add(col.Key, col.Value);
+                        }
+                        else
+                        {
+                            new_rec[col.Key] = col.Value;
+                        }
+                    }
+                    //new_rec[col.] = col.Value;
+                    //FF_result.Add(new_rec.ToDictionary(x => x.key, x => x.value));
+                    FF_result.Add(new_rec);
+
+                }
+                foreach (var f1 in loadF1)
+                {
+                    f1.Clear();
+                }
+                foreach (var f1 in loadF2)
+                {
+                    f1.Clear();
+                }
+                //foreach (var gg in ff)
+                //{
+                //    var new_rec = new List<KeyValue>(); //insRec.ToDictionary(x => x.Key, x => x.Value);// 
+                //    foreach (var col in gg)
+                //    {
+
+                //        if (new_rec.FirstOrDefault(x => x.key == col.Key) == null)
+                //        {
+                //            new_rec.Add(KeyValue.createNew(col.Key, col.Value));
+                //        }
+                //        //if (!new_rec.ContainsKey(col.Key))
+                //        //{
+                //        //    new_rec.Add(col.Key, col.Value);
+                //        //}
+                //        //else
+                //        //{
+                //        //    //if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
+                //        //    new_rec[col.Key] = col.Value;
+                //        //}
+                //    }
+                //    //new_rec[col.] = col.Value;
+                //    FF_result.Add(new_rec.ToDictionary(x => x.key, x => x.value));
+                //    //FF_result.Add(new_rec);
+
+                //}
+                ls.Add(FF_result);
+            }
+
+
+            var lsDataTable = new List<DataTable>();
+            foreach (var item in ls)
+            {
+                lsDataTable.Add(Ulti.ToDataTable(item));
+            }
+            var dtAll = Ulti.MergeAll(lsDataTable, key);// new DataTable();
+            //           var result = ls
+            //               .SelectMany(dict => dict)
+            //                        //.ToLookup(pair => pair[key], pair => pair)
+            //                        .ToLookup(x => Tuple.Create(x[key], x[sndKey]))//pair[key], pair => pair)
+            //                        .ToDictionary(group => group.Key, group => group.SelectMany(c => c)
+            //                        //.Select(k=>k.fi)
+            //                        //.GroupBy(k => k.Key)
+            //                        //.Select(k => k.FirstOrDefault(p => !string.IsNullOrEmpty(p[])
+            //                        //.Select(k=>k.First())
+            //                        //)
+            //                        //)
+            //);
+            //           var a = Ulti.ToDataTable(ls.First().ToList());
+            //var aa = result.Select(p => p.Value.ToDictionary(x => x.Key, x => x.Value));//.ToDictionary(x => x.ToDictionary(y=>y.Key), x => x.ToDictionary(y => y.Value));
+            //var rs = new List<IDictionary<string, object>>();
+            //foreach (var rec in result.Select(p=>p.Value))
+            //{
+            //    var cols = new Dictionary<string, object>();
+            //    //var a = rec;
+            //    foreach (var col in rec)
+            //    {
+            //        if (!cols.ContainsKey(col.Key))
+            //            cols.Add(col.Key, col.Value);
+            //        else
+            //        {
+            //            if(string.IsNullOrEmpty(cols[col.Key].ToString()))
+            //                cols[col.Key] = col.Value;
+            //        }
+
+            //    }
+            //    rs.Add(cols);
+            //}
+            Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
+                "testLinkage.csv", dtAll);
+            //foreach (var item in lsDataTable)
+            //{
+            //    item.Clear();
+            //}
+            lsDataTable.Clear();
+            lsDataTable = null;
+            dtAll.Dispose();
+            GC.Collect();
+        }
+        public void testLinkage2(int id)
+        {
+            
+            var db = new BL.DA_Model();
+            var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
+
+            if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
+
+
+            var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
+            var dic = new Dictionary<string, IEnumerable<IDictionary<string, object>>>();
+            var limit = 200000;// 2*1000*1000*1000;
             //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
             //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
             
@@ -1521,6 +1668,7 @@ namespace Mvc_5_site.Controllers
             var ls = new List<IEnumerable<IDictionary<string, object>>>();
             var allRec= new List<IDictionary<string, object>>();
             var insRec = new Dictionary<string, object>();
+            
             foreach (var item in files)
             {
                 var loadF1 = Process(item, limit: 1, addSequence: false, applyRules: false);
@@ -1535,32 +1683,33 @@ namespace Mvc_5_site.Controllers
                 }
             }
 
-
-
-            foreach (var item in linkageData)
+            var groupLinkageData = linkageData.GroupBy(p => p.firstId+p.sndId);
+            string key = groupLinkageData.First().First().firstField;
+            string sndKey = groupLinkageData.First().Last().firstField;
+            foreach (var item in groupLinkageData)
             {
                 var FF_result = new List<IDictionary<string, object>>();
-                var loadF1 = Process(item.firstId, limit: limit, addSequence: false, applyRules: false);
+                var loadF1 = Process(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
 
-                var loadF2 = Process(item.sndId, limit: limit, addSequence: false, applyRules: false);
+                var loadF2 = Process(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
 
                 var firstF1 = loadF1.First();
                 var firstF2 = loadF2.First();
-                
+
 
 
                 //missing field nếu ko join dc
                 var ff = from p in loadF1
                          join pp in loadF2
-                         on p[item.firstField] equals pp[item.sndField]
+                         on new { a=p[item.First().firstField] , b=p[item.Last().firstField] } equals new { a=pp[item.First().sndField],b=pp[item.Last().sndField]}
                          into ps
-                         from g in ps.DefaultIfEmpty()
+                         from g in ps//.DefaultIfEmpty()
                          select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
 
 
                 foreach (var gg in ff)
                 {
-                    var new_rec = insRec.ToDictionary(x=>x.Key,x=>x.Value);// new Dictionary<string, object>();
+                    var new_rec = insRec.ToDictionary(x => x.Key, x => x.Value);// new Dictionary<string, object>();
                     foreach (var col in gg)
                     {
                         if (!new_rec.ContainsKey(col.Key))
@@ -1570,7 +1719,7 @@ namespace Mvc_5_site.Controllers
                         else
                         {
                             //if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
-                                new_rec[col.Key] = col.Value;
+                            new_rec[col.Key] = col.Value;
                         }
                     }
                     //new_rec[col.] = col.Value;
@@ -1578,37 +1727,49 @@ namespace Mvc_5_site.Controllers
 
                 }
                 ls.Add(FF_result);
-                
             }
-            var result = ls
-                .SelectMany(dict => dict)
-                         .ToLookup(pair => pair["PARCEL_NUMBER"], pair => pair)
-                         .ToDictionary(group => group.Key, group => group.SelectMany(c => c)
-                         //.GroupBy(k => k.Key)
-                         //.Select(k => k.FirstOrDefault(p => !string.IsNullOrEmpty(p[])
-                         //)
-                         //)
- );
-            var rs = new List<IDictionary<string, object>>();
-            foreach (var rec in result)
+
+            
+            var lsDataTable = new List<DataTable>();
+            foreach (var item in ls)
             {
-                var cols = new Dictionary<string, object>();
-                var a = rec.Value;
-                foreach (var col in rec.Value)
-                {
-                    if (!cols.ContainsKey(col.Key))
-                        cols.Add(col.Key, col.Value);
-                    else
-                    {
-                        if(string.IsNullOrEmpty(cols[col.Key].ToString()))
-                            cols[col.Key] = col.Value;
-                    }
-                        
-                }
-                rs.Add(cols);
+                lsDataTable.Add(Ulti.ToDataTable(item));
             }
+            var dtAll = Ulti.MergeAll(lsDataTable, "PARCEL_NUMBER");// new DataTable();
+            //           var result = ls
+            //               .SelectMany(dict => dict)
+            //                        //.ToLookup(pair => pair[key], pair => pair)
+            //                        .ToLookup(x => Tuple.Create(x[key], x[sndKey]))//pair[key], pair => pair)
+            //                        .ToDictionary(group => group.Key, group => group.SelectMany(c => c)
+            //                        //.Select(k=>k.fi)
+            //                        //.GroupBy(k => k.Key)
+            //                        //.Select(k => k.FirstOrDefault(p => !string.IsNullOrEmpty(p[])
+            //                        //.Select(k=>k.First())
+            //                        //)
+            //                        //)
+            //);
+            //           var a = Ulti.ToDataTable(ls.First().ToList());
+            //var aa = result.Select(p => p.Value.ToDictionary(x => x.Key, x => x.Value));//.ToDictionary(x => x.ToDictionary(y=>y.Key), x => x.ToDictionary(y => y.Value));
+            //var rs = new List<IDictionary<string, object>>();
+            //foreach (var rec in result.Select(p=>p.Value))
+            //{
+            //    var cols = new Dictionary<string, object>();
+            //    //var a = rec;
+            //    foreach (var col in rec)
+            //    {
+            //        if (!cols.ContainsKey(col.Key))
+            //            cols.Add(col.Key, col.Value);
+            //        else
+            //        {
+            //            if(string.IsNullOrEmpty(cols[col.Key].ToString()))
+            //                cols[col.Key] = col.Value;
+            //        }
+
+            //    }
+            //    rs.Add(cols);
+            //}
             Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
-                "testLinkage.csv", rs);
+                "testLinkage.csv", dtAll);
 
         }
         public void testLinkage(int id)
@@ -2085,5 +2246,14 @@ namespace Mvc_5_site.Controllers
         public int Count { get; set; }
         public string Delimeter { get; set; }
         public string[] Header { get; set; }
+    }
+    public class KeyValue
+    {
+        public string key { get; set; }
+        public object value { get; set; }
+        public static KeyValue createNew(string key,object value)
+        {
+            return new KeyValue { key = key, value = value };
+        }
     }
 }

@@ -78,5 +78,13 @@ namespace FA_admin_site.Controllers
         {
 
         }
+        [HttpPost]
+        public void deleteAll(int id)
+        {
+            var db = new DA_Model();
+            var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
+            ws.Linkage = null;
+            db.SaveChanges();
+        }
     }
 }
