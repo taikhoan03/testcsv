@@ -1,0 +1,230 @@
+﻿@model IEnumerable<BL.OutputMapper>
+<link href="~/Content/css/jquery-ui.min.css" rel="stylesheet" />
+<style>
+    #feedback { font-size: 1.4em; }
+  .selectable .ui-selecting { background: #FECA40; }
+  .selectable .ui-selected { background: #F39814; color: white; }
+  .selectable { list-style-type: none; margin: 0; padding: 0; }
+  .selectable li { margin: 3px; padding: 0.4em; font-size: 1.4em; }
+</style>
+
+<script type="text/javascript">
+    var fields=@Html.Raw(ViewBag.OutputFields);
+    var filteredField=[];
+    var files=@Html.Raw(ViewBag.Files);
+    var userOutput=@Html.Raw(ViewBag.UserOutputField);
+    var SeletedOutputId=@ViewBag.SeletedOutputId;
+    var $rightFile;
+    var leftField;
+    var rightField;
+    $(document).ready(function(){
+        $rightFile=$('#rightFile');
+        $rightFile.append($('<option>'));
+        $(files).each(function(ind,item){
+            var option_r=$('<option>').val(item.id).text(item.name);
+            $rightFile.append($(option_r));
+        });
+
+        $('#selOutput').val(SeletedOutputId).change();
+        loadData();
+    });
+    function showColumnsLeft(isLeft){
+
+        var $zone;
+        if(isLeft){
+            $zone=$("#leftColumns");
+        }else{
+            $zone=$("#rightColumns");
+        }
+        $zone.html('');
+        var selectedFile;
+        if(isLeft){
+            selectedFile=$leftFile.val();
+        }else{
+            selectedFile=$rightFile.val();
+        }
+        $(files).each(function(ind,item){
+            if(item.id==selectedFile){
+                var $ul;
+                if(isLeft){
+                    $ul=$('<ol id="leftColSelect" class="selectable">');
+                }else{
+                    $ul=$('<ol id="rightColSelect" class="selectable">');
+                }
+
+                for (var i = 0; i < item.field.length; i++) {
+                    var fieldname=item.field[i];
+                    var $li=$('<li>').addClass('ui-widget-content').html(fieldname);
+                    $ul.append($li);
+                }
+                $zone.append($ul);
+                if(item.field.length==0){
+                    var $li=$('<li>').addClass('ui-widget-content').html('<a href="@Url.Action("Layout2", "WorkingSet")/@ViewBag.Id/?fid='+$('#rightFile').val()+'" style="color:red">No field(s) has been defined, please define layout first</a>');
+                    $ul.append($li);
+                    return;
+                }
+                if(isLeft){
+                    $('#leftColSelect').selectable()
+                        .on( "selectableselected", function( event, ui ) {
+                            //leftCol=ui.selected.textContent;
+                        } );
+                }else{
+                    $('#rightColSelect').selectable()
+                        .on( "selectableselected", function( event, ui ) {
+                            rightField=ui.selected.textContent;
+                        } );
+                }
+
+                return;
+            }
+        });
+    }
+    function showOutputField(){
+        if($('#selOutput').val()!=SeletedOutputId){
+            if(!confirm('You are changing the output file, please confirm your selection!!!')){
+                return;
+            }
+        }
+        var $zone=$("#leftColumns");
+        $zone.html('');
+        var selectedFile=$('#selOutput').val();
+
+        var $ul=$('<ol id="leftColSelect" class="selectable">');
+        filteredField=[];
+        $(fields).each(function(ind,item){
+
+            if(item.OutputMapperId==selectedFile){
+                filteredField.push(item);
+
+                var fieldname=item.Name;
+                var $li=$('<li>').addClass('ui-widget-content').html(fieldname);
+                $ul.append($li);
+
+
+            }
+        });
+        $zone.append($ul);
+        $ul.selectable()
+                .on( "selectableselected", function( event, ui ) {
+                    leftField=ui.selected.textContent;
+                } );
+
+        return;
+    }
+    function add(){
+        var o={};
+        //get id of field
+        for (var i = 0; i < filteredField.length; i++) {
+            var item=filteredField[i];
+            if(item.Name==leftField){
+                o.fieldid=item.Id;
+            }
+        }
+        if(o.fieldid==undefined) return;
+        o.targetField=leftField;
+        //o.sourceField='['+$('#rightFile option:selected').text()+'].'+rightField;
+        o.FieldMapperName=rightField;
+        o.FileMapperName=$('#rightFile option:selected').text();
+        o.wsId=@ViewBag.Id;
+        o.OutId=$('#selOutput').val();
+        console.log(o);
+        $.post('@Url.Action("addData", "Output")',{data:o})
+            .done(function(){
+
+            })
+            .fail()
+            .always(function(){
+                loadData();
+            })
+        ;
+        
+    }
+    function loadData(){
+        $.post('@Url.Action("getUserData","Output")',{id:@ViewBag.Id})
+            .done(function(data){
+                userOutput=JSON.parse(data);
+                var t=$('#data');
+                t.find('tr:gt(0)').remove();
+
+                var group=_.groupBy(userOutput,function(item){
+                    return item.OutputFieldId;
+                });
+                $.each(group,function(ind,item){
+                    var tr_rec=$('<tr>');
+                    //target
+                    var td=$('<td>').html(item[0].target);
+                    tr_rec.append(td);
+                    //source field
+                    td=$('<td>');
+                    $.each(item,function(ind2,rec){
+                        var div=$('<div>').html(rec.FileMapperName+':'+rec.FieldMapperName);
+
+                        td.append(div);
+                    });
+                    tr_rec.append(td);
+                    //cmd
+                    td=$('<td>').html('...');
+                    tr_rec.append(td);
+                    t.append(tr_rec);
+                })
+            })
+            .fail()
+            .always()
+        ;
+        
+
+    }
+</script>
+
+<script src="~/Content/js/plugins/jquery-ui.min.js"></script>
+<script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
+<script src="~/Content/js/Underscore1.8.3-min.js"></script>
+<script src="~/scripts/custom/app.js"></script>
+
+<div>
+    <table>
+        <tr>
+            <td>
+                Select driver: <select id="selOutput" onchange="showOutputField()">
+                    @foreach (var item in Model)
+                    {
+                        <option value="@item.Id">@item.Name</option>
+                    }
+                </select>
+            </td>
+            <td>
+                File: <select id="rightFile" onchange="showColumnsLeft(false)">
+                    
+                </select>
+            </td>
+        </tr>
+        <tr style="vertical-align: top">
+            <td id="leftColumns">
+            </td>
+            <td id="rightColumns">
+            </td>
+        </tr>
+    </table>
+</div>
+<div>
+    <input type="button" value="Add" onclick="add()" />
+</div>
+<table id="data" class="table">
+    <tr>
+        <th>
+            Target
+        </th>
+        <th>
+            Source Field
+        </th>
+        <th>
+
+        </th>
+    </tr>
+
+    @*<tr>
+        <td data-template>
+            {{FieldMapperName}}
+        </td>
+    </tr>*@
+</table>

@@ -9,6 +9,22 @@ namespace FA_admin_site.Controllers
 {
     public class OutputController : Controller
     {
+        public class FileInfo
+        {
+            
+            public int id { get; set; }
+            public string name { get; set; }
+            public string[] field { get; set; }
+        }
+        public class Field
+        {
+            public int OutId { get; set; }
+            public int wsId { get; set; }
+            public int fieldid { get; set; }
+            public string targetField { get; set; }
+            public string filemappername { get; set; }
+            public string fieldmappername { get; set; }
+        }
         // GET: Output
         public ActionResult Index()
         {
@@ -16,6 +32,109 @@ namespace FA_admin_site.Controllers
             var outputFields = db.outputFields.OrderBy(p=>p.Order);
             ViewBag.OutputFields = JsonConvert.SerializeObject(outputFields);
             return View(db.outputMappers);
+        }
+        public ActionResult Select(int id)
+        {
+            ViewBag.Id = id;
+            var db = new BL.DA_Model();
+            var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
+            var all_outputFields = db.outputFields.OrderBy(p => p.Order);
+            ViewBag.OutputFields = JsonConvert.SerializeObject(all_outputFields);
+
+            var ws_files = db.workingSetItems.Where(p => p.WorkingSetId == id);
+            //ViewBag.Files = ws_files;
+
+            //var files = db.workingSetItems.Where(p => p.WorkingSetId == id);
+            var rs_file = new List<FileInfo>();
+            foreach (var file in ws_files)
+            {
+                var fileinfo = new FileInfo();
+                fileinfo.name = file.Filename;
+                fileinfo.id = file.Id;
+                var columns = db.jobFileLayouts.Where(p => p.WorkingSetItemId == file.Id);
+                fileinfo.field = columns.Select(p => p.Fieldname).ToArray();
+                rs_file.Add(fileinfo);
+            }
+            //String serializedResult = /*JsonConvert.SerializeObject(jsonContactsGroups);*/
+            ViewBag.Files = JsonConvert.SerializeObject(rs_file);
+            //get data
+            var outputFields = db.outputFields.Where(p => p.OutputMapperId == ws.SeletedOutputId);
+            var data = from p in outputFields
+                       join pp in db.outputDatas
+                       on p.Id equals pp.OutputFieldId
+                       select new {
+                           target=p.Name,
+                           Id=pp.Id,
+                           OutputFieldId = pp.OutputFieldId,
+                           FileMapperName = pp.FileMapperName,
+                           FieldMapperName = pp.FieldMapperName
+                       };
+            ViewBag.UserOutputField= JsonConvert.SerializeObject(data);
+            ViewBag.SeletedOutputId = ws.SeletedOutputId;
+            return View(db.outputMappers);
+        }
+        [HttpPost]
+        public string getUserData(int id)
+        {
+            var db = new BL.DA_Model();
+            var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
+            var outputFields = db.outputFields.Where(p => p.OutputMapperId == ws.SeletedOutputId);
+            var data = from p in outputFields
+                       join pp in db.outputDatas
+                       on p.Id equals pp.OutputFieldId
+                       select new
+                       {
+                           target = p.Name,
+                           Id = pp.Id,
+                           OutputFieldId = pp.OutputFieldId,
+                           FileMapperName = pp.FileMapperName,
+                           FieldMapperName = pp.FieldMapperName
+                       };
+            return JsonConvert.SerializeObject(data);
+        }
+        [HttpPost]
+        public void addData(Field data)
+        {
+            var db = new BL.DA_Model();
+            //get field is existed
+            var selectOutput = db.workingSets.FirstOrDefault(p=>p.Id==data.wsId);
+            if (selectOutput.SeletedOutputId <= 0)
+            {
+                selectOutput.SeletedOutputId = data.OutId;
+                db.SaveChanges();
+            }else
+            {
+                if(selectOutput.SeletedOutputId != data.OutId)
+                {
+                    var outputFields = db.outputFields.Where(p => p.OutputMapperId == selectOutput.SeletedOutputId);
+                    var allField= from p in outputFields
+                                  join pp in db.outputDatas
+                                  on p.Id equals pp.OutputFieldId
+                                  select pp;
+                    db.outputDatas.RemoveRange(allField);
+                    selectOutput.SeletedOutputId = data.OutId;
+                    db.SaveChanges();
+                }
+            }
+            var field = db.outputDatas.FirstOrDefault(p => p.Id == data.fieldid && p.FieldMapperName==data.filemappername && p.FieldMapperName==data.fieldmappername);
+            //var a = new BL.OutputData();
+            //a.Data = " The code you provide at least looks better than my code because the validation constraint is declared in the attribute. How would the ProcessValidation see the MaxStringLength attribute and know what property it is working with? – Ben McCormack Sep 2 '10 at 14:00Reflectively.The ProcessValidation() method can know the type of your object(either this.GetType() or a similar call on a passed parameter), and from there it can get information for the member CompanyName and by extension the attributes decorating it.The attribute can be just a flag telling a central validator routine the exact rules to apply, or you can put the validation rule in the attribute and reflectively call some Evaluate() method on the attribute itself.Declarative validation can get messy, but that mess can be hidden behind the scenes unlike simple Validate() class members. – KeithS Sep 2 '10 at 15:28 ";
+
+            if (field == null)
+            {
+                //not existed in db
+                var new_field = new BL.OutputData();
+                new_field.OutputFieldId = data.fieldid;
+                new_field.FieldMapperName = data.fieldmappername;
+                new_field.FileMapperName = data.filemappername;
+                db.outputDatas.Add(new_field);
+                db.SaveChanges();
+            }
+            //else
+            //{
+
+            //}
+
         }
         public ActionResult Map(int id)
         {

@@ -36,7 +36,7 @@ namespace FA_admin_site.Controllers
                 fileinfo.field = columns.Select(p => p.Fieldname).ToArray();
                 rs_file.Add(fileinfo);
             }
-            String serializedResult = /*JsonConvert.SerializeObject(jsonContactsGroups);*/
+            //String serializedResult = /*JsonConvert.SerializeObject(jsonContactsGroups);*/
             ViewBag.Files = JsonConvert.SerializeObject(rs_file);
             var xmlLinkageData = db.workingSets.FirstOrDefault(p => p.Id == id).Linkage;
             var linkageData = new List<LinkageItem>();

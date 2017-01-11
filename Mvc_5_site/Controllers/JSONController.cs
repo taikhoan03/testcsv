@@ -1165,8 +1165,8 @@ namespace Mvc_5_site.Controllers
                                     ws.County
                                     );
             path = path + @"\" + wsFile.Filename;
-            var file1 = Helpers.ReadCSV.ReadAsDictionary(path, limit);
-            var primaryKey = wsFile.PrimaryKey.ReplaceUnusedCharacters();
+            var file1 = Helpers.ReadCSV.ReadAsDictionary(wsFile.Filename, path, limit);
+            var primaryKey = wsFile.Filename.Replace(".",EV.DOT)+EV.DOLLAR+wsFile.PrimaryKey.ReplaceUnusedCharacters();
             if (string.IsNullOrEmpty(primaryKey))
             {
                 throw new Exception("No Primary Key, Please select 1 first");
@@ -1290,14 +1290,14 @@ namespace Mvc_5_site.Controllers
                     if (ignoreAll)
                         break;
 
-                    rec.Add("isDuplicated", 0);// = 0;
+                    rec.Add(wsFile.Filename+ EV.DOLLAR + "isDuplicated", 0);// = 0;
                     var numOfPrimaryKeyFound = _group.Count();
-                    rec.Add("numOfPrimaryKeyFound", numOfPrimaryKeyFound);
+                    rec.Add(wsFile.Filename + EV.DOLLAR + "numOfPrimaryKeyFound", numOfPrimaryKeyFound);
                     if (numOfPrimaryKeyFound > 1)
                     {
                         if(isResponseWithError)
                             throw new Exception("ResponseWithError");
-                        rec["isDuplicated"] = 1;
+                        rec[wsFile.Filename + EV.DOLLAR + "isDuplicated"] = 1;
 
                     }
 
@@ -1634,6 +1634,287 @@ namespace Mvc_5_site.Controllers
             //}
             lsDataTable.Clear();
             lsDataTable = null;
+            dtAll.Dispose();
+            GC.Collect();
+        }
+        public void testMap(int id,bool cleanUpResult=false)
+        {
+
+            var db = new BL.DA_Model();
+            var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
+
+            if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
+
+
+            var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
+            var dic = new Dictionary<string, IEnumerable<IDictionary<string, object>>>();
+            var limit = 10000;// 2*1000*1000*1000;
+                               //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
+                               //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
+
+
+            var files = new List<int>();
+            foreach (var item in linkageData)
+            {
+                if (files.FirstOrDefault(p => p == item.firstId) == 0)
+                {
+                    files.Add(item.firstId);
+                }
+                if (files.FirstOrDefault(p => p == item.sndId) == 0)
+                {
+                    files.Add(item.sndId);
+                }
+            }
+            var ls = new List<IEnumerable<IDictionary<string, object>>>();
+            var _ls= new List<IDictionary<string, object>>();
+            var allRec = new List<IDictionary<string, object>>();
+            
+
+
+            var groupLinkageData = linkageData.GroupBy(p => p.firstId + p.sndId);
+            string key = groupLinkageData.First().First().firstField;
+            string sndKey = groupLinkageData.First().Last().firstField;
+            var dtAll = new DataTable();
+            foreach (var item in groupLinkageData)
+            {
+                var FF_result = new List<IDictionary<string, object>>();
+                var loadF1 = Process(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
+
+                var loadF2 = Process(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
+
+                var firstF1 = loadF1.First();
+                var firstF2 = loadF2.First();
+
+                
+
+                //missing field nếu ko join dc
+                //var ff = from p in loadF1
+                //         join pp in loadF2
+                //         on new { a = p[item.First().firstField], b = p[item.Last().firstField] } equals new { a = pp[item.First().sndField], b = pp[item.Last().sndField] }
+                //         into ps
+                //         from g in ps//.DefaultIfEmpty()
+                //         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
+                if (_ls.Count == 0)
+                {
+                    _ls = loadF1.ToList();
+                }
+                var left1 = item.First().firstFilename.Replace(".",EV.DOT) + EV.DOLLAR + item.First().firstField;
+                var right1 = item.Last().firstFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.Last().firstField;
+                var left2 = item.First().sndFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.First().sndField;
+                var right2 = item.Last().sndFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.Last().sndField;
+                var ff = from p in _ls
+                         join pp in loadF2
+                         on new
+                         {
+                             a = p[left1],
+                             b = p[right1]
+                         }
+                         equals new
+                         {
+                             a = pp[left2],
+                             b = pp[right2]
+                         }
+                         into ps
+                         from g in ps//.DefaultIfEmpty()
+                         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g).ToDictionary(x => x.Key, x => x.Value);
+                //var ff = from p in _ls
+                //         join pp in loadF2
+                //         on new
+                //         {
+                //             a = p[item.First().firstFilename + EV.DOLLAR + item.First().firstField],
+                //             b = p[item.Last().firstFilename + EV.DOLLAR + item.Last().firstField]
+                //         }
+                //         equals new
+                //         {
+                //             a = pp[item.First().sndFilename + EV.DOLLAR + item.First().sndField],
+                //             b = pp[item.Last().sndFilename + EV.DOLLAR + item.Last().sndField]
+                //         }
+                //         into ps
+                //         from g in ps//.DefaultIfEmpty()
+                //         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g).ToDictionary(x=>x.Key,x=>x.Value);
+                _ls = new List<IDictionary<string,object>>(ff);// ff.ToDictionary(x=>x.Keys).ToList();
+                
+            }
+            // apply rule mapper
+            var outputFields = db.outputFields.Where(p => p.OutputMapperId == ws.SeletedOutputId);
+            var outputData = db.outputDatas.Where(p => outputFields.Any(c => c.Id == p.OutputFieldId));
+            var rules = db.outputDataDetails.Where(p => p.OutputFileId == ws.SeletedOutputId).ToList();//.OrderBy(p => p.Order);
+            var outputData_ = outputData.ToList().GroupBy(c=>c.OutputFieldId);
+            //var outputData_ = new List<BL.OutputData>
+            //{
+            //    new OutputData
+            //    {
+            //        OutputFieldId=1,
+            //        FileMapperName="Improvement_TAB.txt",
+            //        FieldMapperName="FIBS",
+
+            //    },
+            //    new OutputData
+            //    {
+            //        OutputFieldId=2,
+            //        FileMapperName="Improvement_TAB.txt",
+            //        FieldMapperName="aaa",
+
+            //    }
+            //};
+            var rule_ = rules.ToList();
+            foreach (var rule in rule_)
+            {
+                rule.ExpValue = rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
+            }
+            //var rule_ = new List<BL.OutputDataDetail>
+            //{
+            //    new OutputDataDetail
+            //    {
+            //        Name="Rule_1",
+            //        OutputFieldName="Improvement_TAB.txt$PARCEL_NUMBER",
+            //        Type=1,
+            //        ExpValue="CONCATENATE({Improvement_TAB.txt$PARCEL_NUMBER}[[]]1)".Replace(".",EV.DOT),
+            //        OutputFieldId=1
+            //    },
+            //    new OutputDataDetail
+            //    {
+            //        Name="Rule_2",
+            //        OutputFieldName="Improvement_TAB.txt$PARCEL_NUMBER",
+            //        Type=1,
+            //        ExpValue="CONCATENATE({Rule_1}[[]]2)".Replace(".",EV.DOT),
+            //        OutputFieldId=1
+            //    }
+            //};
+
+            var dyna = new DynaExp();
+            var dt = new System.Data.DataTable();
+            foreach (var rec in _ls)
+            {
+                IDictionary<string, object> myUnderlyingObject = rec;
+                foreach (var group_field in outputData_)
+                {
+
+                    var ruleForThisField = rule_.Where(p => p.OutputFieldId == group_field.Key).ToList();
+                    var fieldname = group_field.Key+EV.DOLLAR;
+                    foreach (var rule in ruleForThisField)
+                    {
+                        var rule_fullname = fieldname + EV.DOLLAR + rule.Name;
+                        if (rule.Type == 0)
+                        {
+                            //var rule_result = rule.ExpValue.FormatWith(rec);
+                            //TODO: dòng này xữ lý chậm
+                            myUnderlyingObject.Add(rule_fullname, dt.Compute(rule.ExpValue.FormatWith(rec), ""));// target.Eval(rule_result));
+                        }
+                        else if (rule.Type == 2)//bool
+                        {
+                            //var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+                            myUnderlyingObject.Add(rule_fullname, dyna.IS(rule.ExpValue.FormatWith(rec)));
+                        }
+                        else if (rule.Type == 1)//string
+                        {
+                            //var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                            myUnderlyingObject.Add(rule_fullname, dyna.FORMAT(rule.ExpValue.FormatWith(rec)));
+                        }
+                        else if (rule.Type == 3)//string
+                        {
+                            //var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                            myUnderlyingObject.Add(rule_fullname, dyna.FUNC_Num(rule.ExpValue.FormatWith(rec)));
+                        }
+                        else if (rule.Type == 4)//string
+                        {
+                            //var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                            myUnderlyingObject.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
+                        }
+                        if (rule == ruleForThisField.Last())
+                        {
+                            //myUnderlyingObject[field.FileMapperName.Replace(".", EV.DOT) + EV.DOLLAR + field.FieldMapperName] =
+                            //    myUnderlyingObject[rule.Name];
+                            myUnderlyingObject.Add(group_field.First().FieldMapperName, myUnderlyingObject[rule_fullname]);
+                        }
+                    }
+                }
+            }
+
+            var a = 1;
+            //update rules as part of fieldType
+            //foreach (var rule in rules)
+            //{
+            //    //var dicField = new Dictionary<string, int>();
+            //    fieldTypes.Add(rule.Name, rule.Type);
+            //}
+            //var target = new DynamicExpresso.Interpreter();
+            //var firstRec = _ls.First();
+            //foreach (var col in firstRec)
+            //{
+            //    var rule_for_this_field=rules.Where(p=>p.)
+            //}
+
+
+            //var dyna = new DynaExp();
+            //var dt = new System.Data.DataTable();
+            //foreach (var rule in rules)
+            //{
+            //    if (rule.Type == 0)
+            //    {
+            //        foreach (var rec in sorted_file1)
+            //        {
+            //            IDictionary<string, object> myUnderlyingObject = rec;
+            //            var rule_result = rule.ExpValue.FormatWith(rec);
+            //            //TODO: dòng này xữ lý chậm
+            //            myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
+
+
+            //        }
+            //    }
+            //    else if (rule.Type == 2)//bool
+            //    {
+            //        foreach (var rec in sorted_file1)
+            //        {
+            //            IDictionary<string, object> myUnderlyingObject = rec;
+            //            var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+            //            //TODO: dòng này xữ lý chậm
+            //            myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+            //        }
+            //    }
+            //    else if (rule.Type == 1)//string
+            //    {
+            //        foreach (var rec in sorted_file1)
+            //        {
+            //            IDictionary<string, object> myUnderlyingObject = rec;
+            //            var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+            //            //TODO: dòng này xữ lý chậm
+            //            myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+            //        }
+            //    }
+            //}
+
+            dtAll = Ulti.ToDataTable(_ls);
+            //remove columns
+            if (cleanUpResult)
+            {
+                var list_col_to_remove = new List<DataColumn>();
+                foreach (DataColumn col in dtAll.Columns)
+                {
+                    if (!outputData_.Any(c => c.First().FieldMapperName == col.ColumnName))
+                    {
+                        list_col_to_remove.Add(col);
+                    }
+                }
+                foreach (var col in list_col_to_remove)
+                {
+                    dtAll.Columns.Remove(col);
+                }
+            }
+            
+            
+            Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
+                "testLinkage.csv", dtAll);
+            //foreach (var item in lsDataTable)
+            //{
+            //    item.Clear();
+            //}
+            //lsDataTable.Clear();
+            //lsDataTable = null;
             dtAll.Dispose();
             GC.Collect();
         }

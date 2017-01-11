@@ -1120,6 +1120,7 @@
     <Compile Include="Controllers\LinkageController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
     <Compile Include="Controllers\OutputController.cs" />
+    <Compile Include="Controllers\OutputRuleMapperController.cs" />
     <Compile Include="Controllers\SortAndActionController.cs" />
     <Compile Include="Controllers\WorkingSetController.cs" />
     <Compile Include="Global.asax.cs">
@@ -1207,6 +1208,8 @@
     <None Include="Properties\PublishProfiles\Ftp198_FASite.pubxml" />
     <Content Include="Views\Linkage\LinkageIndex.cshtml" />
     <Content Include="Views\Output\Index.cshtml" />
+    <Content Include="Views\Output\Select.cshtml" />
+    <Content Include="Views\OutputRuleMapper\OutputRuleMapperIndex.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

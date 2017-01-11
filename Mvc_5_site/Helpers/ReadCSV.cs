@@ -14,6 +14,11 @@ namespace Mvc_5_site.Helpers
     public static class ReadCSV
     {
         private static decimal C_Default_limit = 90000000000;
+        public static List<IDictionary<string, object>> ReadAsDictionary(string name,string path, decimal limit)
+        {
+            name = name.Replace(".", EV.DOT);
+            return readFromPath_AsDictionary(name,path, limit);
+        }
         public static List<IDictionary<string, object>> ReadAsDictionary(string path, decimal limit)
         {
             return readFromPath_AsDictionary(path, limit);
@@ -179,6 +184,100 @@ namespace Mvc_5_site.Helpers
                         myUnderlyingObject.Add(fields[i], lineArr[i]);
                         
                         
+                    }
+                    var data = new CustomData()
+                    {
+                        Data = myUnderlyingObject,
+                        pureTextData = line,
+                    };
+                    dic.Add(data);
+                }
+                return dic.Select(p => p.Data).ToList();
+
+
+                //var config = new CsvHelper.Configuration.CsvConfiguration
+                //{
+                //    BufferSize = 2048,
+                //    Delimiter = delimiter,
+                //    IgnoreBlankLines = true,
+                //    HasHeaderRecord = true,
+                //    SkipEmptyRecords = true,
+                //    IgnoreQuotes = true
+                //};
+
+                //using (var csv = new CsvReader(reader, config))
+                //{
+                //    //var dic = new Dictionary<string, IDictionary<string, object>>();
+                //    var dic = new HashSet<CustomData>();
+                //    csv.ReadHeader();
+                //    var fields = csv.FieldHeaders.Select(p => p.ReplaceUnusedCharacters()).ToArray();
+                //    if (limit == 0)
+                //        limit = C_Default_limit;
+                //    var line_number = 0;
+
+                //    while (csv.Read() && limit > 0)
+                //    {
+                //        line_number++;
+                //        var line = string.Join(delimiter, csv.CurrentRecord);
+                //        limit--;
+                //        //var key = csv.GetField<string>(0);
+                //        dynamic MyDynamic = new System.Dynamic.ExpandoObject();
+                //        IDictionary<string, object> myUnderlyingObject = MyDynamic;
+                //        for (var i = 0; i < fields.Length; i++)
+                //        {
+                //            myUnderlyingObject.Add(fields[i], csv.GetField(i));
+                //        }
+                //        var data = new CustomData() {
+                //            Data=myUnderlyingObject,
+                //            pureTextData=line,
+                //        };
+                //        dic.Add(data);
+                //        //myUnderlyingObject.Add("ps___comment", "");
+
+                //        //if (!dic.ContainsKey(line))
+                //        //    dic.Add(line, myUnderlyingObject);
+                //        //else
+                //        //{
+                //        //    dic[line]["ps___comment"] += "record at line:" + line_number + " removed[[]]";// +Environment.NewLine;
+                //        //}
+
+                //    }
+
+                //    return dic.Select(p => p.Data).ToList();
+
+
+
+                //}
+            }
+
+        }
+        private static List<IDictionary<string, object>> readFromPath_AsDictionary(string name,string path, decimal limit, string delimiter = "\t")
+        {
+
+
+            using (TextReader reader = System.IO.File.OpenText(path))
+            {
+                var d = DateTime.Now;
+                //string line = reader.ReadLine();
+                //Console.WriteLine(line);
+                var header_str = reader.ReadLine();
+                var fields = header_str.Split(new string[] { delimiter }, StringSplitOptions.None)
+                    .Select(p => p.ReplaceUnusedCharacters()).ToArray();
+
+
+                string line;
+                var dic = new HashSet<CustomData>();
+                while ((line = reader.ReadLine()) != null && limit>0)
+                {
+                    limit--;
+                    var lineArr = line.Split(new string[] { delimiter }, StringSplitOptions.None);
+                    dynamic MyDynamic = new System.Dynamic.ExpandoObject();
+                    IDictionary<string, object> myUnderlyingObject = MyDynamic;
+                    for (var i = 0; i < fields.Length; i++)
+                    {
+                        myUnderlyingObject.Add(name+ EV.DOLLAR + fields[i], lineArr[i]);
+
+
                     }
                     var data = new CustomData()
                     {
