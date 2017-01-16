@@ -82,6 +82,7 @@ namespace FA_admin_site.Controllers
             var data = from p in outputFields
                        join pp in db.outputDatas
                        on p.Id equals pp.OutputFieldId
+                       where pp.WorkingSetId==id
                        select new
                        {
                            target = p.Name,
@@ -127,6 +128,7 @@ namespace FA_admin_site.Controllers
                 new_field.OutputFieldId = data.fieldid;
                 new_field.FieldMapperName = data.fieldmappername;
                 new_field.FileMapperName = data.filemappername;
+                new_field.WorkingSetId = data.wsId;
                 db.outputDatas.Add(new_field);
                 db.SaveChanges();
             }

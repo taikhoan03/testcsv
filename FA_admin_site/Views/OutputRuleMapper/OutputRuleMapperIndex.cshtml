@@ -1,5 +1,8 @@
 ﻿@model IEnumerable<BL.FieldOrderAndAction>
 <style>
+    .tr_selected{
+        background:#2fd2c8;
+    }
     #lblLoading {
         color: #ff0000;
         font-size: 14pt;
@@ -129,11 +132,12 @@
 </h3>
 <div id="div-tab">
     <ul>
-        <li><a href="#div_action">SORT</a></li>
+        <li><a href="#div_action">SELECT FIELD</a></li>
         <li><a href="#rules">RULES</a></li>
         <li><a href="#preview">PREVIEW</a></li>
     </ul>
     <div id="div_action" style="height:500px;overflow:scroll">
+        <h1 style="color:red">Please select a field</h1>
         <table id="data" class="table">
             <tr>
                 <th>
@@ -233,8 +237,8 @@
 </div>
 <script type="text/javascript">
     var ls_rs = [];
-    var rules=@Html.Raw(ViewBag.Rules);
-    var fields=@Html.Raw(ViewBag.Fields);
+    var rules=[];//@Html.Raw(ViewBag.Rules);
+    var fields=[];//@Html.Raw(ViewBag.Fields);
     var fieldTypes=@Html.Raw(ViewBag.FieldTypes);
     var selectedFieldId=-1;
     var selectedFieldOutputName="";
@@ -293,29 +297,48 @@
             //    );
         });
     }
+
     function init_rules(){
-        var r_rules=$('#r_rules');
-        $.each(rules,function(idx,item){
-            if(item.Type==0){
-                r_rules.append($('<div class="f_item number" onclick="genUI(\''+item.Name+'\',\'number\')">').html(item.Name).append($('<span>'))
-                    );
-            }
-            else if(item.Type==1){
-                r_rules.append($('<div class="f_item string" onclick="genUI(\''+item.Name+'\',\'string\')">').html(item.Name).append($('<span>'))
-                    );
-            }
-            else if(item.Type==2){
-                r_rules.append($('<div class="f_item bool" onclick="genUI(\''+item.Name+'\',\'bool\')">').html(item.Name).append($('<span>'))
-                    );
-            }
-            //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
-            //    //.append($('<span>').html(fieldType.type))
-            //    );
-        });
+        $.post('@Url.Action("getRuleFields", "OutputRuleMapper")',{fieldid:selectedFieldId,wsid:@ViewBag.ID})
+                .done(function(data){
+
+                    var js_data=JSON.parse(data);
+                    console.log(js_data);
+                    rules=js_data;
+                    //init_rules();
+                })
+                .fail(function(){
+                    alert("err");
+                })
+                .always(function(){
+                    var r_rules=$('#r_rules');
+                    r_rules.find("div").remove();
+                    $.each(rules,function(idx,item){
+                        if(item.Type==0){
+                            r_rules.append($('<div class="f_item number" onclick="genUI(\''+item.Name+'\',\'number\')">').html(item.Name).append($('<span>'))
+                                );
+                        }
+                        else if(item.Type==1){
+                            r_rules.append($('<div class="f_item string" onclick="genUI(\''+item.Name+'\',\'string\')">').html(item.Name).append($('<span>'))
+                                );
+                        }
+                        else if(item.Type==2){
+                            r_rules.append($('<div class="f_item bool" onclick="genUI(\''+item.Name+'\',\'bool\')">').html(item.Name).append($('<span>'))
+                                );
+                        }
+                        //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
+                        //    //.append($('<span>').html(fieldType.type))
+                        //    );
+                    });
+                    _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
+                });
+
     }
     $(document).ready(function () {
 
         $('#data tbody').on("click","tr:gt(0)",function(obj){
+            $(this).parent().find("tr").removeClass("tr_selected");
+            $(this).addClass("tr_selected");
             var _fields=$(this).find("td:eq(1)>div");
             fields=[];
             for (var i = 0; i < _fields.length; i++) {
@@ -324,16 +347,10 @@
             init_field();
             selectedFieldId=$(this).attr("fieldid");
             selectedFieldOutputName=$(this).find("td:eq(0)").html();
-            $.post('@Url.Action("getRuleFields", "OutputRuleMapper")',{fieldid:selectedFieldId})
-                .done(function(data){
-                    console.log(data);
-                })
-                .fail(function(){
-                    alert("err");
-                })
-                .always(function(){});
             init_rules();
+            
         });
+        _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
         loadData();
         //var actions = $('#div_action tr:not(:first-child)');
 
@@ -349,9 +366,9 @@
         //    ls_rs.push(obj);
         //});
 
-        init_field();
-        init_rules();
-        _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
+        //init_field();
+        //init_rules();
+        
         $('#tab-2').tabs();
         $('#div-tab').tabs();
         showItemForMATH();
@@ -492,10 +509,7 @@
                 });
     }
     function deleteRule(id,$btn){
-        var tr=$btn.parent().parent();
-        tr.remove();
-        $('#tRules #tbody tr')
-        @*var jqxhr = $.get('@Config.Get_local_control_site()/JSON/GetSampleWithSortAndDuplicateAction?ruleid='+id)
+        $.post('@Url.Action("deleteRule", "OutputRuleMapper")/?id='+id)
                 .done(function () {
 
                 })
@@ -509,8 +523,9 @@
 
                 })
                 .always(function () {
-
-                });*@
+                    init_rules();
+                    _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
+                });
     }
 
 
@@ -658,7 +673,7 @@
         }
         if($( "#rules" ).tabs( "option", "active" )==1){
             d.Type=2;
-            
+
         }else if($( "#rules" ).tabs( "option", "active" )==2){
             d.Type=1;
         }
@@ -669,8 +684,11 @@
             }
         }
 
-
-        $.post('@Url.Action("addRule","OutputRuleMapper")',{OutputFileId:@ViewBag.OutputFileId,fieldid:selectedFieldId,rule:d})
+        if(selectedFieldId==-1){
+            alert("please select field first");
+            return;
+        }
+        $.post('@Url.Action("addRule","OutputRuleMapper")',{wsid:@ViewBag.ID,OutputFileId:@ViewBag.OutputFileId,fieldid:selectedFieldId,rule:d})
         .done(function (data) {
             rules.push(data);
             _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});

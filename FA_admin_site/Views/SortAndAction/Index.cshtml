@@ -443,12 +443,9 @@
                 });
     }
     function deleteRule(id,$btn){
-        var tr=$btn.parent().parent();
-        tr.remove();
-        $('#tRules #tbody tr')
-        @*var jqxhr = $.get('@Config.Get_local_control_site()/JSON/GetSampleWithSortAndDuplicateAction?ruleid='+id)
+        $.post('@Url.Action("deleteRule", "SortAndAction")/?id='+id)
                 .done(function () {
-                    
+
                 })
                 .fail(function (request, status, error) {
                     try {
@@ -460,8 +457,9 @@
 
                 })
                 .always(function () {
-
-                });*@
+                    init_rules();
+                    _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
+                });
     }
     var rules=@Html.Raw(ViewBag.Rules);
     var fields=@Html.Raw(ViewBag.Fields);
@@ -486,24 +484,40 @@
         });
     }
     function init_rules(){
-        var r_rules=$('#r_rules');
-        $.each(rules,function(idx,item){
-            if(item.Type==0){
-                r_rules.append($('<div class="f_item number" onclick="genUI(\''+item.Name+'\',\'number\')">').html(item.Name).append($('<span>'))
-                    );
-            }
-            else if(item.Type==1){
-                r_rules.append($('<div class="f_item string" onclick="genUI(\''+item.Name+'\',\'string\')">').html(item.Name).append($('<span>'))
-                    );
-            }
-            else if(item.Type==2){
-                r_rules.append($('<div class="f_item bool" onclick="genUI(\''+item.Name+'\',\'bool\')">').html(item.Name).append($('<span>'))
-                    );
-            }
-            //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
-            //    //.append($('<span>').html(fieldType.type))
-            //    );
-        });
+        $.post('@Url.Action("getRules", "SortAndAction")',{id:@ViewBag.ID})
+                .done(function(data){
+
+                    var js_data=JSON.parse(data);
+                    console.log(js_data);
+                    rules=js_data;
+                    //init_rules();
+                })
+                .fail(function(){
+                    alert("err");
+                })
+                .always(function(){
+                    var r_rules=$('#r_rules');
+                    r_rules.find("div").remove();
+                    $.each(rules,function(idx,item){
+                        if(item.Type==0){
+                            r_rules.append($('<div class="f_item number" onclick="genUI(\''+item.Name+'\',\'number\')">').html(item.Name).append($('<span>'))
+                                );
+                        }
+                        else if(item.Type==1){
+                            r_rules.append($('<div class="f_item string" onclick="genUI(\''+item.Name+'\',\'string\')">').html(item.Name).append($('<span>'))
+                                );
+                        }
+                        else if(item.Type==2){
+                            r_rules.append($('<div class="f_item bool" onclick="genUI(\''+item.Name+'\',\'bool\')">').html(item.Name).append($('<span>'))
+                                );
+                        }
+                        //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
+                        //    //.append($('<span>').html(fieldType.type))
+                        //    );
+                    });
+                    _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
+                });
+        
     }
     function showItemForMATH(){
         $('#r_fields .f_item.string').hide();
@@ -556,7 +570,7 @@
             value=='*' ||
             value=='/'){
             var p_items=$('#rule_right .pi');
-            
+
             if(p_items.hasClass('string')){
                 alert("Operator is accepted NUMERIC TYPE ONLY");
                 return;
@@ -611,7 +625,7 @@
                 //    }else if(acType=='number'){
                 //        tmpValue=
                 //    }
-                    
+
                 //}
                 //currentRule.addParam({value:value,type:acType});
                 //$display.html('').append($('<div>').html(currentRule.showResult()));

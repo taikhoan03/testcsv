@@ -1,4 +1,6 @@
-﻿<aside class="main-sidebar">
+﻿<link href="~/Content/css/sidebar-menu.css" rel="stylesheet" />
+<script src="~/Content/js/plugins/sidebar-menu.js"></script>
+<aside class="main-sidebar">
     <section class="sidebar">
         @* BEGIN Search *@
         <form action="#" method="get" class="sidebar-form">
@@ -14,12 +16,27 @@
         @* END Search *@
         @* BEGIN Menu *@
         <ul class="sidebar-menu">
-            <li class="header">HEADER</li>
+            <li class="header">IMPORT</li>
             <li class="active"><a href="@Url.Action("Create", "File")"><i class="fa fa-link"></i> <span>Import package</span></a></li>
+            
             <li><a href="@Url.Action("Index", "WorkingSet")"><i class="fa fa-link"></i> <span>Create Working Set</span></a></li>
-            <li><a href="@Url.Action("Manage", "WorkingSet")"><i class="fa fa-link"></i> <span>Manage</span></a></li>
-            <li><a href="@Url.Action("Merge", "WorkingSet")"><i class="fa fa-link"></i> <span>Merge</span></a></li>
-            <li><a href="@Url.Action("MergeJobs", "WorkingSet")"><i class="fa fa-link"></i> <span>Merge Job Logs</span></a></li>
+            
+            <li class="header">EDIT</li>
+            <li><a href="@Url.Action("Manage", "WorkingSet")"><i class="fa fa-th"></i> <span><strong>Manage</strong></span></a></li>
+            <li><a href="@Url.Action("Merge", "WorkingSet")"><i class="fa fa-pie-chart"></i> <span>Merge</span></a></li>
+            <li><a href="@Url.Action("MergeJobs", "WorkingSet")"><i class="fa fa-calendar"></i> <span>Merge Job Logs</span></a></li>
+            @if (System.Web.HttpContext.Current.Session[BL.EV.KEY_UserSession] != null)
+            {
+                <li class="header">TRANSFORM</li>
+                var user = (BL.UserData)System.Web.HttpContext.Current.Session[BL.EV.KEY_UserSession];
+                <li><a href="@Url.Action("Index", "Linkage")/?id=@user.Current_wsid"><i class="fa fa-share"></i> <span>Linkage</span></a></li>
+                <li><a href="@Url.Action("select", "output")/?id=@user.Current_wsid"><i class="fa fa-share"></i> <span>Transform Mapping </span></a></li>
+                <li><a href="@Url.Action("Index", "outputRuleMapper")/?wsid=@user.Current_wsid"><i class="fa fa-share"></i> <span>Transform Rule</span></a></li>
+                <li><a href="@Url.Action("RunTransform", "outputRuleMapper")/?id=@user.Current_wsid"><i class="fa fa-share"></i> <span>Run Transform</span></a></li>
+                <script type="text/javascript">
+                    var loaded_wsid=@user.Current_wsid;
+                </script>
+            }
                         @*<li><a href="@Url.Action("Layout", "WorkingSet")"><i class="fa fa-link"></i> <span>Merge Job Logs</span></a></li>
     <li><a href="@Url.Action("Index", "SortAndAction")"><i class="fa fa-link"></i> <span>SortAndAction</span></a></li>
                         *@
@@ -40,3 +57,8 @@
         @* END Menu *@
     </section>
 </aside>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $.sidebarMenu($('.sidebar-menu'));
+    });
+</script>

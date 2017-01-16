@@ -1,0 +1,15 @@
+﻿<a href="javascript:;" id="runTranformJob">Run</a>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $("#runTranformJob").click(function (e) {
+            $(this).text('Running');
+            e.preventDefault();
+            $.get('@Config.Get_local_control_site()' + '/JSON/testMap?id=@ViewBag.ID&cleanUpResult=true&')
+            .done(function (data) {
+                window.location.href = '@Config.Get_local_control_site()/File/Download_tmp_tam?state=a&county=b&filename=c'
+            })
+            .fail()
+            .always();
+        });
+    });
+</script>

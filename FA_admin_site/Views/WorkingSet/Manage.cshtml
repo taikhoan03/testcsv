@@ -44,12 +44,28 @@
     .chk-current{
         background:rgba(58, 235, 98, 0.86)
     }
+    .selected{
+        background:#a6ce51 !important;
+    }
 </style>
 <script src="~/scripts/custom/app.js"></script>
 <script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
 <script src="~/scripts/custom/filesUpload.js"></script>
 <script src="~/scripts/angular.min.js"></script>
 <script src="~/Content/js/Underscore1.8.3-min.js"></script>
+@if (System.Web.HttpContext.Current.Session[BL.EV.KEY_UserSession] != null)
+{
+    var user = (BL.UserData)System.Web.HttpContext.Current.Session[BL.EV.KEY_UserSession];
+    <script type="text/javascript">
+        var ws_selected='@user.Current_wsid';
+    </script>
+}
+else
+{
+    <script type="text/javascript">
+        var ws_selected=null;
+    </script>
+}
 <script type="text/javascript">
 
     var pid, state, county, edt, ver;
@@ -57,21 +73,28 @@
     var currentWs;
     $(document).ready(function () {
         var url_get_info = '@Config.Get_local_control_site()';
+        
         $('#sel_package tr:gt(0)').click(function () {
             currentWs = $(this);
+            $('#sel_package tr:gt(0)').removeClass("selected");
+            currentWs.addClass("selected");
             var row  = $(this).find('td');
             pid      = $(row[0]).text();
             state    = $(row[1]).text();
             county   = $(row[2]).text();
             edt      = $(row[3]).text();
-            ver      = $(row[4]).text();
+            ver = $(row[4]).text();
+            
             //pid    = $(this).find('td:first').text();
             //state  = $(this).find('td:first').text();
             //county = $(this).find('td:first').text();
 
             $.get('@Url.Action("workingSetItem", "WorkingSet")?checkPrimary=false&packid=' + pid)
                 .done(function (data) {
-
+                    if (typeof (loaded_wsid) === 'undefined' || loaded_wsid != pid) {
+                        loaded_wsid = pid;
+                        window.location.href = window.location.href;
+                    }
                     //console.log(data);
                     _createTableWithJsonObj_withTemplate(data, 'tSample', true, function (d) {
                         for (var i = 0; i < d.length; i++) {
@@ -80,8 +103,8 @@
                             d[i].Layout = '<a href="' + '@Url.Action("Layout2", "WorkingSet")/' + d[i].WorkingSetId + '?fid=' + d[i].Id+ '">Layout</a>';
                         }
                     });
-                    var linkageDownload = $('<a href="@Url.Action("index","Linkage")/?id=' + pid + '">').html('Linkage');
-                    $('#tSample').parent().prepend(linkageDownload);
+                    @*var linkageDownload = $('<a href="@Url.Action("index","Linkage")/?id=' + pid + '">').html('Linkage');
+                    $('#tSample').parent().prepend(linkageDownload);*@
                     //$('#tSample #tbody>tr').remove();
                     //$('#tSample #header>th').remove();
                     //var header_arr = data[0];
@@ -247,6 +270,7 @@
         </tr>
     }
 </table>
+
 <table id="files" class="table">
     <tr></tr>
 </table>
@@ -449,4 +473,22 @@ app.controller("myCtrl", function ($scope) {
 var myfile = {};
 var field_merge_rs = [];
 
+
+$(document).ready(function () {
+    if (ws_selected) {
+        var tr = $('#sel_package tr:gt(0)');
+        tr.removeClass("selected");
+        for (var i = 0; i < tr.length; i++) {
+            var row = $(tr[i]);
+            var td_id = row.find('td')[0];
+
+            if ($(td_id).text() == ws_selected) {
+                row.trigger("click");
+                row.addClass("selected");
+                break;
+            }
+        }
+
+    }
+})
     </script>

@@ -6,6 +6,7 @@
   .selectable .ui-selected { background: #F39814; color: white; }
   .selectable { list-style-type: none; margin: 0; padding: 0; }
   .selectable li { margin: 3px; padding: 0.4em; font-size: 1.4em; }
+  .td_scroll_div{display: block;height: 500px;overflow:scroll; }
 </style>
 
 <script type="text/javascript">
@@ -199,9 +200,15 @@
             </td>
         </tr>
         <tr style="vertical-align: top">
-            <td id="leftColumns">
+            <td >
+                <div id="leftColumns" class="td_scroll_div">
+
+                </div>
             </td>
-            <td id="rightColumns">
+            <td >
+                <div id="rightColumns" class="td_scroll_div">
+
+                </div>
             </td>
         </tr>
     </table>

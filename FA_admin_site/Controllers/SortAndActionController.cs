@@ -64,6 +64,7 @@ namespace FA_admin_site.Controllers
                 }
             }
             var fields = db.fieldOrderAndActions.Where(p => p.WorkingSetItemId == id);
+            //var fields =  db.fieldOrderAndActions.Where(p => wsFile.Any(c=>c.Id==p.WorkingSetItemId));
             //List<BL.JobFileLayout> rs = new List<BL.JobFileLayout>();
             //foreach (var field in fields)
             //{
@@ -84,7 +85,22 @@ namespace FA_admin_site.Controllers
             ViewBag.Fileid = id;
             return View(fields);
         }
-
+        [HttpPost]
+        public void deleteRule(int id)
+        {
+            var db = new BL.DA_Model();
+            var rule = db.fieldRules.Find(id);
+            db.fieldRules.Remove(rule);
+            db.SaveChanges();
+        }
+        [HttpPost]
+        
+        public string getRules(int id)
+        {
+            var db = new BL.DA_Model();
+            var rules = db.fieldRules.Where(p => p.WorkingSetItemId == id);
+            return Newtonsoft.Json.JsonConvert.SerializeObject(rules);
+        }
         //[AllowHtml]
         [ValidateInput(false)]
         [HttpPost]

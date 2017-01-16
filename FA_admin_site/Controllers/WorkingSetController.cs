@@ -104,6 +104,22 @@ namespace FA_admin_site.Controllers
         [HttpGet]
         public JsonResult workingSetItem(int packid,bool checkPrimary=true)
         {
+            //set session
+            var sess = System.Web.HttpContext.Current.Session[EV.KEY_UserSession];
+            if (sess == null)
+            {
+                var user = new BL.UserData();
+                user.Username = System.Web.HttpContext.Current.User.Identity.Name;
+                user.Current_wsid = packid;
+                System.Web.HttpContext.Current.Session[EV.KEY_UserSession] = user;
+            }
+            else
+            {
+                var user = (BL.UserData)sess;
+                user.Username = System.Web.HttpContext.Current.User.Identity.Name;
+                user.Current_wsid = packid;
+            }
+
             var allFiles = db.workingSetItems.Where(p => p.WorkingSetId == packid && !p.IsMerged);
             // chỉ lấy những file đã dc layout (có Primary key)
             if(checkPrimary)

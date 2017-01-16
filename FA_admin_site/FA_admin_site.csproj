@@ -217,6 +217,7 @@
     <Content Include="Content\css\jquery.orderable.min.css" />
     <Content Include="Content\css\select2.css" />
     <Content Include="Content\css\select2.min.css" />
+    <Content Include="Content\css\sidebar-menu.css" />
     <Content Include="Content\css\skins\skin-black-light.css" />
     <Content Include="Content\css\skins\skin-black-light.min.css" />
     <Content Include="Content\css\skins\skin-black.css" />
@@ -312,6 +313,7 @@
     <Content Include="Content\js\plugins\select2\select2.full.min.js" />
     <Content Include="Content\js\plugins\select2\select2.js" />
     <Content Include="Content\js\plugins\select2\select2.min.js" />
+    <Content Include="Content\js\plugins\sidebar-menu.js" />
     <Content Include="Content\js\plugins\slimscroll\jquery.slimscroll.js" />
     <Content Include="Content\js\plugins\slimscroll\jquery.slimscroll.min.js" />
     <Content Include="Content\js\plugins\tempo\tempo.js" />
@@ -1210,6 +1212,7 @@
     <Content Include="Views\Output\Index.cshtml" />
     <Content Include="Views\Output\Select.cshtml" />
     <Content Include="Views\OutputRuleMapper\OutputRuleMapperIndex.cshtml" />
+    <Content Include="Views\OutputRuleMapper\RunTransform.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

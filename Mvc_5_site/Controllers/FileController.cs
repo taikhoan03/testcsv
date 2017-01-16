@@ -36,6 +36,18 @@ namespace Mvc_5_site.Controllers
             //string fileName = filename;// "myfile.ext";
             //return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileName);
         }
+        public FileResult Download_tmp_tam(string state, string county, string filename)
+        {
+            var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
+                                    Config.Data.GetKey("tmp_folder_process")
+                                    
+                                    );
+            path = path + @"\" + "testFinalOutput.csv";
+            return Download_abs(path);
+            //byte[] fileBytes = System.IO.File.ReadAllBytes(path);
+            //string fileName = filename;// "myfile.ext";
+            //return File(fileBytes, System.Net.Mime.MediaTypeNames.Application.Octet, fileName);
+        }
         private FileResult Download_abs(string path)
         {
             

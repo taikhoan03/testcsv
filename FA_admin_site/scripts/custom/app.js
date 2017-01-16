@@ -826,7 +826,7 @@ r_UPPER.showResult = function () {
 
 
 var r_AS_IS = new IRule("AS_IS", "AS_IS", default_limit, '');
-r_AS_IS.setAcceptTypes([[at.string, at.number]]);
+r_AS_IS.setAcceptTypes([at.any]);
 r_AS_IS.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Value : </th>';

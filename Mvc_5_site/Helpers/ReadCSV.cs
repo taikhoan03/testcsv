@@ -161,7 +161,7 @@ namespace Mvc_5_site.Helpers
         private static List<IDictionary<string, object>> readFromPath_AsDictionary(string path, decimal limit, string delimiter = "\t")
         {
 
-
+            
             using (TextReader reader = System.IO.File.OpenText(path))
             {
                 var d = DateTime.Now;
@@ -174,8 +174,9 @@ namespace Mvc_5_site.Helpers
 
                 string line;
                 var dic = new HashSet<CustomData>();
-                while ((line = reader.ReadLine()) != null)
+                while ((line = reader.ReadLine()) != null && limit > 0)
                 {
+                    limit--;
                     var lineArr= line.Split(new string[] { delimiter }, StringSplitOptions.None);
                     dynamic MyDynamic = new System.Dynamic.ExpandoObject();
                     IDictionary<string, object> myUnderlyingObject = MyDynamic;
@@ -452,11 +453,11 @@ namespace Mvc_5_site.Helpers
             public IDictionary<string, object> Data { get; set; }
             public string pureTextData { get; set; }
 
-            public override bool Equals(object x)
-            {
-                return this.pureTextData== ((CustomData)x).pureTextData;// StringComparer.InvariantCultureIgnoreCase
-                             //.Equals(this.pureTextData, ((CustomData)x).pureTextData);
-            }
+            //public override bool Equals(object x)
+            //{
+            //    return this.pureTextData== ((CustomData)x).pureTextData;// StringComparer.InvariantCultureIgnoreCase
+            //                 //.Equals(this.pureTextData, ((CustomData)x).pureTextData);
+            //}
             public override int GetHashCode()
             {
                 return StringComparer.InvariantCultureIgnoreCase.GetHashCode(this.pureTextData);
