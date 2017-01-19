@@ -312,25 +312,29 @@
                 $('#cboxCondition').hide();
                 $('#cboxFormatting').hide();
                 $('#cboxMISCELLANEOUS').hide();
+                clean_cbox_selection();
                 if($(event.currentTarget).attr('href')=='#ARITHMETICAL_r'){
                     $('#ARITHMETICAL_operator').show();
                     showItemForMATH();
+                    
                     //return;
                 }else if($(event.currentTarget).attr('href')=='#CONDITIONAL_r'){
                     $('#cboxCondition').show();
-                    if($('#cboxCondition').val()=='')
-                        $('#cboxCondition').change();
+                    //if($('#cboxCondition').val()=='')
+                    
+                    $('#cboxCondition').trigger('change');
+                    
                     //return;
                 }else if($(event.currentTarget).attr('href')=='#FORMATTING_r'){
                     $('#cboxFormatting').show();
-                    if($('#cboxFormatting').val()=='')
-                        $('#cboxFormatting').change();
+                    //if($('#cboxFormatting').val()=='')
+                    $('#cboxFormatting').trigger('change');
                     //return;
                 }
                 else if($(event.currentTarget).attr('href')=='#MISCELLANEOUS_r'){
                     $('#cboxMISCELLANEOUS').show();
-                    if($('#cboxMISCELLANEOUS').val()=='')
-                        $('#cboxMISCELLANEOUS').change();
+                    //if($('#cboxMISCELLANEOUS').val()=='')
+                    $('#cboxMISCELLANEOUS').trigger('change');
                     //return;
                 }
 
@@ -516,12 +520,13 @@
                         //    );
                     });
                     _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
+                    if($( "#rules" ).tabs( "option", "active" )==0){
+                        showItemForMATH();
+                    }
                 });
         
     }
-    function showItemForMATH(){
-        $('#r_fields .f_item.string').hide();
-    }
+    
     function genUI(value,type){
 
         var r_panel=$('#rule_right');

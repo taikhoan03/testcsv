@@ -1,5 +1,14 @@
 ﻿@model IEnumerable<BL.FieldOrderAndAction>
 <style>
+    .noti-red{
+        background-color:red;
+    }
+    .noti-green{
+        background-color:green;
+    }
+    .noti-gray{
+        background-color:gray;
+    }
     .tr_selected{
         background:#2fd2c8;
         
@@ -138,7 +147,6 @@
     <ul>
         <li><a href="#div_action">SELECT FIELD</a></li>
         <li><a href="#rules">RULES</a></li>
-        @*<li><a href="#preview">PREVIEW</a></li>*@
     </ul>
     <div id="div_action" style="height:500px;overflow:scroll">
         <h1 id="cautain" style="color:red">Please select a field</h1>
@@ -160,6 +168,16 @@
     </div>
 
     <div id="rules">
+        <div id="noti-validation" style="margin-bottom:11px">
+            <strong>Output valid:</strong>
+            <span id="valid-info">
+                <span id="noti-color" style="display: inline-block;width:15px;height:15px;" class="noti-gray"></span>
+            </span>
+            <span id="noti-data-type" style="display:none"></span>
+            <div id="more-info">
+
+            </div>
+        </div>
         <div id="chose_type">
             <ul>
                 <li><a href="#ARITHMETICAL_r">ARITHMETICAL</a></li>
@@ -167,17 +185,13 @@
                 <li><a href="#FORMATTING_r">FORMATTING</a></li>
                 <li><a href="#MISCELLANEOUS_r">MISCELLANEOUS</a></li>
             </ul>
-            @*<span id="btn_ARITHMETICAL">ARITHMETICAL</span>
-                <span id="btn_CONDITIONAL">CONDITIONAL</span>
-                <span id="btn_FORMATTING">FORMATTING</span>
-                <span id="btn_MISCELLANEOUS">MISCELLANEOUS</span>*@
+            
         </div>
         <div>
             <div id="rule_left" style="float:left">
                 <div>
                     <input type="text" id="txt_input" />
                     <input type="button" id="btn_input" value="Add" onclick="addValue($('#txt_input').val())" />
-                    @*<input type="button" id="btn_clear" value="Clear" onclick="$('#txt_input').val('')" />*@
                 </div>
                 <div style="border-radius:4px" id="ARITHMETICAL_operator">
                     <div id="plus" class="operator" onclick="addOperator('+')">+</div>
@@ -245,6 +259,7 @@
     var fields=[];//@Html.Raw(ViewBag.Fields);
     var fieldTypes=@Html.Raw(ViewBag.FieldTypes);
     var selectedFieldId=-1;
+    var selectedField;
     var selectedFieldOutputName="";
     function loadData(){
         $.post('@Url.Action("getUserData","Output")',{id:@ViewBag.Id})
@@ -335,11 +350,39 @@
                         //    );
                     });
                     _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
+                    //validate last rule is valid for output field
+                    var lastRule=_.last(rules);
+                    $('#noti-validation').hide();
+                    if(lastRule!==undefined){
+                        $('#noti-validation').show();
+                        var noti_color=$("#noti-color");
+                        var noti_type=$('#noti-data-type');
+                        noti_color.removeClass();
+                        var more_info=$('#more-info');
+                        more_info.find('div').remove();
+                        if(convertToClientType(lastRule.Type)==noti_type.html()){
+                            noti_color.addClass("noti-green");
+                            $('#valid-info').find('#errDetail').remove();
+                        }else{
+                            noti_color.addClass("noti-red");
+                            $('#valid-info').append($('<span id="errDetail" style="color:red;font-style: italic;">').html('<strong>(Last Rule return is: '+convertToClientType(lastRule.Type)+')</strong>'));
+                        }
+                        //more-info
+                    
+                        more_info.append($('<div>').html('<strong>Output Name: '+selectedField.target+'</strong>'));
+                        more_info.append($('<div>').html('Type: '+selectedField.type_));
+                        more_info.append($('<div>').html('Length: '+selectedField.length_));
+                        more_info.append($('<div>').html('Decimal: '+selectedField.decimal_));
+                    }
+                    
+                    if($( "#rules" ).tabs( "option", "active" )==0){
+                        showItemForMATH();
+                    }
                 });
 
     }
     $(document).ready(function () {
-
+        
         $('#data tbody').on("click","tr:gt(0)",function(obj){
 
             $(this).parent().find("tr").removeClass("tr_selected");
@@ -351,9 +394,21 @@
             }
             init_field();
             selectedFieldId=$(this).attr("fieldid");
+            for (var i = 0; i < userOutput.length; i++) {
+                if(userOutput[i].OutputFieldId==selectedFieldId){
+                    selectedField=userOutput[i];
+                    var noti_color=$("#noti-data-type");
+                    
+                    noti_color.html(selectedField.type_);
+                    break;
+                    
+                }
+                    
+            }
             selectedFieldOutputName=$(this).find("td:eq(0)").html();
             init_rules();
             $("#cautain").hide();
+            
         });
         _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
         loadData();
@@ -384,32 +439,37 @@
                 }
             }
         });
-        showItemForMATH();
+        
         $('#rules').tabs({
+            
             beforeActivate: function( event, ui ) {
                 $('#ARITHMETICAL_operator').hide();
                 $('#cboxCondition').hide();
                 $('#cboxFormatting').hide();
                 $('#cboxMISCELLANEOUS').hide();
+                clean_cbox_selection();
                 if($(event.currentTarget).attr('href')=='#ARITHMETICAL_r'){
                     $('#ARITHMETICAL_operator').show();
                     showItemForMATH();
+                    
                     //return;
                 }else if($(event.currentTarget).attr('href')=='#CONDITIONAL_r'){
                     $('#cboxCondition').show();
-                    if($('#cboxCondition').val()=='')
-                        $('#cboxCondition').change();
+                    //if($('#cboxCondition').val()=='')
+                    
+                    $('#cboxCondition').trigger('change');
+                    
                     //return;
                 }else if($(event.currentTarget).attr('href')=='#FORMATTING_r'){
                     $('#cboxFormatting').show();
-                    if($('#cboxFormatting').val()=='')
-                        $('#cboxFormatting').change();
+                    //if($('#cboxFormatting').val()=='')
+                    $('#cboxFormatting').trigger('change');
                     //return;
                 }
                 else if($(event.currentTarget).attr('href')=='#MISCELLANEOUS_r'){
                     $('#cboxMISCELLANEOUS').show();
-                    if($('#cboxMISCELLANEOUS').val()=='')
-                        $('#cboxMISCELLANEOUS').change();
+                    //if($('#cboxMISCELLANEOUS').val()=='')
+                    $('#cboxMISCELLANEOUS').trigger('change');
                     //return;
                 }
 
@@ -428,6 +488,7 @@
         generateConditionCombobox();
         generateFormattingCombobox();
         generateMISCELLANEOUSCombobox();
+        
     });
     function updateOrderType(id,sort){
 
@@ -442,7 +503,7 @@
         if(value==-1) return;
         var actions=$('#div_action>table tr>td>select.action');
         $.each(actions,function(idx,item){
-            $(item).val(c.val()).trigger('change');;
+            $(item).val(c.val()).trigger('change');
         })
 
     }
@@ -543,9 +604,7 @@
 
 
 
-    function showItemForMATH(){
-        $('#r_fields .f_item.string').hide();
-    }
+    
     function genUI(value,type){
 
         var r_panel=$('#rule_right');
@@ -657,8 +716,10 @@
 
         }
     }
+    
     function Clear_F(){
         currentRule.params=[];
+        $('#rule_right').html();
         var $display=$('#CONDITIONAL_r');
         if($( "#rules" ).tabs( "option", "active" )==1){
             $display=$('#CONDITIONAL_r');
@@ -718,7 +779,13 @@
             else if($( "#rules" ).tabs( "option", "active" )==3){
                 $rules.append($('<div class="r_item number" _id="'+data.Id+'" onclick="genUI(\'data.Name\',\'number\')">').html(data.Name));
             }
-
+            //clean
+            currentRule={};
+            $('#rule_right').html('');
+            $('#CONDITIONAL_r').html('');
+            $('#FORMATTING_r').html('');
+            $('#MISCELLANEOUS_r').html('');
+            clean_cbox_selection();
         })
                 .fail(function (request, status, error) {
                     try {

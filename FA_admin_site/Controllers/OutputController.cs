@@ -89,7 +89,10 @@ namespace FA_admin_site.Controllers
                            Id = pp.Id,
                            OutputFieldId = pp.OutputFieldId,
                            FileMapperName = pp.FileMapperName,
-                           FieldMapperName = pp.FieldMapperName
+                           FieldMapperName = pp.FieldMapperName,
+                           type_=p.Type,
+                           length_=p.Length,
+                           decimal_=p.Decimal
                        };
             return JsonConvert.SerializeObject(data);
         }

@@ -1016,3 +1016,39 @@ r_SUM_ALL
 function addRule() {
     var rule = new IRule();
 }
+//
+function convertToClientType(idType) {
+    if (idType == 1 || idType == 4) {
+        return "TEXT";
+    } else if (idType == 0 || idType == 3) {
+        return "NUM";
+    }
+    else if (idType == 2) {
+        return "BOOL";
+    }
+}
+//begin rule math
+function showItemForMATH() {
+    var items = $('#r_rules .f_item');
+    for (var i = 0; i < items.length; i++) {
+        var item = $(items[i]);
+        if (!item.hasClass('number'))
+            item.hide();
+        else
+            item.show();
+    }
+    items = $('#r_fields .f_item');
+    for (var i = 0; i < items.length; i++) {
+        var item = $(items[i]);
+        if (!item.hasClass('number'))
+            item.hide();
+        else
+            item.show();
+    }
+}
+function clean_cbox_selection() {
+    $('#cboxCondition').val('').trigger('change');
+    $('#cboxFormatting').val('').trigger('change');
+    $('#cboxMISCELLANEOUS').val('').trigger('change');
+}
+//end rule math
