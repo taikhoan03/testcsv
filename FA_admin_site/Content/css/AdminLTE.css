@@ -4935,3 +4935,9 @@ table.text-center th {
 .table #tbody > tr:hover{
     background:#00c0ef;
 }
+.table>tbody>tr>td{
+    cursor:pointer
+}
+.table>tbody>tr.selected {
+    background: #a6ce51 none repeat scroll 0 0 !important;
+}

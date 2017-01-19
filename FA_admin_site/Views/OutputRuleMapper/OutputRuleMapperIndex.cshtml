@@ -2,6 +2,10 @@
 <style>
     .tr_selected{
         background:#2fd2c8;
+        
+    }
+    #data tbody tr>td{
+        cursor:pointer;
     }
     #lblLoading {
         color: #ff0000;
@@ -134,10 +138,10 @@
     <ul>
         <li><a href="#div_action">SELECT FIELD</a></li>
         <li><a href="#rules">RULES</a></li>
-        <li><a href="#preview">PREVIEW</a></li>
+        @*<li><a href="#preview">PREVIEW</a></li>*@
     </ul>
     <div id="div_action" style="height:500px;overflow:scroll">
-        <h1 style="color:red">Please select a field</h1>
+        <h1 id="cautain" style="color:red">Please select a field</h1>
         <table id="data" class="table">
             <tr>
                 <th>
@@ -205,8 +209,8 @@
             <div style="clear:both"></div>
         </div>
     </div>
-    <div id="preview" style="height:400px;overflow:scroll">
-        <input type="button" value="Preview" onclick="preview(@ViewBag.ID)" />
+    <div id="preview" style="height:400px;overflow:scroll;">
+        @*<input type="button" value="Preview" onclick="preview(@ViewBag.ID)" />
         <input type="button" value="Download" onclick="download(@ViewBag.ID)" />
         <label style="font-weight:bold; color:bisque;display:none" id="lblLoading">Loading...</label>
         <div id="tSample" style="display:none;width: 100%;background-color: #fff;">
@@ -214,7 +218,7 @@
                 <tr id="header"></tr>
                 <tbody id="tbody"></tbody>
             </table>
-        </div>
+        </div>*@
     </div>
 </div>
 <div id="tRules" style="display:block;width: 100%;overflow: scroll;background-color: #fff;">
@@ -337,6 +341,7 @@
     $(document).ready(function () {
 
         $('#data tbody').on("click","tr:gt(0)",function(obj){
+
             $(this).parent().find("tr").removeClass("tr_selected");
             $(this).addClass("tr_selected");
             var _fields=$(this).find("td:eq(1)>div");
@@ -348,7 +353,7 @@
             selectedFieldId=$(this).attr("fieldid");
             selectedFieldOutputName=$(this).find("td:eq(0)").html();
             init_rules();
-            
+            $("#cautain").hide();
         });
         _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
         loadData();
@@ -370,7 +375,15 @@
         //init_rules();
         
         $('#tab-2').tabs();
-        $('#div-tab').tabs();
+        $('#div-tab').tabs({
+            beforeActivate: function( event, ui ) {
+                if(selectedFieldId===-1){
+                    alert("Please select a field");
+                    event.preventDefault();
+                    return;
+                }
+            }
+        });
         showItemForMATH();
         $('#rules').tabs({
             beforeActivate: function( event, ui ) {

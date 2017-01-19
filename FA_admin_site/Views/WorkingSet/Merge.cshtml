@@ -64,7 +64,9 @@
             state    = $(row[1]).text();
             county   = $(row[2]).text();
             edt      = $(row[3]).text();
-            ver      = $(row[4]).text();
+            ver = $(row[4]).text();
+            $('#sel_package').find('tbody>tr').removeClass('selected');
+            currentWs.addClass('selected');
             //pid    = $(this).find('td:first').text();
             //state  = $(this).find('td:first').text();
             //county = $(this).find('td:first').text();

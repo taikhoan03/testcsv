@@ -22,9 +22,9 @@
             <li><a href="@Url.Action("Index", "WorkingSet")"><i class="fa fa-link"></i> <span>Create Working Set</span></a></li>
             
             <li class="header">EDIT</li>
-            <li><a href="@Url.Action("Manage", "WorkingSet")"><i class="fa fa-th"></i> <span><strong>Manage</strong></span></a></li>
+            <li><a href="@Url.Action("Manage", "WorkingSet")"><i class="fa fa-th"></i> <span style="color:#81fb04"><strong>Manage</strong></span></a></li>
             <li><a href="@Url.Action("Merge", "WorkingSet")"><i class="fa fa-pie-chart"></i> <span>Merge</span></a></li>
-            <li><a href="@Url.Action("MergeJobs", "WorkingSet")"><i class="fa fa-calendar"></i> <span>Merge Job Logs</span></a></li>
+            
             @if (System.Web.HttpContext.Current.Session[BL.EV.KEY_UserSession] != null)
             {
                 <li class="header">TRANSFORM</li>
@@ -33,10 +33,16 @@
                 <li><a href="@Url.Action("select", "output")/?id=@user.Current_wsid"><i class="fa fa-share"></i> <span>Transform Mapping </span></a></li>
                 <li><a href="@Url.Action("Index", "outputRuleMapper")/?wsid=@user.Current_wsid"><i class="fa fa-share"></i> <span>Transform Rule</span></a></li>
                 <li><a href="@Url.Action("RunTransform", "outputRuleMapper")/?id=@user.Current_wsid"><i class="fa fa-share"></i> <span>Run Transform</span></a></li>
+                
                 <script type="text/javascript">
                     var loaded_wsid=@user.Current_wsid;
                 </script>
             }
+            <li class="header">LOG</li>
+            <li><a href="@Url.Action("MergeJobs", "WorkingSet")"><i class="fa fa-calendar"></i> <span>Merge Jobs</span></a></li>
+            <li><a href="#"><i class="fa fa-calendar"></i> <span>Transform Jobs</span></a></li>
+            <li class="header">Other</li>
+            <li><a href="@Url.Action("Index", "Output")"><i class="fa fa-calendar"></i> <span>Manage Output</span></a></li>
                         @*<li><a href="@Url.Action("Layout", "WorkingSet")"><i class="fa fa-link"></i> <span>Merge Job Logs</span></a></li>
     <li><a href="@Url.Action("Index", "SortAndAction")"><i class="fa fa-link"></i> <span>SortAndAction</span></a></li>
                         *@

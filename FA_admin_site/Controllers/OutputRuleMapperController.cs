@@ -76,6 +76,7 @@ namespace FA_admin_site.Controllers
             return Newtonsoft.Json.JsonConvert.SerializeObject(rules);
         }
         [HttpPost]
+        [ValidateInput(false)]
         public JsonResult addRule(int wsid, int OutputFileId, int fieldid, BL.OutputDataDetail rule)
         {
             //rule.WorkingSetItemId
@@ -94,8 +95,12 @@ namespace FA_admin_site.Controllers
             foreach (var item in placeholders)
             {
                 //var a = 1;
-                var new_match = rule.OutputFieldId + EV.DOLLAR + item;
-                rule.ExpValue = rule.ExpValue.Replace("{" + item + "}", "{"+new_match+"}");
+                if (item.StartsWith("RULE_"))
+                {
+                    var new_match = rule.OutputFieldId + EV.DOLLAR + item;
+                    rule.ExpValue = rule.ExpValue.Replace("{" + item + "}", "{" + new_match + "}");
+                }
+                
             }
             //rule. = fileid;
             rule.Name = name;

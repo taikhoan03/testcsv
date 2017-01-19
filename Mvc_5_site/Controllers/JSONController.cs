@@ -2091,13 +2091,13 @@ namespace Mvc_5_site.Controllers
                              join pp in loadF2
                              on new
                              {
-                                 a = p[left1],
-                                 b = p[right1]
+                                 a = p[left1].ToString(),
+                                 b = p[right1].ToString()
                              }
                              equals new
                              {
-                                 a = pp[left2],
-                                 b = pp[right2]
+                                 a = pp[left2].ToString(),
+                                 b = pp[right2].ToString()
                              }
                              into ps
                              from g in ps//.DefaultIfEmpty()
@@ -2129,6 +2129,7 @@ namespace Mvc_5_site.Controllers
             // apply rule mapper
             var outputFields = db.outputFields.Where(p => p.OutputMapperId == ws.SeletedOutputId);
             var outputData = db.outputDatas.Where(p => outputFields.Any(c => c.Id == p.OutputFieldId) && p.WorkingSetId==ws.Id);
+            
             var outputDataWithName = from p in outputData
                                      join pp in outputFields
                                      on p.OutputFieldId equals pp.Id
@@ -2143,7 +2144,30 @@ namespace Mvc_5_site.Controllers
                                          FieldName = pp.Name
                                      };
             var rules = db.outputDataDetails.Where(p => p.OutputFileId == ws.SeletedOutputId && p.WorkingSetId==id).ToList();//.OrderBy(p => p.Order);
-            var outputData_ = outputDataWithName.ToList().GroupBy(c=>c.OutputFieldId);
+            var seq1Name = "seq1";
+            var seq2Name = "seq2";
+            var outputDataWithNameList = outputDataWithName.ToList();
+            outputDataWithNameList.Add(new
+            {
+                FieldMapperName = seq1Name,
+                FileMapperName = seq1Name,
+                Id = 0,
+                Order = 999,
+                OutputFieldId = -1,
+                WorkingSetId = ws.Id,
+                FieldName = seq1Name
+            });
+            outputDataWithNameList.Add(new
+            {
+                FieldMapperName = seq2Name,
+                FileMapperName = seq2Name,
+                Id = 0,
+                Order = 999,
+                OutputFieldId = -2,
+                WorkingSetId = ws.Id,
+                FieldName = seq2Name
+            });
+            var outputData_ = outputDataWithNameList.GroupBy(c=>c.OutputFieldId);
             
             var rule_ = rules.ToList();
             foreach (var rule in rule_)
@@ -2196,7 +2220,25 @@ namespace Mvc_5_site.Controllers
             }
 
             var a = 1;
+            var firstLinkage = linkageData.First();
+            var primaryKey = firstLinkage.firstFilename.Replace(".", EV.DOT) + EV.DOLLAR + firstLinkage.firstField;
             
+            var group1 = _ls.ToList().GroupBy(p => p[primaryKey]);
+            
+            //add sequence
+            foreach (var _group in group1)
+            {
+                var increasement = 1;
+                foreach (var record in _group)
+                {
+                    record.Add(seq1Name, 1);
+                    record.Add(seq2Name, increasement);
+                    increasement++;
+                }
+
+            }
+            
+
             dtAll = Ulti.ToDataTable(_ls);
             //remove columns
             if (cleanUpResult)
@@ -2214,8 +2256,38 @@ namespace Mvc_5_site.Controllers
                     dtAll.Columns.Remove(col);
                 }
             }
+            //format, and length
             
-            
+            var colFields = new List<string>();
+            foreach (DataColumn item in dtAll.Columns)
+            {
+                if(item.ColumnName!=seq1Name && item.ColumnName!=seq2Name)
+                    colFields.Add(item.ColumnName);
+            }
+            var outputDic = outputFields.Where(c => colFields.Any(d => d==c.Name)).ToList().ToDictionary(x => x.Name, x => x);
+            foreach (DataRow row in dtAll.Rows)
+            {
+                foreach (var col in colFields)
+                {
+                    var formatCell = outputDic[col];
+                    if (formatCell.Type == EV.TYPE_NUM)
+                    {
+                        var cell = row[col];
+                        cell = Math.Round(Convert.ToDecimal(cell), formatCell.Decimal);
+                    }
+                    else
+                    {
+                        var cell = row[col];
+                        var content = cell.ToString();
+                        if (!string.IsNullOrEmpty(content) && content.Length >= formatCell.Length)
+                        {
+                            row[col] = content.Substring(0, formatCell.Length);
+                        }
+                    }
+                }
+            }
+
+
             Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
                 "testFinalOutput.csv", dtAll);
             _ls.Clear();

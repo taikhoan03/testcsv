@@ -4,5 +4,11 @@
     "inputFiles": [
       "Scripts/jquery.pjax.js"
     ]
+  },
+  {
+    "outputFileName": "Content/css/AdminLTE.min.css",
+    "inputFiles": [
+      "Content/css/AdminLTE.css"
+    ]
   }
 ]

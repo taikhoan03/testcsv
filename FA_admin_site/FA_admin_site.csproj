@@ -187,7 +187,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Content\css\AdminLTE.css" />
-    <Content Include="Content\css\AdminLTE.min.css" />
+    <Content Include="Content\css\AdminLTE.min.css">
+      <DependentUpon>AdminLTE.css</DependentUpon>
+    </Content>
     <Content Include="Content\css\bootstrap.css" />
     <Content Include="Content\css\bootstrap.min.css" />
     <Content Include="Content\css\datepicker3.css" />
@@ -1213,6 +1215,15 @@
     <Content Include="Views\Output\Select.cshtml" />
     <Content Include="Views\OutputRuleMapper\OutputRuleMapperIndex.cshtml" />
     <Content Include="Views\OutputRuleMapper\RunTransform.cshtml" />
+    <Content Include="Web.local.config">
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="Web.local.Debug.config">
+      <DependentUpon>Web.local.config</DependentUpon>
+    </Content>
+    <Content Include="Web.local.Release.config">
+      <DependentUpon>Web.local.config</DependentUpon>
+    </Content>
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
