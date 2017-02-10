@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
+
 using Libs;
 namespace FA_admin_site.Controllers
 {
@@ -135,19 +136,31 @@ namespace FA_admin_site.Controllers
 
                         var date_create = DateTime.Now;
                         //tạo package
+                        var existedPackage = db.packages.FirstOrDefault(p => p.State == json.State && p.County == json.County && p.Edition == json.Edition && p.Version == json.Version);
                         var package = new BL.package();
-                        package.County = json.County;
-                        package.State = json.State;
-                        package.Createdby = "test";
-                        package.Createddate = date_create;
-                        package.Edition = json.Edition;
-                        package.Version = json.Version;
-                        package.Status = "Processing";
-                        db.packages.Add(package);
-                        db.SaveChanges();
+                        if (existedPackage != null)
+                        {
+                            package = existedPackage;
+                        }else
+                        {
+                            package.County = json.County;
+                            package.State = json.State;
+                            package.Createdby = System.Web.HttpContext.Current.User.Identity.Name;
+                            package.Createddate = date_create;
+                            package.Edition = json.Edition;
+                            package.Version = json.Version;
+                            package.Status = "Processing";
+
+                            db.packages.Add(package);
+                            db.SaveChanges();
+                        }
+
+                        var filesInPackage = db.files.Where(p => p.Packageid == package.Id).ToList();
+                        var filteredName = new List<string>();
+                        filteredName = json.Filenames.Except(filesInPackage.Select(c=>c.Name).ToList()).ToList();
                         //throw new Exception("fksljd");
                         //tạo các files thuộc về package
-                        foreach (var name in json.Filenames)
+                        foreach (var name in filteredName)//json.Filenames)
                         {
                             var file = new BL.file();
                             file.County = json.County;
@@ -156,7 +169,7 @@ namespace FA_admin_site.Controllers
                             file.Packageid = package.Id;
                             file.State = json.State;
                             file.Status = "Processing";
-                            file.User = "test";
+                            file.User = System.Web.HttpContext.Current.User.Identity.Name;
                             db.files.Add(file);
                         }
 

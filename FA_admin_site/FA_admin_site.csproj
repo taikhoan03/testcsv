@@ -192,6 +192,7 @@
     </Content>
     <Content Include="Content\css\bootstrap.css" />
     <Content Include="Content\css\bootstrap.min.css" />
+    <Content Include="Content\css\colorbox.css" />
     <Content Include="Content\css\datepicker3.css" />
     <Content Include="Content\css\font-awesome.css" />
     <Content Include="Content\css\font-awesome.min.css" />
@@ -217,6 +218,7 @@
     <Content Include="Content\css\icheck\yellow.min.css" />
     <Content Include="Content\css\jquery-ui.min.css" />
     <Content Include="Content\css\jquery.orderable.min.css" />
+    <Content Include="Content\css\lightbox.min.css" />
     <Content Include="Content\css\select2.css" />
     <Content Include="Content\css\select2.min.css" />
     <Content Include="Content\css\sidebar-menu.css" />
@@ -299,6 +301,7 @@
     <Content Include="Content\js\plugins\input-mask\jquery.inputmask.regex.extensions.js" />
     <Content Include="Content\js\plugins\jquery-sortable.js" />
     <Content Include="Content\js\plugins\jquery-ui.min.js" />
+    <Content Include="Content\js\plugins\jquery.colorbox-min.js" />
     <Content Include="Content\js\plugins\jquery.validate.min.js" />
     <Content Include="Content\js\plugins\jquery.validate.unobtrusive.min.js" />
     <Content Include="Content\js\plugins\jquery\jquery-2.2.4.js" />
@@ -306,6 +309,7 @@
     <Content Include="Content\js\plugins\jquery\jquery-3.1.0.js" />
     <Content Include="Content\js\plugins\jquery\jquery-3.1.0.min.js" />
     <Content Include="Content\js\plugins\jquery\jquery-ui.min.js" />
+    <Content Include="Content\js\plugins\lightbox.min.js" />
     <Content Include="Content\js\plugins\moment\moment.js" />
     <Content Include="Content\js\plugins\moment\moment.min.js" />
     <Content Include="Content\js\plugins\pure\pure.js" />
@@ -1224,6 +1228,8 @@
     <Content Include="Web.local.Release.config">
       <DependentUpon>Web.local.config</DependentUpon>
     </Content>
+    <Content Include="Views\OutputRuleMapper\TransformLog.cshtml" />
+    <Content Include="Views\OutputRuleMapper\test.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -1233,6 +1239,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Content\css\images\" />
     <Folder Include="Models\" />
   </ItemGroup>
   <ItemGroup>

@@ -7,6 +7,7 @@ using System.Web.Mvc;
 using Libs;
 namespace FA_admin_site.Controllers
 {
+    [Authorize]
     public class OutputRuleMapperController : Controller
     {
         // GET: OutputRuleMapper
@@ -67,6 +68,124 @@ namespace FA_admin_site.Controllers
         {
             ViewBag.ID = id;
             return View();
+        }
+        public ActionResult TransformLog()
+        {
+            var db = new BL.DA_Model();
+            var rs = db.runTransformRequests.Take(200).ToList();
+            return View(rs);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="wsid"></param>
+        /// <returns></returns>
+        public string addRunTransformRequest(int wsid)
+        {
+            var db = new BL.DA_Model();
+            var req = new BL.RunTransformRequest();
+            req.CreatedBy = System.Web.HttpContext.Current.User.Identity.Name;
+            req.CreatedDate = DateTime.Now;
+            req.IsDeleted = false;
+            req.Status = 0;
+            req.WorkingSetId = wsid;
+            //check co du lieu de san sang chay
+            //check has primarykey
+            var wsFiles = db.workingSetItems.Where(p=>p.WorkingSetId==wsid).ToList();
+            var hasPrimaryKey = false;
+            foreach (var item in wsFiles)
+            {
+                if (!string.IsNullOrEmpty(item.PrimaryKey))
+                {
+                    hasPrimaryKey = true;
+                    break;
+                }
+            }
+            //check has RuleMapper
+            var hasRule = false;
+            var rule_count = db.outputDataDetails.Where(p => p.WorkingSetId == wsid).Count();
+            if (rule_count > 0)
+                hasRule = true;
+            if (hasRule && hasPrimaryKey)
+            {
+                req.IsReady = true;
+            }
+            var item_found = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == wsid);
+            db.runTransformRequests.Add(req);
+            db.SaveChanges();
+            return "OK";
+        }
+        public string addRunTransformRequest_ReRun(int wsid)
+        {
+            var db = new BL.DA_Model();
+            //var req = new BL.RunTransformRequest();
+            //req.CreatedBy = System.Web.HttpContext.Current.User.Identity.Name;
+            //req.CreatedDate = DateTime.Now;
+            //req.IsDeleted = false;
+            //req.Status = 0;
+            //req.WorkingSetId = wsid;
+            var item_found = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == wsid);
+            if (item_found.Status != 1)//not processing
+            {
+                item_found.Status = 0;
+                db.SaveChanges();
+                return "OK";// "This RunTransform request has been created already and will be rerun again soon";
+            }
+            else
+            {
+                return "This RunTransform request has been created already and running currently";
+            }
+
+        }
+        public string detachRequest(int wsid)
+        {
+            var db = new BL.DA_Model();
+            //var req = new BL.RunTransformRequest();
+            //req.CreatedBy = System.Web.HttpContext.Current.User.Identity.Name;
+            //req.CreatedDate = DateTime.Now;
+            //req.IsDeleted = false;
+            //req.Status = 0;
+            //req.WorkingSetId = wsid;
+            var item_found = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == wsid);
+            if (item_found.Status != 1)//not processing
+            {
+                item_found.Status = 4;
+                item_found.IsReady = false;
+                db.SaveChanges();
+                return "OK";// "This RunTransform request has been created already and will be rerun again soon";
+            }
+            else
+            {
+                return "This RunTransform request has been created already and running currently";
+            }
+
+        }
+        public string verifyBeforeAddRequest(int wsid)
+        {
+            var db = new BL.DA_Model();
+            //check has primarykey
+            var wsFiles = db.workingSetItems.Where(p => p.WorkingSetId == wsid).ToList();
+            var hasPrimaryKey = false;
+            foreach (var item in wsFiles)
+            {
+                if (!string.IsNullOrEmpty(item.PrimaryKey))
+                {
+                    hasPrimaryKey = true;
+                    break;
+                }
+            }
+            //check has RuleMapper
+            var hasRule = false;
+            var rule_count = db.outputDataDetails.Where(p => p.WorkingSetId == wsid).Count();
+            if (rule_count > 0)
+                hasRule = true;
+            if(!hasRule || !hasPrimaryKey)
+            {
+                return "Your request should not ready!!! (Missing Primary or rule to transform)";
+            }
+            var item_found = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == wsid);
+            
+            return Newtonsoft.Json.JsonConvert.SerializeObject(item_found);
         }
         [HttpPost]
         public string getRuleFields(int fieldId, int wsid)

@@ -173,20 +173,37 @@
     var $selectedFiles = $("#selectedFiles");
     //inject directives and services.
     var app = angular.module('fileUpload', ['ngFileUpload']);
-
+    var numOfFiles = 0;
+    var countFileUploaded = 0;
+    var filenames = [];
     app.controller('MyCtrl', ['$scope', 'Upload', function ($scope, Upload) {
         // upload later on form submit or something similar
 
         $scope.submit = function () {
             
+            
             // for multiple files:
             $scope.uploadFiles = function (files) {
-                var filenames = [];
+                filenames = [];
                 for (var i = 0; i < files.length; i++) {
                     filenames.push(files[i].name);
                 }
+                numOfFiles = files.length;
+                countFileUploaded = 0;
+                if (files && files.length) {
+                    for (var i = 0; i < files.length; i++) {
+                        $scope.upload(files[i]);
+                    }
 
-                var jqxhr = $.ajax({
+                    // or send them all together for HTML5 browsers:
+                    //Upload.upload({data: {file: files}});
+                }
+                //if (numOfFiles != countFileUploaded) {
+                //    alert('FAIL. Not all file has been uploaded!!!');
+                //    return;
+                //}
+
+                @*var jqxhr = $.ajax({
                     url: '@Url.Action("Create", "File")',
                     //processData: false,
                     datatype: 'json',
@@ -201,21 +218,17 @@
                 })
                       .done(function () {
                           //alert("success");
-                          if (files && files.length) {
-                              for (var i = 0; i < files.length; i++) {
-                                  $scope.upload(files[i]);
-                              }
-                              // or send them all together for HTML5 browsers:
-                              //Upload.upload({data: {file: files}});
-                          }
+                          
+                          
                       })
                       .fail(function (request, status, error) {
                           alert(error);
 
                       })
                       .always(function () {
+                          
                           //alert("complete");
-                      });
+                      });*@
                 
             }
             $scope.upload = function (file) {
@@ -230,10 +243,48 @@
                     
                 //    },
                 file:file
-            }).then(function (resp) {
+                }).then(function (resp) {
+                    countFileUploaded++;
+                    if (countFileUploaded==numOfFiles)
+                    {
+                        var jqxhr = $.ajax({
+                            url: '@Url.Action("Create", "File")',
+                            //processData: false,
+                            datatype: 'json',
+                            contentType: "application/json; charset=UTF-8",
+                            method: "POST",
+                            data: JSON.stringify({
+                                State: $("#txtState").val(), County: $("#txtCounty").val(),
+                                Edition: $("#edition").val(),
+                                Version: $("#version").val(),
+                                Filenames: filenames
+                            })
+                        })
+                      .done(function () {
+                          //alert("success");
+                          $.colorbox({ html: "<h3>Import done!!!</h3><a href='@Url.Action("Index", "WorkingSet")'>Take me to Create Working Set</a> ???" });
+
+                      })
+                      .fail(function (request, status, error) {
+                          alert(error);
+
+                      })
+                      .always(function () {
+
+                          //alert("complete");
+                      });
+                        
+                    }
                 //console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
             }, function (resp) {
                 console.log('Error status: ' + resp.status);
+                if (resp.status == -1) {
+                    alert("Fail to connect to UPLOAD SERVICE!!! Please startup UPLOAD SERVICE");
+                } else {
+                    alert('error' + resp);
+                    return;
+                }
+                
             }, function (evt) {
                 $('#per').html(parseInt(100.0 * evt.loaded / evt.total));
                 //var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);

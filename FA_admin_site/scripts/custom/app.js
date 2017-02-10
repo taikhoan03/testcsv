@@ -100,7 +100,7 @@ function appendSelectedProperty(js_arr) {
     return js_arr;
 }
 
-function _createTableWithJsonObj(data, tableid, appendSelected, cb) {
+function _createTableWithJsonObj(data, tableid, appendSelected, cb,cb_after) {
     if (cb!=undefined)
         cb(data);
     $('#' + tableid + ' #tbody>tr').remove();
@@ -123,6 +123,8 @@ function _createTableWithJsonObj(data, tableid, appendSelected, cb) {
         .when(TempoEvent.Types.RENDER_COMPLETE, function (event) {
             $('#' + tableid + '').show();
             $('#' + tableid + ' #tbody>tr:last').remove();
+            if (cb_after != undefined)
+                cb_after(data);
         }).render(js_);
 }
 function _createTableWithJsonObj_withTemplate(data, tableid, appendSelected, cb_before, cb_after) {
@@ -138,9 +140,10 @@ function _createTableWithJsonObj_withTemplate(data, tableid, appendSelected, cb_
             $('#' + tableid + '').show();
 
             $('#' + tableid + ' #tbody>tr:first').hide();
+            if (cb_after != undefined)
+                cb_after(js_);
         }).render(js_).clear();
-    if (cb_after != undefined)
-        cb_after(js_);
+    
 }
 function _createTableWithArrObj(data, tableid, appendSelected, limit) {
     if (limit == undefined) limit = 10;
@@ -1050,5 +1053,30 @@ function clean_cbox_selection() {
     $('#cboxCondition').val('').trigger('change');
     $('#cboxFormatting').val('').trigger('change');
     $('#cboxMISCELLANEOUS').val('').trigger('change');
+}
+function format_transform_status(jsArr,arrRemove) {
+    for (var i = 0; i < jsArr.length; i++) {
+        if (jsArr[i].Status == 0) {
+            jsArr[i].Status_name = 'Waiting';
+        } else if (jsArr[i].Status == 1) {
+            jsArr[i].Status_name = 'Processing';
+        }
+        else if (jsArr[i].Status == 2) {
+            jsArr[i].Status_name = 'Done';
+        }
+        else if (jsArr[i].Status == 3) {
+            jsArr[i].Status_name = 'FAIL';
+        }
+        else if (jsArr[i].Status == 4) {
+            jsArr[i].Status_name = 'Detached';
+        }
+    }
+    for (var i = 0; i < jsArr.length; i++) {
+        var item = jsArr[i];
+        for (var j = 0; j < arrRemove.length; j++) {
+            delete item[arrRemove[j]];
+        }
+    }
+    
 }
 //end rule math

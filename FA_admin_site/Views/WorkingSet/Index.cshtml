@@ -67,10 +67,10 @@
                 items.push(item);
             }
             data.items = items;
-
+            if (!confirm('Are you sure to create this Working Set')) return;
             $.post('@Url.Action("create", "WorkingSet")', data = data)
                 .done(function (data) {
-
+                    $.colorbox({ html: "<h3>Done, You should go to <a href='@Url.Action("Manage", "WorkingSet")'>MANAGE Working Set</a> for next step</h3>" });
                 }).fail(function (req) {
                     //console.log("1" + req.responseText);
                     alert(req.status + " : " + req.responseText);
@@ -102,7 +102,7 @@
         <tbody id="tbody"></tbody>
     </table>
 </div>
-<input type="button" id="confirm-select" value="Confirm" />
+<input type="button" id="confirm-select" value="Continue" />
 <div id="extraInfo" style="display:none">
     Edition
     <span id="divEdition" style="margin-right:20px">

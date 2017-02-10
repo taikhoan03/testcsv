@@ -19,9 +19,9 @@ namespace FA_admin_site.Controllers
         {
             
 
-            var packages = db.packages;
+            var packages = db.packages.Where(p=>p.Createdby== System.Web.HttpContext.Current.User.Identity.Name);
             
-            ViewBag.packages = packages;
+            ViewBag.packages = packages.ToList();
             //ViewBag.jsfiles = Json(allFiles);
             return View();
         }
@@ -29,19 +29,24 @@ namespace FA_admin_site.Controllers
         {
 
 
-            var ws = db.workingSets.Where(p=>p.User=="test");
+            var ws = db.workingSets.Where(p=>p.User== System.Web.HttpContext.Current.User.Identity.Name);
 
             ViewBag.ws = ws;
             //ViewBag.jsfiles = Json(allFiles);
             return View();
         }
-        public ActionResult Manage()
+        public ActionResult Manage(int? id)
         {
 
 
-            var ws = db.workingSets.Where(p => p.User == "test");
+            var ws = db.workingSets.Where(p => p.User == System.Web.HttpContext.Current.User.Identity.Name);
 
             ViewBag.ws = ws;
+            if (id == null)
+            {
+                id = -1;
+            }
+            ViewBag.ID = id;
             //ViewBag.jsfiles = Json(allFiles);
             return View();
         }
@@ -150,7 +155,7 @@ namespace FA_admin_site.Controllers
                     var workingSet = new BL.WorkingSet();
                     workingSet.County = wd.ws.County;
                     workingSet.State = wd.ws.State;
-                    workingSet.User = "test";
+                    workingSet.User = System.Web.HttpContext.Current.User.Identity.Name;
                     workingSet.Createdate = date_create;
                     workingSet.Edition = wd.ws.Edition;
                     workingSet.Version = wd.ws.Version;
@@ -203,7 +208,7 @@ namespace FA_admin_site.Controllers
             _mergeJob.Finishdate = now;
             _mergeJob.MergeDetails = mergeInfo.details.XmlSerialize();
             _mergeJob.OutputFilename = mergeInfo.output_filename;
-            _mergeJob.Runby = "test";
+            _mergeJob.Runby = System.Web.HttpContext.Current.User.Identity.Name;
             _mergeJob.Rundate = now;
             _mergeJob.State = ws.State;
             _mergeJob.WorkingJobId = ws.Id;

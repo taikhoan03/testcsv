@@ -1,0 +1,102 @@
+﻿
+@model IEnumerable<BL.RunTransformRequest>
+<style>
+    .show-hidden-detail{
+        cursor:pointer;
+        color:#e75b21
+    }
+</style>
+<p>
+    @{var num_err_display_char_limit = 100; }
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table1">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.WorkingSetId)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.CreatedBy)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.CreatedDate)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Status)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.IsDeleted)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.Detail)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.COMHandle)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.IsReady)
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @*@Html.DisplayFor(modelItem => item.WorkingSetId)*@
+                <a href="@Url.Action("Manage","WorkingSet")?id=@item.WorkingSetId">@item.WorkingSetId</a>
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreatedBy)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CreatedDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Status)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsDeleted)
+            </td>
+            <td width="20%">
+                @if (!string.IsNullOrEmpty(item.Detail))
+                {
+                    if (item.Detail.Length > num_err_display_char_limit)
+                    {
+                        <div class="show-hidden-detail">
+                            <div>@item.Detail.Substring(0, num_err_display_char_limit) ...</div>
+                            <div class="hidden-content" style="display:none">
+                                @item.Detail
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @Html.DisplayFor(modelItem => item.Detail)
+                    }
+                }
+                
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.COMHandle)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsReady)
+            </td>
+            <td>
+                @Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
+                @Html.ActionLink("Details", "Details", new { id = item.Id }) |
+                @Html.ActionLink("Delete", "Delete", new { id = item.Id })
+            </td>
+        </tr>
+    }
+
+</table>
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('.show-hidden-detail').click(function () {
+            var content = $(this).find('div.hidden-content').html();
+            $.colorbox({html:content,width:'60%'});
+        });
+    });
+</script>

@@ -57,23 +57,25 @@
 {
     var user = (BL.UserData)System.Web.HttpContext.Current.Session[BL.EV.KEY_UserSession];
     <script type="text/javascript">
-        var ws_selected='@user.Current_wsid';
+        var ws_selected = '@user.Current_wsid';
+        
     </script>
 }
 else
 {
     <script type="text/javascript">
-        var ws_selected=null;
+        var ws_selected = null;
+        
     </script>
 }
 <script type="text/javascript">
-
+    var urlId = @ViewBag.ID;
     var pid, state, county, edt, ver;
     var files = [];
     var currentWs;
     $(document).ready(function () {
         var url_get_info = '@Config.Get_local_control_site()';
-        
+
         $('#sel_package tr:gt(0)').click(function () {
             currentWs = $(this);
             $('#sel_package tr:gt(0)').removeClass("selected");
@@ -84,7 +86,7 @@ else
             county   = $(row[2]).text();
             edt      = $(row[3]).text();
             ver = $(row[4]).text();
-            
+
             //pid    = $(this).find('td:first').text();
             //state  = $(this).find('td:first').text();
             //county = $(this).find('td:first').text();
@@ -475,6 +477,9 @@ var field_merge_rs = [];
 
 
 $(document).ready(function () {
+    if(urlId>0){
+        ws_selected=urlId;
+    }
     if (ws_selected) {
         var tr = $('#sel_package tr:gt(0)');
         tr.removeClass("selected");

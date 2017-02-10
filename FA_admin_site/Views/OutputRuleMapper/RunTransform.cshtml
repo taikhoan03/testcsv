@@ -1,15 +1,121 @@
-﻿<a href="javascript:;" id="runTranformJob">Run</a>
+﻿<style>
+    a.button{
+        border:solid 1px;padding:5px;background:#ffddcc;font-weight: bold;
+        cursor:pointer;
+        margin:2px;
+        display:inline-block;
+    }
+</style>
+<script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
+<script src="~/scripts/custom/app.js"></script>
+
+<div id="cmd" style="display:none">
+    <a href="javascript:;" id="runTranformJob" class="button">Run1</a>
+    <a href="javascript:;" id="detach" class="button">Detach</a>
+</div>
+<div id="tSample" class="table" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+    <table class="table">
+        <tr id="header"></tr>
+        <tbody id="tbody"></tbody>
+    </table>
+</div>
 <script type="text/javascript">
+    var objData = {};
     $(document).ready(function () {
+        $.get('@Url.Action("verifyBeforeAddRequest", "OutputRuleMapper")?wsid=@ViewBag.ID')
+            .done(function (data) {
+                //window.location.href = '@Config.Get_local_control_site()/File/Download_tmp_tam?state=a&county=b&filename=c'
+                $('#cmd').show();
+                if (data != 'null') {
+                    try {
+                        var jsData = JSON.parse(data);
+                        objData = jsData;
+                        if (jsData.Status == 1 || jsData.Status == 0) {
+                            $("#runTranformJob").remove();
+                        }
+                        if (jsData.Status == 1) {
+                            $("#detach").remove();
+                        }
+                        var arr = [];
+                        arr.push(jsData)
+                        format_transform_status(arr, []);
+                        //createTableFromJsonObj(jsData, 'tSample');
+                        _createTableWithJsonObj(arr, 'tSample', false, function () { }, function () {
+                            $('#tSample tr td:nth(4)').hide();
+                            $('#tSample tr th:nth(4)').hide();
+                        });
+                        
+                    } catch (e) {
+                        
+                        $("#runTranformJob").remove();
+                        $("#detach").remove();
+                        $('#cmd').html('<h2 style="color:gray">' + data + '</h2>');
+                    }
+                    
+
+                }
+            })
+            .fail()
+            .always();
+
+
+
+
+
+        $("#detach").click(function (e) {
+            $(this).text('Running');
+            $.get('@Url.Action("detachRequest", "OutputRuleMapper")?wsid=@ViewBag.ID')
+                   .done(function (d) {
+
+                       window.location.href = window.location.href;
+                   })
+                   .fail()
+                   .always();
+        });
         $("#runTranformJob").click(function (e) {
             $(this).text('Running');
-            e.preventDefault();
-            $.get('@Config.Get_local_control_site()' + '/JSON/testMap?id=@ViewBag.ID&cleanUpResult=true&')
+            //e.preventDefault();
+            if (objData == null || objData == undefined)
+                return;
+            var data = objData;
+            if (data) {
+
+                    $.get('@Url.Action("addRunTransformRequest", "OutputRuleMapper")?wsid=@ViewBag.ID')
+                    .done(function (d) {
+
+                        window.location.href = window.location.href;
+                    })
+                    .fail()
+                    .always();
+
+                } else {
+                    //du lieu da co
+
+                var jsData = data;
+                
+                    if (jsData.Status == 0) {
+                        alert('This request is alreay existed and still in-queue');
+                        return;//alreay add and still in-queue
+                    } else if (jsData.Status == 1) {
+                        alert('This request is running, please wait...');
+                        return;
+                    }
+                    if (!confirm('This request is alreay existed, would you like to re-run it again!!!'))
+                        return;
+                    $.get('@Url.Action("addRunTransformRequest_ReRun", "OutputRuleMapper")?wsid=@ViewBag.ID')
+                    .done(function (d) {
+                        alert("Updated!!!");
+                        window.location.href = window.location.href;
+                    })
+                    .fail()
+                    .always();
+                }
+            @*$.get('@Config.Get_local_control_site()' + '/JSON/testMap?id=@ViewBag.ID&cleanUpResult=true&')
             .done(function (data) {
                 window.location.href = '@Config.Get_local_control_site()/File/Download_tmp_tam?state=a&county=b&filename=c'
             })
             .fail()
-            .always();
+            .always();*@
         });
     });
 </script>
