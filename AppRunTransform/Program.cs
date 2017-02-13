@@ -16,14 +16,17 @@ namespace AppRunTransform
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("App is running...");
             using (Process p = Process.GetCurrentProcess())
                 p.PriorityClass = ProcessPriorityClass.BelowNormal;
             var db = new BL.DA_Model();
-            var a = db.runTransformRequests.Where(p => p.WorkingSetId == 4002);
+            //var a = db.runTransformRequests.Where(p => p.WorkingSetId == 4002);
             while (true)
             {
-                
-                var req = db.runTransformRequests.FirstOrDefault(p => p.Status == 0 && p.IsReady && !p.IsDeleted);
+                //lay req dang chạy trước (trường hợp bị tắt hoặc dừng đột xuất thì chạy lại)
+                var req = db.runTransformRequests.FirstOrDefault(p => p.Status == 1 && p.IsReady && !p.IsDeleted);
+                if(req==null)
+                    req = db.runTransformRequests.FirstOrDefault(p => p.Status == 0 && p.IsReady && !p.IsDeleted);
                 if (req != null) {
                     Console.WriteLine("processing ws: " + req.WorkingSetId);
                     req.Status = 1;
@@ -31,10 +34,15 @@ namespace AppRunTransform
                     db.SaveChanges();
                     try
                     {
-                        testMap(req.WorkingSetId, true);
+                        var watch = Stopwatch.StartNew();
+                        var outputname=testMap(req.WorkingSetId, true);
+                        watch.Stop();
+                        req.TimeCost = Convert.ToInt32(watch.Elapsed.TotalSeconds);
                         req.Status = 2;
                         req.Detail = "";
+                        req.OutputName = outputname;
                         db.SaveChanges();
+                        continue;
                     }
                     catch (Exception ex)
                     {
@@ -45,19 +53,22 @@ namespace AppRunTransform
                 }
                 
                 
-                //check has any next req
-                var next= db.runTransformRequests.FirstOrDefault(p => p.Status == 0 && p.IsReady && !p.IsDeleted);
-                if (next == null)
-                {
-                    Console.WriteLine("No more request, waiting...");
-                    Thread.Sleep(1 * 1000);
-                }
-                
+                ////check has any next req
+                //var next= db.runTransformRequests.FirstOrDefault(p => p.Status == 0 && p.IsReady && !p.IsDeleted);
+                //if (next == null)
+                //{
+                //    Console.WriteLine("No more request, waiting...");
+                //    Thread.Sleep(10 * 1000);
+                //}
+                Console.WriteLine("No more request, waiting...");
+                Thread.Sleep(10 * 1000);
+
             }
         }
-        public static void testMap(int id, bool cleanUpResult = false)
+        public static string testMap(int id, bool cleanUpResult = false)
         {
-
+            
+            
             var db = new BL.DA_Model();
             var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
             var firstFileId = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == id);
@@ -257,8 +268,16 @@ namespace AppRunTransform
             }
 
             var a = 1;
-            var firstLinkage = linkageData.First();
-            var primaryKey = firstLinkage.firstFilename.Replace(".", EV.DOT) + EV.DOLLAR + firstLinkage.firstField;
+            string primaryKey = "";
+            if (linkageData != null)
+            {
+                var firstLinkage = linkageData.First();
+                primaryKey = firstLinkage.firstFilename.Replace(".", EV.DOT) + EV.DOLLAR + firstLinkage.firstField;
+            }else
+            {
+                primaryKey = firstFileId.Filename.Replace(".", EV.DOT) + EV.DOLLAR + firstFileId.PrimaryKey;
+            }
+            
 
             var group1 = _ls.ToList().GroupBy(p => p[primaryKey]);
 
@@ -323,14 +342,15 @@ namespace AppRunTransform
                     }
                 }
             }
-
-
-            Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
-                "testFinalOutput.csv", dtAll);
+            var fileOutput = db.outputMappers.Find(ws.SeletedOutputId);
+            var name = DateTime.Now.ToString("yyyyMMdd") + "_" + fileOutput.Name + "_" + ws.User+".csv";
+            Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("output_folder_process") + "\\" +
+                ws.State+"\\"+ws.County+"\\"+ name, dtAll);
             _ls.Clear();
             dtAll.Clear();
             dtAll.Dispose();
             GC.Collect();
+            return name;
         }
         private static IEnumerable<IDictionary<string, object>> Process_final(int fileid, decimal limit = 100, bool writeFile = false, int showLimit = 1000, bool addSequence = true, bool applyRules = true)
         {

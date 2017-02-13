@@ -67,6 +67,14 @@ namespace FA_admin_site.Controllers
         public ActionResult RunTransform(int id)
         {
             ViewBag.ID = id;
+            var db = new BL.DA_Model();
+
+            var ws = db.workingSets.Find(id);
+            var req = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == id);
+            if (req != null)
+                ViewBag.DownloadParam = Config.Get_local_control_site() + "/File/Download_outputFile?state=" + ws.State + "&county=" + ws.State + "&filename=" + req.OutputName;
+            else
+                ViewBag.DownloadParam = "";
             return View();
         }
         public ActionResult TransformLog()
@@ -109,6 +117,7 @@ namespace FA_admin_site.Controllers
             if (hasRule && hasPrimaryKey)
             {
                 req.IsReady = true;
+                req.IsDeleted = false;
             }
             var item_found = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == wsid);
             db.runTransformRequests.Add(req);
@@ -128,6 +137,8 @@ namespace FA_admin_site.Controllers
             if (item_found.Status != 1)//not processing
             {
                 item_found.Status = 0;
+                item_found.IsReady = true;
+                item_found.IsDeleted = false;
                 db.SaveChanges();
                 return "OK";// "This RunTransform request has been created already and will be rerun again soon";
             }

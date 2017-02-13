@@ -1018,82 +1018,53 @@ namespace Mvc_5_site.Controllers
                 fieldTypes.Add(rule.Name, rule.Type);
             }
             //var target = new DynamicExpresso.Interpreter();
-            var dyna = new DynaExp();
-            var dt = new System.Data.DataTable();
-            foreach (var rule in rules)
-            {
-                if (rule.Type == 0)
-                {
-                    foreach (var rec in sorted_file1)
-                    {
-                        IDictionary<string, object> myUnderlyingObject = rec;
-                        var rule_result = rule.ExpValue.FormatWith(rec);
-                        //TODO: dòng này xữ lý chậm
-                        myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result,""));// target.Eval(rule_result));
-
-                        
-                    }
-                }else if (rule.Type == 2)//bool
-                {
-                    foreach (var rec in sorted_file1)
-                    {
-                        IDictionary<string, object> myUnderlyingObject = rec;
-                        var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
-                        //TODO: dòng này xữ lý chậm
-                        myUnderlyingObject.Add(rule.Name, rule_result);
+            CallFunction(rules, sorted_file1);
+            //var dyna = new DynaExp();
+            //var dt = new System.Data.DataTable();
+            //foreach (var rule in rules)
+            //{
+            //    if (rule.Type == 0)
+            //    {
+            //        foreach (var rec in sorted_file1)
+            //        {
+            //            IDictionary<string, object> myUnderlyingObject = rec;
+            //            var rule_result = rule.ExpValue.FormatWith(rec);
+            //            //TODO: dòng này xữ lý chậm
+            //            myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result,""));// target.Eval(rule_result));
 
 
-                    }
-                }
-                else if (rule.Type == 1)//string
-                {
-                    foreach (var rec in sorted_file1)
-                    {
-                        IDictionary<string, object> myUnderlyingObject = rec;
-                        var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
-                        //TODO: dòng này xữ lý chậm
-                        myUnderlyingObject.Add(rule.Name, rule_result);
+            //        }
+            //    }else if (rule.Type == 2)//bool
+            //    {
+            //        foreach (var rec in sorted_file1)
+            //        {
+            //            IDictionary<string, object> myUnderlyingObject = rec;
+            //            var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+            //            //TODO: dòng này xữ lý chậm
+            //            myUnderlyingObject.Add(rule.Name, rule_result);
 
 
-                    }
-                }
-                //foreach (var rec in sorted_file1)
-                //{
-                //    IDictionary<string, object> myUnderlyingObject = rec;
-                //    var placeholders = rule.ExpValue.GetPlaceHolderName_ExpandObject();
+            //        }
+            //    }
+            //    else if (rule.Type == 1)//string
+            //    {
+            //        foreach (var rec in sorted_file1)
+            //        {
+            //            IDictionary<string, object> myUnderlyingObject = rec;
+            //            var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+            //            //TODO: dòng này xữ lý chậm
+            //            myUnderlyingObject.Add(rule.Name, rule_result);
 
-                //    var fullRuleText = "";
-                //    var _params = new List<DynamicExpresso.Parameter>();
-                //    foreach (var ph in placeholders.Distinct())
-                //    {
-                //        if (fullRuleText == "")
-                //            fullRuleText = rule.ExpValue.Replace("{" + ph + "}", ph);
-                //        else
-                //            fullRuleText = fullRuleText.Replace("{" + ph + "}", ph);
-                //        var value = new object();
-                //        if (fieldTypes[ph] == 0)
-                //        {
-                //            value = Convert.ToDecimal(myUnderlyingObject[ph]);
-                //        }else
-                //        {
-                //            value = myUnderlyingObject[ph];
-                //        }
-                //        //target.SetVariable(ph, value);
-                //        var param = new DynamicExpresso.Parameter(ph, value.GetType(), value);
-                //        _params.Add(param);
-                //    }
-                //    var c = _params.ToArray();
 
-                //    //TODO: dòng này xữ lý chậm
-                //    var rule_result = target.Eval(fullRuleText, _params.ToArray());
-                //    myUnderlyingObject.Add(rule.Name, rule_result);
-                //}
+            //        }
+            //    }
 
 
 
-            }
+
+            //}
             //bool rules
-            
+
             //foreach (var rec in sorted_file1)
             //{
             //    IDictionary<string, object> myUnderlyingObject = rec;
@@ -1106,7 +1077,7 @@ namespace Mvc_5_site.Controllers
 
 
             //generate json data
-            
+
             var rs = new List<string[]>();
             var header = sorted_file1.Count() != 0 ?
                     sorted_file1.FirstOrDefault().Select(p => p.Key) : allrecs.FirstOrDefault().Select(p => p.Key);
@@ -1443,46 +1414,47 @@ namespace Mvc_5_site.Controllers
                 {
                     fieldTypes.Add(rule.Name, rule.Type);
                 }
-                var dyna = new DynaExp();
-                var dt = new System.Data.DataTable();
-                foreach (var rule in rules)
-                {
-                    if (rule.Type == 0)
-                    {
-                        foreach (var rec in sorted_file1)
-                        {
-                            IDictionary<string, object> myUnderlyingObject = rec;
-                            var rule_result = rule.ExpValue.FormatWith(rec);
-                            //TODO: dòng này xữ lý chậm
-                            myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
+                CallFunction(rules, sorted_file1);
+                //var dyna = new DynaExp();
+                //var dt = new System.Data.DataTable();
+                //foreach (var rule in rules)
+                //{
+                //    if (rule.Type == 0)
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            var rule_result = rule.ExpValue.FormatWith(rec);
+                //            //TODO: dòng này xữ lý chậm
+                //            myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
 
 
-                        }
-                    }
-                    else if (rule.Type == 2)//bool
-                    {
-                        foreach (var rec in sorted_file1)
-                        {
-                            IDictionary<string, object> myUnderlyingObject = rec;
-                            var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
-                            myUnderlyingObject.Add(rule.Name, rule_result);
+                //        }
+                //    }
+                //    else if (rule.Type == 2)//bool
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+                //            myUnderlyingObject.Add(rule.Name, rule_result);
 
 
-                        }
-                    }
-                    else if (rule.Type == 1)//string
-                    {
-                        foreach (var rec in sorted_file1)
-                        {
-                            IDictionary<string, object> myUnderlyingObject = rec;
-                            var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
-                            myUnderlyingObject.Add(rule.Name, rule_result);
+                //        }
+                //    }
+                //    else if (rule.Type == 1)//string
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                //            myUnderlyingObject.Add(rule.Name, rule_result);
 
 
-                        }
-                    }
+                //        }
+                //    }
 
-                }
+                //}
             }
             
             return sorted_file1;
@@ -1797,51 +1769,121 @@ namespace Mvc_5_site.Controllers
                 {
                     fieldTypes.Add(rule.Name, rule.Type);
                 }
-                var dyna = new DynaExp();
-                var dt = new System.Data.DataTable();
-                foreach (var rule in rules)
-                {
-                    if (rule.Type == 0)
-                    {
-                        foreach (var rec in sorted_file1)
-                        {
-                            IDictionary<string, object> myUnderlyingObject = rec;
-                            var rule_result = rule.ExpValue.FormatWith(rec);
-                            //TODO: dòng này xữ lý chậm
-                            myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
+                CallFunction(rules, sorted_file1);
+                //var dyna = new DynaExp();
+                //var dt = new System.Data.DataTable();
+                //foreach (var rule in rules)
+                //{
+                //    if (rule.Type == 0)
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            var rule_result = rule.ExpValue.FormatWith(rec);
+                //            //TODO: dòng này xữ lý chậm
+                //            myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
 
 
-                        }
-                    }
-                    else if (rule.Type == 2)//bool
-                    {
-                        foreach (var rec in sorted_file1)
-                        {
-                            IDictionary<string, object> myUnderlyingObject = rec;
-                            var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
-                            //TODO: dòng này xữ lý chậm
-                            myUnderlyingObject.Add(rule.Name, rule_result);
+                //        }
+                //    }
+                //    else if (rule.Type == 2)//bool
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+                //            //TODO: dòng này xữ lý chậm
+                //            myUnderlyingObject.Add(rule.Name, rule_result);
 
 
-                        }
-                    }
-                    else if (rule.Type == 1)//string
-                    {
-                        foreach (var rec in sorted_file1)
-                        {
-                            IDictionary<string, object> myUnderlyingObject = rec;
-                            var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
-                            //TODO: dòng này xữ lý chậm
-                            myUnderlyingObject.Add(rule.Name, rule_result);
+                //        }
+                //    }
+                //    else if (rule.Type == 1)//string
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                //            //TODO: dòng này xữ lý chậm
+                //            myUnderlyingObject.Add(rule.Name, rule_result);
 
 
-                        }
-                    }
+                //        }
+                //    }
 
-                }
+                //}
             }
 
             return sorted_file1;
+        }
+        public void CallFunction(IOrderedQueryable<FieldRule> rules, IOrderedEnumerable<IDictionary<string, object>> sorted_file1)
+        {
+            var dyna = new DynaExp();
+            var dt = new System.Data.DataTable();
+            foreach (var rule in rules)
+            {
+                if (rule.Type == 0)//math
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = rule.ExpValue.FormatWith(rec);
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
+
+
+                    }
+                }
+                else if (rule.Type == 2)//bool
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                    }
+                }
+                else if (rule.Type == 1)//string
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                    }
+                }
+                else if (rule.Type == 3)//FUNC_Num
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = dyna.FUNC_Num(rule.ExpValue.FormatWith(rec));
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                    }
+                }
+                else if (rule.Type == 4)//obj AS_IS/IF
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec));
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                    }
+                }
+
+            }
         }
         public void testLinkage3(int id)
         {
@@ -2211,6 +2253,7 @@ namespace Mvc_5_site.Controllers
                         {
                             myUnderlyingObject.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
                         }
+                        
                         if (rule == ruleForThisField.Last())
                         {
                             myUnderlyingObject.Add(group_field.First().FieldName, myUnderlyingObject[rule_fullname]);

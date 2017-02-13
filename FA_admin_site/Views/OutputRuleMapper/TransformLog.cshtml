@@ -3,12 +3,36 @@
 <style>
     .show-hidden-detail{
         cursor:pointer;
-        color:#e75b21
+        color:#e75b21;
+    }
+    .st_0,.st_1,.st_2,.st_3,.st_4{
+        padding:3px;
+        font-weight:normal;
+        height: 100%;
+        width: 100%;
+    }
+    .st_0{
+        background:#808080;
+    }
+    .st_1{
+        background:#ff6a00;
+        font-weight:bold;
+    }
+    .st_2{
+        background:#4cff00
+    }
+    .st_3{
+        background:#ff0000
+    }
+    .st_4{
+        background:#153a47;
+        color:white;
+        font-style:italic;
     }
 </style>
 <p>
     @{var num_err_display_char_limit = 100; }
-    @Html.ActionLink("Create New", "Create")
+    @*@Html.ActionLink("Create New", "Create")*@
 </p>
 <table class="table1">
     <tr>
@@ -53,7 +77,27 @@
                 @Html.DisplayFor(modelItem => item.CreatedDate)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.Status)
+                
+                @if (item.Status == 0)
+                {
+                    <label class="st_@item.Status">In-queue</label>
+                }
+                else if (item.Status == 1)
+                {
+                    <label class="st_@item.Status">Processing</label>
+                }
+                else if (item.Status == 2)
+                {
+                    <label class="st_@item.Status">Success</label>
+                }
+                else if (item.Status == 3)
+                {
+                    <label class="st_@item.Status">FAIL</label>
+                }
+                else if (item.Status == 4)
+                {
+                    <label class="st_@item.Status">Detached</label>
+                }
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.IsDeleted)
@@ -84,9 +128,9 @@
                 @Html.DisplayFor(modelItem => item.IsReady)
             </td>
             <td>
-                @Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
+                @*@Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
                 @Html.ActionLink("Details", "Details", new { id = item.Id }) |
-                @Html.ActionLink("Delete", "Delete", new { id = item.Id })
+                @Html.ActionLink("Delete", "Delete", new { id = item.Id })*@
             </td>
         </tr>
     }
@@ -98,5 +142,6 @@
             var content = $(this).find('div.hidden-content').html();
             $.colorbox({html:content,width:'60%'});
         });
+        
     });
 </script>

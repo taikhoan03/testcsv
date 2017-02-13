@@ -471,28 +471,28 @@
 
     function init_field(){
         var r_fields=$('#r_fields');
-        $.each(fields,function(idx,item){
-            var fieldType=_.findWhere(fieldTypes,{name:item});//{ name="ACCOUNT_NUMBER",  type=1}
-            if(fieldType==undefined) return;
-            if(fieldType.type==0){
-                r_fields.append($('<div class="f_item number" onclick="genUI(\''+item+'\',\'number\')">').html(item).append($('<span>'))
-                    );
-            }
-            else if(fieldType.type==1){
-                r_fields.append($('<div class="f_item string" onclick="genUI(\''+item+'\',\'string\')">').html(item).append($('<span>'))
-                    );
-            }
-            //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
-            //    //.append($('<span>').html(fieldType.type))
-            //    );
-        });
+        initField_ready(r_fields,fields,fieldTypes);
+        //$.each(fields,function(idx,item){
+        //    var fieldType=_.findWhere(fieldTypes,{name:item});//{ name="ACCOUNT_NUMBER",  type=1}
+        //    if(fieldType==undefined) return;
+        //    if(fieldType.type==0){
+        //        r_fields.append($('<div class="f_item number" onclick="genUI(\''+item+'\',\'number\')">').html(item).append($('<span>'))
+        //            );
+        //    }
+        //    else if(fieldType.type==1){
+        //        r_fields.append($('<div class="f_item string" onclick="genUI(\''+item+'\',\'string\')">').html(item).append($('<span>'))
+        //            );
+        //    }
+        //    //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
+        //    //    //.append($('<span>').html(fieldType.type))
+        //    //    );
+        //});
     }
     function init_rules(){
         $.post('@Url.Action("getRules", "SortAndAction")',{id:@ViewBag.ID})
                 .done(function(data){
 
                     var js_data=JSON.parse(data);
-                    console.log(js_data);
                     rules=js_data;
                     //init_rules();
                 })
@@ -501,24 +501,29 @@
                 })
                 .always(function(){
                     var r_rules=$('#r_rules');
-                    r_rules.find("div").remove();
-                    $.each(rules,function(idx,item){
-                        if(item.Type==0){
-                            r_rules.append($('<div class="f_item number" onclick="genUI(\''+item.Name+'\',\'number\')">').html(item.Name).append($('<span>'))
-                                );
-                        }
-                        else if(item.Type==1){
-                            r_rules.append($('<div class="f_item string" onclick="genUI(\''+item.Name+'\',\'string\')">').html(item.Name).append($('<span>'))
-                                );
-                        }
-                        else if(item.Type==2){
-                            r_rules.append($('<div class="f_item bool" onclick="genUI(\''+item.Name+'\',\'bool\')">').html(item.Name).append($('<span>'))
-                                );
-                        }
-                        //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
-                        //    //.append($('<span>').html(fieldType.type))
-                        //    );
-                    });
+                    initRule_ready(r_rules,rules);
+                    //r_rules.find("div").remove();
+                    //$.each(rules,function(idx,item){
+                    //    if(item.Type==0 || item.Type==3){
+                    //        r_rules.append($('<div class="f_item number" onclick="genUI(\''+item.Name+'\',\'number\')">').html(item.Name).append($('<span>'))
+                    //            );
+                    //    }
+                    //    else if(item.Type==1){
+                    //        r_rules.append($('<div class="f_item string" onclick="genUI(\''+item.Name+'\',\'string\')">').html(item.Name).append($('<span>'))
+                    //            );
+                    //    }
+                    //    else if(item.Type==2){
+                    //        r_rules.append($('<div class="f_item bool" onclick="genUI(\''+item.Name+'\',\'bool\')">').html(item.Name).append($('<span>'))
+                    //            );
+                    //    }
+                    //    else if(item.Type==4){
+                    //        r_rules.append($('<div class="f_item bool" onclick="genUI(\''+item.Name+'\',\'object\')">').html(item.Name).append($('<span>'))
+                    //            );
+                    //    }
+                    //    //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
+                    //    //    //.append($('<span>').html(fieldType.type))
+                    //    //    );
+                    //});
                     _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
                     if($( "#rules" ).tabs( "option", "active" )==0){
                         showItemForMATH();

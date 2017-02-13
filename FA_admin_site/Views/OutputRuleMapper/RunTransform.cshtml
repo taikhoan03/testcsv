@@ -20,7 +20,7 @@
     </table>
 </div>
 <script type="text/javascript">
-    var objData = {};
+    var objData;
     $(document).ready(function () {
         $.get('@Url.Action("verifyBeforeAddRequest", "OutputRuleMapper")?wsid=@ViewBag.ID')
             .done(function (data) {
@@ -30,6 +30,9 @@
                     try {
                         var jsData = JSON.parse(data);
                         objData = jsData;
+                        var downloadurl = '@ViewBag.DownloadParam';
+                        if (downloadurl!='')
+                            objData.downloadurl = "<a href='@ViewBag.DownloadParam'>Download</a>";
                         if (jsData.Status == 1 || jsData.Status == 0) {
                             $("#runTranformJob").remove();
                         }
@@ -75,10 +78,10 @@
         $("#runTranformJob").click(function (e) {
             $(this).text('Running');
             //e.preventDefault();
-            if (objData == null || objData == undefined)
-                return;
+            //if (objData == null || objData == undefined)
+            //    return;
             var data = objData;
-            if (data) {
+            if (!data || data==undefined) {
 
                     $.get('@Url.Action("addRunTransformRequest", "OutputRuleMapper")?wsid=@ViewBag.ID')
                     .done(function (d) {
