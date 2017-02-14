@@ -1031,6 +1031,21 @@ function convertToClientType(idType) {
     }
 }
 //begin rule math
+function genUI_afterSaveRule(data) {
+    var $rules = $('#r_rules');
+    if ($("#rules").tabs("option", "active") == 0) {
+        $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\''+data.Name+'\',\'number\')">').html(data.Name));
+    }
+    else if ($("#rules").tabs("option", "active") == 2) {
+        $rules.append($('<div class="r_item string" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'string\')">').html(data.Name));
+    }
+    else if ($("#rules").tabs("option", "active") == 1) {
+        $rules.append($('<div class="r_item bool" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
+    }
+    else if ($("#rules").tabs("option", "active") == 3) {
+        $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'number\')">').html(data.Name));
+    }
+}
 function initField_ready(r_rules, fields, fieldTypes) {
     $.each(fields, function (idx, item) {
         var fieldType=_.findWhere(fieldTypes, {name: item});//{ name="ACCOUNT_NUMBER",  type=1}

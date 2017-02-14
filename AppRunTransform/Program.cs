@@ -234,6 +234,20 @@ namespace AppRunTransform
 
                     var ruleForThisField = rule_.Where(p => p.OutputFieldId == group_field.Key).ToList();
                     var fieldname = group_field.Key + EV.DOLLAR;
+                    var mapper = group_field.First();
+                    //TODO: nếu ko viết Rule, và chỉ có 1 field dc chọn để map
+                    if(mapper.FieldMapperName!=seq1Name && mapper.FieldMapperName != seq2Name)
+                    if (ruleForThisField.Count==0)
+                    {
+                        if (group_field.Count() == 1 && !string.IsNullOrEmpty(mapper.FieldMapperName))
+                        {
+                            
+                            var _name = mapper.FileMapperName +":"+ mapper.FieldMapperName;
+                            _name=_name.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
+                            myUnderlyingObject.Add(mapper.FieldName, myUnderlyingObject[_name]);
+                        }
+                        
+                    }
                     foreach (var rule in ruleForThisField)
                     {
                         var rule_fullname = fieldname + rule.Name;
@@ -261,7 +275,7 @@ namespace AppRunTransform
                         }
                         if (rule == ruleForThisField.Last())
                         {
-                            myUnderlyingObject.Add(group_field.First().FieldName, myUnderlyingObject[rule_fullname]);
+                            myUnderlyingObject.Add(mapper.FieldName, myUnderlyingObject[rule_fullname]);
                         }
                     }
                 }

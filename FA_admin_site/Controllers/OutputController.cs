@@ -74,6 +74,23 @@ namespace FA_admin_site.Controllers
             return View(db.outputMappers);
         }
         [HttpPost]
+        public void ClearAll(int wsid)
+        {
+            var db = new BL.DA_Model();
+            var ruleoutputs = db.outputDataDetails.Where(p => p.WorkingSetId == wsid);
+            foreach (var item in ruleoutputs)
+            {
+                db.outputDataDetails.Remove(item);
+            }
+            var outputs = db.outputDatas.Where(p => p.WorkingSetId == wsid);
+            foreach (var item in outputs)
+            {
+                db.outputDatas.Remove(item);
+            }
+            db.SaveChanges();
+            
+        }
+        [HttpPost]
         public string getUserData(int id)
         {
             var db = new BL.DA_Model();

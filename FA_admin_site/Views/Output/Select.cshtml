@@ -140,6 +140,18 @@
         ;
         
     }
+    function clearAll(){
+        if(!confirm('Remove all data?'))
+            return;
+        if(!confirm('Becareful all existed Rules ouput will be remove also?'))
+            return;
+        $.post('@Url.Action("ClearAll","Output")',{wsid:@ViewBag.Id})
+            .done(function(data){
+                window.location.href=window.location.href;
+            })
+        .fail()
+        .always();
+    }
     function loadData(){
         $.post('@Url.Action("getUserData","Output")',{id:@ViewBag.Id})
             .done(function(data){
@@ -215,6 +227,7 @@
 </div>
 <div>
     <input type="button" value="Add" onclick="add()" />
+    <input type="button" value="Clear" onclick="clearAll()" />
 </div>
 <table id="data" class="table">
     <tr>
