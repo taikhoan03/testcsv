@@ -875,6 +875,8 @@
         $('#rule_left').prepend($select);
     }
     function filter(selected_rule,isClear){
+        selectedRuleFilter(selected_rule,isClear);
+        return;
         var $display=$('#CONDITIONAL_r');
         if($( "#rules" ).tabs( "option", "active" )==1){
             $display=$('#CONDITIONAL_r');

@@ -192,6 +192,185 @@ var at = {//rule accept_type
     char: 'char',
     any: 'any'
 }
+var IfNode = function(){
+    this.Node = null;
+    this.Condition = null;
+    this.Value = null;
+}
+var IRule_IF = function () {
+    this.name = "IF";
+    this.F = "if";//function string, Ex:AND(true,false) -> AND
+    this.CurrentNode = null;//node=IF/ELSE IF/ELSE
+    this.Nodes = [];
+    this.acceptType = [];
+    this.CurrentNodeIndex = 0;
+    this.createNode = function (strNode) {//strNode=if/else if/else
+        var node = new IfNode();
+        if (this.Nodes.length == 0) {
+            node.Node = "if";
+        } else {
+            if (strNode === 'else if') {
+                node.Node = "else if";
+            } else if (strNode === 'else') {
+                node.Node = "else";
+            }
+        }
+        this.CurrentNode = node;
+    };
+    this.validLastNodeIsElse = function () {
+        if (this.Nodes.length > 0) {
+            if (this.Nodes[this.Nodes.length - 1].Node === 'else') {
+                
+                return true;
+            }
+        }
+        return false;
+    }
+    this.addNodeCondition = function (condition) {//strCondition: 1>2
+        var node = this.CurrentNode;
+        if (node.Node == null) {
+            alert("Node name is not set");
+        }
+        node.Condition = condition;
+    };
+    this.addNodeValue = function (strval) {//strval: 12
+        if (this.CurrentNode == null) return;
+        var node = this.CurrentNode;
+        //if (node.Node == null || node.condition == null) {
+        //    alert("Node name/Condition is not set");
+        //}
+        if (node.Node == null) {
+            alert("Node name is not set");
+            return;
+        }
+        if (this.validLastNodeIsElse()) {
+            alert('Not valid for IF function');
+            return;
+        }
+        
+        //add lan dau => add condition
+        if (node.Node != 'else') {
+            if (node.Condition == null) {
+                node.Condition = strval;
+                return;
+            }
+            //add lan 2 => add Value
+            if (strval.indexOf('{') < 0) {
+                strval = '"' + strval + '"';
+            }
+        } else {
+            if (strval.indexOf('{') < 0) {
+                strval = '"' + strval + '"';
+            }
+        }
+        
+        node.Value = strval;
+        this.Nodes.push(node);
+        this.CurrentNode = null;
+    };
+    this.result = function () {
+        var rs = '';
+        for (var i = 0; i < this.Nodes.length; i++) {
+            var n = this.Nodes[i];
+            if(n.Node!=='else')
+                rs += n.Node + ' (' + n.Condition + ') {' + n.Value + ';} ';
+            else
+                rs += n.Node + ' {' + n.Value + ';} ';
+        }
+        return rs;//.replace(' if','if');
+        //return str_func + '(' + this.params.join(this.delimiter) + ')';
+    }
+    this.showResult = function () {
+        return this.result().replace(/\[\[\]\]/gi, ',');
+    }
+    this.setAcceptTypes = function (acceptTypesArr) {
+        this.acceptType = acceptTypesArr;
+    }
+    this.setAllAcceptType = function (acceptType) {
+        this.acceptType = [];
+        for (var i = 0; i < 30; i++) {
+            this.acceptType.push(acceptType);
+        }
+    }
+}
+
+var r_IF = new IRule_IF();
+r_IF.setAllAcceptType(at.bool);
+r_IF.showResult = function () {
+    
+    var lblContent = '';
+    var currentNode = this.CurrentNode;
+    if (currentNode)
+        if (!currentNode.Condition) {
+            lblContent = '<h3 class="lblIfCaution-con">Set CONDITION for '+currentNode.Node.toUpperCase()+'</h3>';
+        } else {
+            lblContent = '<h3 class="lblIfCaution-val">Set VALUE for ' + currentNode.Node.toUpperCase() + '</h3>';
+        }
+    else
+        lblContent = '<h3 class="lblIfCaution-node">Chose IF/ELSE button</h3>';
+    if (this.validLastNodeIsElse()) {
+        lblContent = '<h3 class="lblIfCaution-node">...</h3>';
+    }
+    var str = "";
+    for (var i = 0; i < this.Nodes.length; i++) {
+        var n=this.Nodes[i];
+        var tr = $('<tr>');
+        var td = $('<td class="lbl-arg">').html(n.Node);
+        tr.append(td);
+        td = $('<td class="arg">').html(n.Condition);
+        tr.append(td);
+        var row1 = $('<div>').append(tr).html();
+
+        tr = $('<tr>');
+        td = $('<td class="lbl-arg">').html('=>');
+        tr.append(td);
+        td = $('<td class="arg">').html(n.Value);
+        tr.append(td);
+        var row2 = $('<div>').append(tr).html();
+        str += row1 + row2;
+    }
+    //node hiện đang thao tác (chưa complete)
+    if (this.name == 'IF') {
+        if (currentNode != null) {
+            var n = currentNode;
+            if (n.Condition) {
+                var tr = $('<tr>');
+                var td = $('<td class="lbl-arg">').html(n.Node);
+                tr.append(td);
+                td = $('<td class="arg">').html(n.Condition);
+                tr.append(td);
+                str += $('<div>').append(tr).html();
+            }
+            if (n.Value) {
+                tr = $('<tr>');
+                td = $('<td class="lbl-arg">').html('=>');
+                tr.append(td);
+                td = $('<td class="arg">').html(n.Value);
+                tr.append(td);
+                str += $('<div>').append(tr).html();
+            }
+
+            
+        }
+
+        
+    }
+
+    //var $lbl = '<tr><th class="lbl-arg">Target : </th>';
+    //var f = "";
+    //if (this.params[0])
+    //    f = this.params[0].replace(/{|}/g, "");
+    //var $arg = '<td class="arg">' + f + '</td></tr>';
+    //str += $lbl + $arg;
+    //for (var i = 1; i < this.params.length; i++) {
+    //    var $lbl = '<tr><th class="lbl-arg">Contain : </th>';
+    //    if (i > 1)
+    //        $lbl = '<tr><th class="lbl-arg"><b>AND</b> Contain : </th>';
+    //    var $arg = '<td class="arg">' + this.params[i].replace(/{|}/g, "") + '</td></tr>';
+    //    str += $lbl + $arg;
+    //}
+    return lblContent + '<table>' + str + '</table>';
+};
 var IRule = function (name, str_func, limit, delimiter) {
     this.name = name;
     this.F = str_func;//function string, Ex:AND(true,false) -> AND
@@ -986,6 +1165,7 @@ r_IS_NULL,
 r_IS_NUMERIC,
 r_LESS_THAN,
 r_LESS_THAN_OR_EQUAL,
+r_IF,
 r_NOT,
 r_NOT_CONTAINS,
 r_NOT_EQUAL,
@@ -1110,6 +1290,139 @@ function showItemForMATH() {
             item.show();
     }
 }
+function selectedRuleFilter(selected_rule, isClear) {
+    var $display = $('#CONDITIONAL_r');
+    if ($("#rules").tabs("option", "active") == 1) {
+        $display = $('#CONDITIONAL_r');
+    } else if ($("#rules").tabs("option", "active") == 2) {
+        $display = $('#FORMATTING_r');
+    }
+    else if ($("#rules").tabs("option", "active") == 3) {
+        $display = $('#MISCELLANEOUS_r');
+    }
+    if (selected_rule == '') {
+        $('.f_item').show();
+        currentRule = null;
+        $display.html('');
+        return;
+    }
+    
+    
+    
+    
+    for (var i = 0; i < app_rules.length; i++) {
+        var rule = app_rules[i];
+        if (rule.name == selected_rule) {
+            currentRule = jQuery.extend(true, {}, rule);//currentRule = rule;//set current rule, selected
+            if (isClear)
+                rule.params = [];//clear params
+            var nextAcceptType = rule.acceptType[rule.params.length];
+            $('.f_item').hide();
+            $(genSeletor('.f_item', nextAcceptType)).show();
+
+            //check rule IF
+            if (currentRule.name === "IF") {
+                $('#div_if_cmd').show();
+                currentRule.createNode('');//create IF node
+            }else
+                $('#div_if_cmd').hide();
+            break;
+        }
+    }
+
+    $display.html(currentRule.showResult());
+}
+function setElseIFNode(str) {//else if//else
+    if (currentRule == null) return;
+    if (currentRule.name != 'IF') return;
+    if (currentRule.Nodes.length < 1) {
+        alert("First node should be IF");
+        return;
+    }
+    currentRule.createNode(str);
+    var d = getDisplay_forRule();
+    d.html(currentRule.showResult());
+}
+function getDisplay_forRule() {
+    var $display = $('#CONDITIONAL_r');
+    if ($("#rules").tabs("option", "active") == 1) {
+        $display = $('#CONDITIONAL_r');
+    } else if ($("#rules").tabs("option", "active") == 2) {
+        $display = $('#FORMATTING_r');
+    }
+    else if ($("#rules").tabs("option", "active") == 3) {
+        $display = $('#MISCELLANEOUS_r');
+    }
+    return $display;
+}
+//add text value by click Add button
+function addValue(value) {
+    if (currentRule == null) {
+        alert('Please select a Rule');
+        return;
+    }
+    var r_panel = $('#rule_right');
+    var $display = $('#CONDITIONAL_r');
+    if ($("#rules").tabs("option", "active") == 1) {
+        $display = $('#CONDITIONAL_r');
+    } else if ($("#rules").tabs("option", "active") == 2) {
+        $display = $('#FORMATTING_r');
+    }
+    else if ($("#rules").tabs("option", "active") == 3) {
+        $display = $('#MISCELLANEOUS_r');
+    }
+
+    if ($("#rules").tabs("option", "active") == 0) {
+        if ($('#rule_right').find('div:last-child').hasClass('op')
+            ||
+            $('#rule_right').find('div').length == 0)
+            r_panel.append($('<div class="va">').html(value));
+    } else {
+        if (currentRule.name == 'IF') {
+            currentRule.addNodeValue(value);
+            console.log(currentRule);
+            $display.html('').append($('<div>').html(currentRule.showResult()));
+            return;
+        }
+        var nextAcceptType = currentRule.acceptType[currentRule.params.length];
+        //console.log(nextAcceptType);
+        if (nextAcceptType == undefined) return;
+
+        // simple type
+        if (typeof nextAcceptType == 'string') {
+            if (nextAcceptType == 'number') {
+                if (!$.isNumeric(value)) {
+                    alert("A numeric input is required");
+                    return;
+                }
+                currentRule.addParam({ value: value, type: 'number' });
+                $display.html('').append($('<div>').html(currentRule.showResult()));
+            } else {
+                currentRule.addParam({ value: value, type: nextAcceptType });
+                $display.html('').append($('<div>').html(currentRule.showResult()));
+            }
+
+
+        } else {
+            //var acType;
+            //var tmpValue=value;
+            //for (var i = 0; i < nextAcceptType.length; i++) {
+            //    var acType=nextAcceptType[i];
+            //    if(acType=='string'){
+
+            //    }else if(acType=='number'){
+            //        tmpValue=
+            //    }
+
+            //}
+            //currentRule.addParam({value:value,type:acType});
+            //$display.html('').append($('<div>').html(currentRule.showResult()));
+        }
+
+    }
+}
+
+
 function clean_cbox_selection() {
     $('#cboxCondition').val('').trigger('change');
     $('#cboxFormatting').val('').trigger('change');

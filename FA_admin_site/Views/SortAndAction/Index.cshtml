@@ -1,6 +1,42 @@
 ﻿@model IEnumerable<BL.FieldOrderAndAction>
 <style>
-    
+    .lbl-arg{
+        text-transform:uppercase;
+        
+    }
+    .arg{
+        font-weight:bold;
+    }
+    .lblIfCaution-con,.lblIfCaution-val,lblIfCaution-node{
+        border: 1px solid;
+    display: inline-block;
+    font-weight: bold;
+    margin-left: 10px;
+    padding: 8px;
+    }
+    .lblIfCaution-con{
+        
+        color:#18a4e9;
+    }
+    .lblIfCaution-val{
+        color:#00ff21;
+    }
+    .lblIfCaution-node{
+        color:#eb771c;
+    }
+    #div_if_cmd{
+        padding: 4px; margin: 2px; background: rgb(230, 183, 80) none repeat scroll 0% 0%; border: 1px solid;
+        text-align:center;
+    }
+    #div_if_cmd input[type='button']{
+        background: #86e120 none repeat scroll 0 0;
+    border: 1px solid white;
+    color: white;
+    display: inline-block;
+    font-weight: bold;
+    margin-right: 41px;
+    padding: 4px;
+    }    
     #lblLoading {
         color: #ff0000;
         font-size: 14pt;
@@ -221,7 +257,10 @@
                 <div>
                     <input type="text" id="txt_input" />
                     <input type="button" id="btn_input" value="Add" onclick="addValue($('#txt_input').val())"/>
-                    @*<input type="button" id="btn_clear" value="Clear" onclick="$('#txt_input').val('')" />*@
+                    <div id="div_if_cmd" style="display:none">
+                        <input type="button" value="ELSE IF" onclick="setElseIFNode('else if')" />
+                        <input type="button" value="ELSE" onclick="setElseIFNode('else')"/>
+                    </div>
                 </div>
                 <div style="border-radius:4px" id="ARITHMETICAL_operator">
                     <div id="plus" class="operator" onclick="addOperator('+')">+</div>
@@ -313,6 +352,7 @@
                 $('#cboxFormatting').hide();
                 $('#cboxMISCELLANEOUS').hide();
                 clean_cbox_selection();
+                $('#div_if_cmd').hide();
                 if($(event.currentTarget).attr('href')=='#ARITHMETICAL_r'){
                     $('#ARITHMETICAL_operator').show();
                     showItemForMATH();
@@ -323,7 +363,6 @@
                     //if($('#cboxCondition').val()=='')
                     
                     $('#cboxCondition').trigger('change');
-                    
                     //return;
                 }else if($(event.currentTarget).attr('href')=='#FORMATTING_r'){
                     $('#cboxFormatting').show();
@@ -536,7 +575,10 @@
 
         var r_panel=$('#rule_right');
         var str_rs=r_panel.text();
-
+        if(currentRule.name=='IF'){
+            addValue('{'+value+'}');
+            return;
+        }
         //if(str_rs.indexOf('-')>0 ||
         //    str_rs.indexOf('*')>0 ||
         //    str_rs.indexOf('/')>0){
@@ -590,59 +632,65 @@
             $('#rule_right').find('div:last-child').hasClass('va'))
             r_panel.append($('<div class="op">').html(value));
     }
-    function addValue(value){
-        var r_panel=$('#rule_right');
-        var $display=$('#CONDITIONAL_r');
-        if($( "#rules" ).tabs( "option", "active" )==1){
-            $display=$('#CONDITIONAL_r');
-        }else if($( "#rules" ).tabs( "option", "active" )==2){
-            $display=$('#FORMATTING_r');
-        }
-        else if($( "#rules" ).tabs( "option", "active" )==3){
-            $display=$('#MISCELLANEOUS_r');
-        }
-        if($( "#rules" ).tabs( "option", "active" )==0){
-            if($('#rule_right').find('div:last-child').hasClass('op')
-                ||
-                $('#rule_right').find('div').length==0)
-                r_panel.append($('<div class="va">').html(value));
-        }else{
-            var nextAcceptType=currentRule.acceptType[currentRule.params.length];
-            //console.log(nextAcceptType);
-            if(nextAcceptType==undefined) return;
-            // simple type
-            if(typeof nextAcceptType=='string'){
-                if(nextAcceptType=='number'){
-                    if(!$.isNumeric(value)){
-                        alert("A numeric input is required");
-                        return;
-                    }
-                    currentRule.addParam({value:value,type:'number'});
-                    $display.html('').append($('<div>').html(currentRule.showResult()));
-                }else{
-                    currentRule.addParam({value:value,type:nextAcceptType});
-                    $display.html('').append($('<div>').html(currentRule.showResult()));
-                }
+    //function addValue(value){
+    //    var r_panel=$('#rule_right');
+    //    var $display=$('#CONDITIONAL_r');
+    //    if($( "#rules" ).tabs( "option", "active" )==1){
+    //        $display=$('#CONDITIONAL_r');
+    //    }else if($( "#rules" ).tabs( "option", "active" )==2){
+    //        $display=$('#FORMATTING_r');
+    //    }
+    //    else if($( "#rules" ).tabs( "option", "active" )==3){
+    //        $display=$('#MISCELLANEOUS_r');
+    //    }
+        
+    //    if($( "#rules" ).tabs( "option", "active" )==0){
+    //        if($('#rule_right').find('div:last-child').hasClass('op')
+    //            ||
+    //            $('#rule_right').find('div').length==0)
+    //            r_panel.append($('<div class="va">').html(value));
+    //    }else{
+    //        if(currentRule.name=='IF'){
+
+    //            return;
+    //        }
+    //        var nextAcceptType=currentRule.acceptType[currentRule.params.length];            
+    //        //console.log(nextAcceptType);
+    //        if(nextAcceptType==undefined) return;
+            
+    //        // simple type
+    //        if(typeof nextAcceptType=='string'){
+    //            if(nextAcceptType=='number'){
+    //                if(!$.isNumeric(value)){
+    //                    alert("A numeric input is required");
+    //                    return;
+    //                }
+    //                currentRule.addParam({value:value,type:'number'});
+    //                $display.html('').append($('<div>').html(currentRule.showResult()));
+    //            }else{
+    //                currentRule.addParam({value:value,type:nextAcceptType});
+    //                $display.html('').append($('<div>').html(currentRule.showResult()));
+    //            }
 
 
-            }else{
-                //var acType;
-                //var tmpValue=value;
-                //for (var i = 0; i < nextAcceptType.length; i++) {
-                //    var acType=nextAcceptType[i];
-                //    if(acType=='string'){
+    //        }else{
+    //            //var acType;
+    //            //var tmpValue=value;
+    //            //for (var i = 0; i < nextAcceptType.length; i++) {
+    //            //    var acType=nextAcceptType[i];
+    //            //    if(acType=='string'){
 
-                //    }else if(acType=='number'){
-                //        tmpValue=
-                //    }
+    //            //    }else if(acType=='number'){
+    //            //        tmpValue=
+    //            //    }
 
-                //}
-                //currentRule.addParam({value:value,type:acType});
-                //$display.html('').append($('<div>').html(currentRule.showResult()));
-            }
+    //            //}
+    //            //currentRule.addParam({value:value,type:acType});
+    //            //$display.html('').append($('<div>').html(currentRule.showResult()));
+    //        }
 
-        }
-    }
+    //    }
+    //}
     function Clear_F(){
         currentRule.params=[];
         var $display=$('#CONDITIONAL_r');
@@ -728,6 +776,7 @@
             'EQUAL',
             'GREATER_THAN',
             'GREATER_THAN_OR_EQUAL',
+            'IF',
             'IS_ALPHA',
             'IS_NULL',
             'IS_NUMERIC',
@@ -788,6 +837,9 @@
         $('#rule_left').prepend($select);
     }
     function filter(selected_rule,isClear){
+        selectedRuleFilter(selected_rule,isClear);
+        return;
+
         var $display=$('#CONDITIONAL_r');
         if($( "#rules" ).tabs( "option", "active" )==1){
             $display=$('#CONDITIONAL_r');
@@ -803,6 +855,12 @@
             $display.html('');
             return;
         }
+        //check rule IF
+        if(currentRule.Name==="IF"){
+            $('#div_if_cmd').show();
+            return;
+        }
+        $('#div_if_cmd').hide();
         for (var i = 0; i < app_rules.length; i++) {
             var rule=app_rules[i];
             if(rule.name==selected_rule){
@@ -835,4 +893,5 @@
         }
         return prefix+'.'+type;
     }
+    
 </script>
