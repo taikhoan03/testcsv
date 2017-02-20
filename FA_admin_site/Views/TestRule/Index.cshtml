@@ -1,0 +1,77 @@
+﻿@model IEnumerable<string>
+    <style>
+        .table *{
+            white-space: nowrap;
+        }
+    </style>
+<h3 style="color:#00ff21">Input your data to check that rules can run perfect</h3>
+<input type="button" value="Check" onclick="check()"/>
+<table class="table" id="tbl-fields-check">
+    <tr>
+        <th>Name</th>
+        <th>Value</th>
+    </tr>
+    <tbody id="tbody">
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    <span>@item</span>
+                </td>
+                <td>
+                    <input type="text" />
+                </td>
+            </tr>
+        }
+    </tbody>
+        
+
+</table>
+<input type="button" value="Check" onclick="check()" />
+<hr />
+<div id="tSample" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+    <table class="table">
+        <tr id="header"></tr>
+        <tbody id="tbody"></tbody>
+    </table>
+</div>
+<div id="fail" style="color:red"></div>
+<script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
+<script src="~/scripts/custom/app.js"></script>
+<script type="text/javascript">
+    var a;
+    function check() {
+        var rs = [];
+        var tbl = $('#tbl-fields-check');
+        var rows = tbl.find('tr:has(td)');
+        
+        for (var i = 0; i < rows.length; i++) {
+            var row=$(rows[i]);
+            var item = {};
+            item.name = row.find('td:first>span').text();
+            item.val = row.find('input').val();
+            rs.push(item);
+        }
+        //console.log(rs);
+        $.post('@Url.Action("runTestRules", "TestRule")?wsid=@ViewBag.ID', { fields :rs})
+        .done(function (data) {
+            //console.log(data);
+            try {
+                var js = JSON.parse(data);
+                console.log(js);
+                a = js;
+                _createTableWithJsonObj(js, 'tSample',false);
+                $('#tSample').show();
+                $('#fail').html('');
+            } catch (e) {
+                alert(data);
+            }
+        })
+        .fail(function (err) {
+            console.log(err);
+            //alert(err);
+            $('#fail').html(err.responseText);
+        })
+        .always();
+    }
+</script>

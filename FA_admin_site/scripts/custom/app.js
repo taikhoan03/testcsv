@@ -273,9 +273,9 @@ var IRule_IF = function () {
         for (var i = 0; i < this.Nodes.length; i++) {
             var n = this.Nodes[i];
             if(n.Node!=='else')
-                rs += n.Node + ' (' + n.Condition + ') {' + n.Value + ';} ';
+                rs += n.Node + ' (' + n.Condition + ') {{' + n.Value + ';}} ';
             else
-                rs += n.Node + ' {' + n.Value + ';} ';
+                rs += n.Node + ' {{' + n.Value + ';}} ';
         }
         return rs;//.replace(' if','if');
         //return str_func + '(' + this.params.join(this.delimiter) + ')';
@@ -1212,19 +1212,36 @@ function convertToClientType(idType) {
 }
 //begin rule math
 function genUI_afterSaveRule(data) {
+    console.log(data);
     var $rules = $('#r_rules');
-    if ($("#rules").tabs("option", "active") == 0) {
-        $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\''+data.Name+'\',\'number\')">').html(data.Name));
-    }
-    else if ($("#rules").tabs("option", "active") == 2) {
-        $rules.append($('<div class="r_item string" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'string\')">').html(data.Name));
-    }
-    else if ($("#rules").tabs("option", "active") == 1) {
+    if (data.Type == 0) {//number
+        $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
+    } else if (data.Type == 1) {//string
+        $rules.append($('<div class="r_item string" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
+    } else if (data.Type == 2) {//bool
         $rules.append($('<div class="r_item bool" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
+    } else if (data.Type == 3) {//number
+        $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
+    } else if (data.Type == 4) {//object
+        $rules.append($('<div class="r_item object" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
     }
-    else if ($("#rules").tabs("option", "active") == 3) {
-        $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'number\')">').html(data.Name));
-    }
+
+    //if ($("#rules").tabs("option", "active") == 0) {
+    //    $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\''+data.Name+'\',\'number\')">').html(data.Name));
+    //}
+    //else if ($("#rules").tabs("option", "active") == 2) {
+    //    $rules.append($('<div class="r_item string" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'string\')">').html(data.Name));
+    //}
+    //else if ($("#rules").tabs("option", "active") == 1) {
+    //    if (data.Type == 4) {//object
+    //        $rules.append($('<div class="r_item object" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
+    //    }
+    //    else
+    //        $rules.append($('<div class="r_item bool" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
+    //}
+    //else if ($("#rules").tabs("option", "active") == 3) {
+    //    $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'number\')">').html(data.Name));
+    //}
 }
 function initField_ready(r_rules, fields, fieldTypes) {
     $.each(fields, function (idx, item) {
@@ -1264,7 +1281,7 @@ function initRule_ready(r_rules,rules) {
                 );
         }
         else if (item.Type == 4) {
-            r_rules.append($('<div class="f_item bool" onclick="genUI(\'' + item.Name + '\',\'object\')">').html(item.Name).append($('<span>'))
+            r_rules.append($('<div class="f_item object" onclick="genUI(\'' + item.Name + '\',\'object\')">').html(item.Name).append($('<span>'))
                 );
         }
         //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
@@ -1354,6 +1371,35 @@ function getDisplay_forRule() {
         $display = $('#MISCELLANEOUS_r');
     }
     return $display;
+}
+function genRuleData() {
+    var str_rs = $('#rule_right').text();
+    var html = $('#rule_right').html();
+
+    var d = {};
+    d.ExpValue = str_rs;//exp=MATH exp
+    d.HTMLBack = html;
+    d.Type = 0;
+    if ($("#rules").tabs("option", "active") != 0) {//neu ko phai tab MATH
+        d.ExpValue = currentRule.result();
+        d.HTMLBack = $('#CONDITIONAL_r').html();
+
+    }
+    if ($("#rules").tabs("option", "active") == 1) {
+        d.Type = 2;
+        if ($('#cboxCondition').val() == "IF") {
+            d.Type = 4;
+        }
+    } else if ($("#rules").tabs("option", "active") == 2) {
+        d.Type = 1;
+    }
+    else if ($("#rules").tabs("option", "active") == 3) {
+        d.Type = 3;
+        if ($('#cboxMISCELLANEOUS').val() == "AS_IS") {
+            d.Type = 4;
+        }
+    }
+    return d;
 }
 //add text value by click Add button
 function addValue(value) {

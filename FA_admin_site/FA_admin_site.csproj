@@ -1130,6 +1130,7 @@
     <Compile Include="Controllers\OutputController.cs" />
     <Compile Include="Controllers\OutputRuleMapperController.cs" />
     <Compile Include="Controllers\SortAndActionController.cs" />
+    <Compile Include="Controllers\TestRuleController.cs" />
     <Compile Include="Controllers\WorkingSetController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -1230,6 +1231,7 @@
     </Content>
     <Content Include="Views\OutputRuleMapper\TransformLog.cshtml" />
     <Content Include="Views\OutputRuleMapper\test.cshtml" />
+    <Content Include="Views\TestRule\Index.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

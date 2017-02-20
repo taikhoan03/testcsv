@@ -687,96 +687,98 @@ namespace AppRunTransform
                 {
                     fieldTypes.Add(rule.Name, rule.Type);
                 }
-                var dyna = new DynaExp();
-                var dt = new System.Data.DataTable();
-                foreach (var rule in rules)
-                {
-                    if (rule.Type == 0)
-                    {
-                        foreach (var rec in sorted_file1)
-                        {
-                            IDictionary<string, object> myUnderlyingObject = rec;
-                            try
-                            {
-                                var rule_result = rule.ExpValue.FormatWith(rec);
-                                //TODO: dòng này xữ lý chậm
-                                myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
+                CallFunction(rules, sorted_file1);
 
-                            }
-                            catch (Exception ex)
-                            {
+                //var dyna = new DynaExp();
+                //var dt = new System.Data.DataTable();
+                //foreach (var rule in rules)
+                //{
+                //    if (rule.Type == 0)
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            try
+                //            {
+                //                var rule_result = rule.ExpValue.FormatWith(rec);
+                //                //TODO: dòng này xữ lý chậm
+                //                myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
 
-                                throw new Exception("Process final --- Fail to run Rule:" + rule.ExpValue + Environment.NewLine +
-                                        " rec: " + Newtonsoft.Json.JsonConvert.SerializeObject(rec) + Environment.NewLine +
-                                        " Message:" + ex.Message
-                                        );
-                            }
-                            
+                //            }
+                //            catch (Exception ex)
+                //            {
 
-                        }
-                    }
-                    else if (rule.Type == 2)//bool
-                    {
-                        foreach (var rec in sorted_file1)
-                        {
-                            IDictionary<string, object> myUnderlyingObject = rec;
-                            try
-                            {
-                                var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
-                                //TODO: dòng này xữ lý chậm
-                                myUnderlyingObject.Add(rule.Name, rule_result);
-                            }
-                            catch (Exception ex)
-                            {
-
-                                throw new Exception("Process final --- Fail to run Rule:" + rule.ExpValue + Environment.NewLine +
-                                        " rec: " + Newtonsoft.Json.JsonConvert.SerializeObject(rec) + Environment.NewLine +
-                                        " Message:" + ex.Message
-                                        );
-                            }
-                            
+                //                throw new Exception("Process final --- Fail to run Rule:" + rule.ExpValue + Environment.NewLine +
+                //                        " rec: " + Newtonsoft.Json.JsonConvert.SerializeObject(rec) + Environment.NewLine +
+                //                        " Message:" + ex.Message
+                //                        );
+                //            }
 
 
-                        }
-                    }
-                    else if (rule.Type == 1)//string
-                    {
-                        foreach (var rec in sorted_file1)
-                        {
-                            IDictionary<string, object> myUnderlyingObject = rec;
-                            try
-                            {
-                                var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
-                                //TODO: dòng này xữ lý chậm
-                                myUnderlyingObject.Add(rule.Name, rule_result);
-                            }
-                            catch (Exception ex)
-                            {
+                //        }
+                //    }
+                //    else if (rule.Type == 2)//bool
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            try
+                //            {
+                //                var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+                //                //TODO: dòng này xữ lý chậm
+                //                myUnderlyingObject.Add(rule.Name, rule_result);
+                //            }
+                //            catch (Exception ex)
+                //            {
 
-                                throw new Exception("Process final --- Fail to run Rule:" + rule.ExpValue + Environment.NewLine +
-                                        " rec: " + Newtonsoft.Json.JsonConvert.SerializeObject(rec) + Environment.NewLine +
-                                        " Message:" + ex.Message
-                                        );
-                            }
-                            
+                //                throw new Exception("Process final --- Fail to run Rule:" + rule.ExpValue + Environment.NewLine +
+                //                        " rec: " + Newtonsoft.Json.JsonConvert.SerializeObject(rec) + Environment.NewLine +
+                //                        " Message:" + ex.Message
+                //                        );
+                //            }
 
 
-                        }
-                    }
-                    //try
-                    //{
 
-                    //}
-                    //catch (Exception ex)
-                    //{
+                //        }
+                //    }
+                //    else if (rule.Type == 1)//string
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            try
+                //            {
+                //                var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                //                //TODO: dòng này xữ lý chậm
+                //                myUnderlyingObject.Add(rule.Name, rule_result);
+                //            }
+                //            catch (Exception ex)
+                //            {
 
-                    //    throw new Exception("Process final --- Fail to run Rule:" + rule.ExpValue + Environment.NewLine +
-                    //            " rec: " + Newtonsoft.Json.JsonConvert.SerializeObject(rec) + Environment.NewLine +
-                    //            " Message:" + ex.Message
-                    //            );
-                    //}
+                //                throw new Exception("Process final --- Fail to run Rule:" + rule.ExpValue + Environment.NewLine +
+                //                        " rec: " + Newtonsoft.Json.JsonConvert.SerializeObject(rec) + Environment.NewLine +
+                //                        " Message:" + ex.Message
+                //                        );
+                //            }
 
-                }
+
+
+                //        }
+                //    }
+                //    //try
+                //    //{
+
+                //    //}
+                //    //catch (Exception ex)
+                //    //{
+
+                //    //    throw new Exception("Process final --- Fail to run Rule:" + rule.ExpValue + Environment.NewLine +
+                //    //            " rec: " + Newtonsoft.Json.JsonConvert.SerializeObject(rec) + Environment.NewLine +
+                //    //            " Message:" + ex.Message
+                //    //            );
+                //    //}
+
+                //}
             }
 
             return sorted_file1;
@@ -819,6 +821,77 @@ namespace AppRunTransform
             /// Nếu type=2, str_param là dilimeter
             /// </summary>
             public string str_param { get; set; }
+        }
+
+        private static DynaExp dyna = new DynaExp();
+        private static void CallFunction(IOrderedQueryable<FieldRule> rules, IOrderedEnumerable<IDictionary<string, object>> sorted_file1)
+        {
+            
+            var dt = new System.Data.DataTable();
+            foreach (var rule in rules)
+            {
+                if (rule.Type == 0)//math
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = rule.ExpValue.FormatWith(rec);
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
+
+
+                    }
+                }
+                else if (rule.Type == 2)//bool
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                    }
+                }
+                else if (rule.Type == 1)//string
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                    }
+                }
+                else if (rule.Type == 3)//FUNC_Num
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = dyna.FUNC_Num(rule.ExpValue.FormatWith(rec));
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                    }
+                }
+                else if (rule.Type == 4)//obj AS_IS/IF
+                {
+                    foreach (var rec in sorted_file1)
+                    {
+                        IDictionary<string, object> myUnderlyingObject = rec;
+                        var rule_result = dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec));
+                        //TODO: dòng này xữ lý chậm
+                        myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                    }
+                }
+
+            }
         }
     }
 }
