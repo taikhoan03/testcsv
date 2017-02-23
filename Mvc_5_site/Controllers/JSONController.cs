@@ -504,10 +504,18 @@ namespace Mvc_5_site.Controllers
         {
             var db = new BL.DA_Model();
             var job = db.mergeFileJob.FirstOrDefault(p => p.Id == id);
+            var mergeDetails = job.MergeDetails.XMLStringToListObject<BL.MergeDetail>();
+            foreach (var item in mergeDetails)
+            {
+                foreach (var field in item.Fields)
+                {
+                    field.FieldName = field.FieldName.ReplaceUnusedCharacters();
+                }
+            }
             var names = job.Filenames.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             try
             {
-                MergeFiles_(job.State, job.County, names.ToList(), job.MergeDetails.XMLStringToListObject<BL.MergeDetail>(),
+                MergeFiles_(job.State, job.County, names.ToList(), mergeDetails,
                     job.OutputFilename);
                 job.Status = BL.JobStatus.Done.ToString();
                 job.ErrorDetail = "";
@@ -532,6 +540,7 @@ namespace Mvc_5_site.Controllers
             }
             finally
             {
+                GC.Collect();
                 db.SaveChanges();
             }
 
@@ -830,94 +839,7 @@ namespace Mvc_5_site.Controllers
 
             }
 
-            //foreach (var _group in group1)
-            //{
-            //    //foreach (var record in _group)
-            //    //{
-
-            //    //}
-            //    var breakOtherRecords = false;
-            //    var ignoreAll = false;
-            //    var record = _group.FirstOrDefault();
-            //    foreach (var sortField in fields_sort)
-            //    {
-            //        try
-            //        {
-            //            if (sortField.duplicateAction == DuplicateAction.ResponseWithError)
-            //            {
-            //                throw new Exception("ResponseWithError");
-            //            }
-            //            else if (sortField.duplicateAction == DuplicateAction.PickupFirstValue)
-            //            {
-            //                breakOtherRecords = true;
-            //                break;
-            //                //ignoreAll = true;
-            //                //break;
-            //            }
-            //            else if (sortField.duplicateAction == DuplicateAction.PickupLastValue)
-            //            {
-            //                breakOtherRecords = true;
-            //                record[sortField.name] = _group.LastOrDefault()[sortField.name];
-            //                //ignoreAll = true;
-            //                break;
-            //            }
-            //            else if (sortField.duplicateAction == DuplicateAction.PickupFirstUn_NULL_value)
-            //            {
-            //                breakOtherRecords = true;
-            //                record[sortField.name] = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.name].ToString()))[sortField.name];
-            //                //ignoreAll = true;
-            //                break;
-            //            }
-            //            else if (sortField.duplicateAction == DuplicateAction.PickupMaximumValue)
-            //            {
-            //                breakOtherRecords = true;
-            //                record[sortField.name] = _group.Max(p => Convert.ToDecimal(p[sortField.name]));
-            //                //ignoreAll = true;
-            //                break;
-            //            }
-            //            else if (sortField.duplicateAction == DuplicateAction.PickupMinimumValue)
-            //            {
-            //                breakOtherRecords = true;
-            //                record[sortField.name] = _group.Min(p => Convert.ToDecimal(p[sortField.name]));
-            //                //ignoreAll = true;
-            //                break;
-            //            }
-            //            else if (sortField.duplicateAction == DuplicateAction.SumAllRow)
-            //            {
-            //                breakOtherRecords = true;
-            //                record[sortField.name] = _group.Sum(p => Convert.ToDecimal(p[sortField.name]));
-            //                //ignoreAll = true;
-            //                break;
-            //            }
-            //            //TODO: ConcatenateWithDelimiter phải xác định delimeter
-            //            else if (sortField.duplicateAction == DuplicateAction.ConcatenateWithDelimiter)
-            //            {
-            //                breakOtherRecords = true;
-            //                record[sortField.name] = string.Join(",", _group.Select(i => i[sortField.name]));
-            //                //ignoreAll = true;
-            //                break;
-            //            }
-            //        }
-            //        catch (Exception ex)
-            //        {
-
-            //            throw new Exception("FAIL at: " + sortField.name
-            //                + ", sortType: " + (DuplicateAction)sortField.duplicateAction + Environment.NewLine + "Record: " + Environment.NewLine +
-            //                Newtonsoft.Json.JsonConvert.SerializeObject(_group, Newtonsoft.Json.Formatting.Indented));
-            //        }
-            //    }
-            //    foreach (var rec in _group)
-            //    {
-            //        if (ignoreAll)
-            //            break;
-
-            //        allrecs.Add(rec);
-
-            //        if (breakOtherRecords)
-            //            break;
-            //    }
-
-            //}
+            
             //Sorting
 
             var sorted_file1 = Enumerable.Empty<IDictionary<string, object>>().OrderBy(x => 1);
@@ -1095,6 +1017,7 @@ namespace Mvc_5_site.Controllers
             //write file
             if(writeFile)
                 Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") +"\\"+Config.Data.GetKey("tmp_folder_process")+"\\"+ws.State+"\\"+ws.County+"\\"+wsFile.Filename, sorted_file1.ToList());
+            GC.Collect();
             return Json(rs.Take(showLimit), JsonRequestBehavior.AllowGet);
             //var sb = new System.Text.StringBuilder("");
             //sb.Append(string.Join(tab, header) + Environment.NewLine);
@@ -1456,7 +1379,7 @@ namespace Mvc_5_site.Controllers
 
                 //}
             }
-            
+            GC.Collect();
             return sorted_file1;
         }
         private IEnumerable<IDictionary<string, object>> Process_final(int fileid, decimal limit = 100, bool writeFile = false, int showLimit = 1000, bool addSequence = true, bool applyRules = true)
@@ -1885,182 +1808,7 @@ namespace Mvc_5_site.Controllers
 
             }
         }
-        public void testLinkage3(int id)
-        {
-
-            var db = new BL.DA_Model();
-            var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
-
-            if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
-
-
-            var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
-            var dic = new Dictionary<string, IEnumerable<IDictionary<string, object>>>();
-            var limit = 200000;// 2*1000*1000*1000;
-                               //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
-                               //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
-
-
-            var files = new List<int>();
-            foreach (var item in linkageData)
-            {
-                if (files.FirstOrDefault(p => p == item.firstId) == 0)
-                {
-                    files.Add(item.firstId);
-                }
-                if (files.FirstOrDefault(p => p == item.sndId) == 0)
-                {
-                    files.Add(item.sndId);
-                }
-            }
-            var ls = new List<IEnumerable<IDictionary<string, object>>>();
-            var allRec = new List<IDictionary<string, object>>();
-            //var insRec = new Dictionary<string, object>();
-
-            //foreach (var item in files)
-            //{
-            //    var loadF1 = Process(item, limit: 1, addSequence: false, applyRules: false);
-            //    var firstF1 = loadF1.First();
-
-            //    foreach (var col in firstF1.Keys)
-            //    {
-            //        if (!insRec.ContainsKey(col))
-            //        {
-            //            insRec.Add(col, "");
-            //        }
-            //    }
-            //}
-
-            var groupLinkageData = linkageData.GroupBy(p => p.firstId + p.sndId);
-            string key = groupLinkageData.First().First().firstField;
-            string sndKey = groupLinkageData.First().Last().firstField;
-            foreach (var item in groupLinkageData)
-            {
-                var FF_result = new List<IDictionary<string, object>>();
-                var loadF1 = Process(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
-
-                var loadF2 = Process(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
-
-                var firstF1 = loadF1.First();
-                var firstF2 = loadF2.First();
-
-
-
-                //missing field nếu ko join dc
-                var ff = from p in loadF1
-                         join pp in loadF2
-                         on new { a = p[item.First().firstField], b = p[item.Last().firstField] } equals new { a = pp[item.First().sndField], b = pp[item.Last().sndField] }
-                         into ps
-                         from g in ps//.DefaultIfEmpty()
-                         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
-
-
-                foreach (var gg in ff)
-                {
-                    var new_rec = new Dictionary<string,object>(); //insRec.ToDictionary(x => x.Key, x => x.Value);// 
-                    foreach (var col in gg)
-                    {
-
-                        if (!new_rec.ContainsKey(col.Key))
-                        {
-                            new_rec.Add(col.Key, col.Value);
-                        }
-                        else
-                        {
-                            new_rec[col.Key] = col.Value;
-                        }
-                    }
-                    //new_rec[col.] = col.Value;
-                    //FF_result.Add(new_rec.ToDictionary(x => x.key, x => x.value));
-                    FF_result.Add(new_rec);
-
-                }
-                foreach (var f1 in loadF1)
-                {
-                    f1.Clear();
-                }
-                foreach (var f1 in loadF2)
-                {
-                    f1.Clear();
-                }
-                //foreach (var gg in ff)
-                //{
-                //    var new_rec = new List<KeyValue>(); //insRec.ToDictionary(x => x.Key, x => x.Value);// 
-                //    foreach (var col in gg)
-                //    {
-
-                //        if (new_rec.FirstOrDefault(x => x.key == col.Key) == null)
-                //        {
-                //            new_rec.Add(KeyValue.createNew(col.Key, col.Value));
-                //        }
-                //        //if (!new_rec.ContainsKey(col.Key))
-                //        //{
-                //        //    new_rec.Add(col.Key, col.Value);
-                //        //}
-                //        //else
-                //        //{
-                //        //    //if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
-                //        //    new_rec[col.Key] = col.Value;
-                //        //}
-                //    }
-                //    //new_rec[col.] = col.Value;
-                //    FF_result.Add(new_rec.ToDictionary(x => x.key, x => x.value));
-                //    //FF_result.Add(new_rec);
-
-                //}
-                ls.Add(FF_result);
-            }
-
-
-            var lsDataTable = new List<DataTable>();
-            foreach (var item in ls)
-            {
-                lsDataTable.Add(Ulti.ToDataTable(item));
-            }
-            var dtAll = Ulti.MergeAll(lsDataTable, key);// new DataTable();
-            //           var result = ls
-            //               .SelectMany(dict => dict)
-            //                        //.ToLookup(pair => pair[key], pair => pair)
-            //                        .ToLookup(x => Tuple.Create(x[key], x[sndKey]))//pair[key], pair => pair)
-            //                        .ToDictionary(group => group.Key, group => group.SelectMany(c => c)
-            //                        //.Select(k=>k.fi)
-            //                        //.GroupBy(k => k.Key)
-            //                        //.Select(k => k.FirstOrDefault(p => !string.IsNullOrEmpty(p[])
-            //                        //.Select(k=>k.First())
-            //                        //)
-            //                        //)
-            //);
-            //           var a = Ulti.ToDataTable(ls.First().ToList());
-            //var aa = result.Select(p => p.Value.ToDictionary(x => x.Key, x => x.Value));//.ToDictionary(x => x.ToDictionary(y=>y.Key), x => x.ToDictionary(y => y.Value));
-            //var rs = new List<IDictionary<string, object>>();
-            //foreach (var rec in result.Select(p=>p.Value))
-            //{
-            //    var cols = new Dictionary<string, object>();
-            //    //var a = rec;
-            //    foreach (var col in rec)
-            //    {
-            //        if (!cols.ContainsKey(col.Key))
-            //            cols.Add(col.Key, col.Value);
-            //        else
-            //        {
-            //            if(string.IsNullOrEmpty(cols[col.Key].ToString()))
-            //                cols[col.Key] = col.Value;
-            //        }
-
-            //    }
-            //    rs.Add(cols);
-            //}
-            Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
-                "testLinkage.csv", dtAll);
-            //foreach (var item in lsDataTable)
-            //{
-            //    item.Clear();
-            //}
-            lsDataTable.Clear();
-            lsDataTable = null;
-            dtAll.Dispose();
-            GC.Collect();
-        }
+        
         public void testMap(int id,bool cleanUpResult=false)
         {
 
@@ -2338,9 +2086,351 @@ namespace Mvc_5_site.Controllers
             dtAll.Dispose();
             GC.Collect();
         }
-        public void testLinkage2(int id)
+
+        #region TestLinkage
+        //public void testLinkage(int id)
+        //{
+        //    //var f1 = Process(3011,limit:10,addSequence:false,applyRules:false);
+        //    //var f2 = Process(3010, limit: 10, addSequence: false, applyRules: false);
+        //    //var f3 = Process(3009, limit: 10, addSequence: false, applyRules: false);
+
+        //    //var linkageData = new List<LinkageItem>();
+        //    //linkageData.Add(new LinkageItem
+        //    //{
+        //    //    firstId = 3011,
+        //    //    firstFilename = "File_1.txt",
+        //    //    firstField = "PARCEL_NUMBER",
+        //    //    sndId = 3010,
+        //    //    sndFilename = "File_2.txt",
+        //    //    sndField = "PARCEL_NUMBER"
+        //    //});
+        //    //linkageData.Add(new LinkageItem
+        //    //{
+        //    //    firstId = 3010,
+        //    //    firstFilename = "File_2.txt",
+        //    //    firstField = "PARCEL_NUMBER",
+        //    //    sndId = 3009,
+        //    //    sndFilename = "File_3.txt",
+        //    //    sndField = "PARCELNUMBER"
+        //    //});
+        //    //linkageData.Add(new LinkageItem
+        //    //{
+        //    //    firstId = 3011,
+        //    //    firstFilename = "File_1.txt",
+        //    //    firstField = "PARCEL_NUMBER",
+        //    //    sndId = 3009,
+        //    //    sndFilename = "File_3.txt",
+        //    //    sndField = "PARCELNUMBER"
+        //    //});
+        //    var db = new BL.DA_Model();
+        //    var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
+
+        //    if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
+
+
+        //    var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
+        //    var dic = new Dictionary<string, IEnumerable<IDictionary<string, object>>>();
+        //    var limit = 10000;
+        //    //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
+        //    //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
+        //    var FF_result = new List<IDictionary<string, object>>();
+        //    foreach (var item in linkageData)
+        //    {
+        //        var loadF1 = Process(item.firstId, limit: limit, addSequence: false, applyRules: false);
+
+        //        var loadF2 = Process(item.sndId, limit: limit, addSequence: false, applyRules: false);
+
+        //        var firstF1 = loadF1.First();
+        //        var firstF2 = loadF2.First();
+        //        foreach (var col in firstF2.Keys)
+        //        {
+        //            if (!firstF1.ContainsKey(col))
+        //            {
+        //                foreach (var rec in loadF1)
+        //                {
+        //                    //var value = rec[item.firstField];
+        //                    //rec.Remove(item.sndField);
+        //                    rec.Add(col, "");
+        //                }
+        //            }
+        //        }
+
+        //        //if (!firstF1.ContainsKey(item.sndField))
+        //        //{
+        //        //    foreach (var rec in loadF1)
+        //        //    {
+        //        //        //var value = rec[item.firstField];
+        //        //        //rec.Remove(item.sndField);
+        //        //        rec.Add(item.sndField, rec[item.firstField]);
+        //        //    }
+        //        //}
+        //        foreach (var col in firstF1.Keys)
+        //        {
+        //            if (!firstF2.ContainsKey(col))
+        //            {
+        //                foreach (var rec in loadF2)
+        //                {
+        //                    //var value = rec[item.sndField];
+        //                    //rec.Remove(item.sndField);
+        //                    rec.Add(col, "");
+        //                }
+        //            }
+        //        }
+        //        //if (!firstF2.ContainsKey(item.firstField))
+        //        //{
+        //        //    foreach (var rec in loadF2)
+        //        //    {
+        //        //        //var value = rec[item.sndField];
+        //        //        //rec.Remove(item.sndField);
+        //        //        rec.Add(item.firstField, rec[item.sndField]);
+        //        //    }
+        //        //}
+
+
+        //        //missing field nếu ko join dc
+        //        var ff = from p in loadF1
+        //                 join pp in loadF2
+        //                 on p[item.firstField] equals pp[item.sndField]
+        //                 into ps
+        //                 from g in ps.DefaultIfEmpty()
+        //                 select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
+
+
+        //        //FF_result= from p in FF_result
+        //        //           join pp in loadF1
+        //        //           on p. equals pp[item.sndField]
+        //        //           select p.Concat(pp.Where(kvp => !p.ContainsKey(kvp.Key)));
+
+        //        foreach (var gg in ff)
+        //        {
+        //            var new_rec = new Dictionary<string, object>();
+        //            foreach (var col in gg)
+        //            {
+        //                if (!new_rec.ContainsKey(col.Key))
+        //                {
+        //                    new_rec.Add(col.Key, col.Value);
+        //                }
+        //                else
+        //                {
+        //                    if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
+        //                        new_rec[col.Key] = col.Value;
+        //                }
+        //            }
+
+        //            FF_result.Add(new_rec);
+
+        //        }
+
+        //        //var ff = loadF1.Concat(loadF2);//.GroupBy(d => d.Keys)             .ToDictionary(d => d.Key, d => d.First().Values);
+
+        //        if (!dic.ContainsKey(item.firstFilename + item.sndFilename))
+        //            dic.Add(item.firstFilename + item.sndFilename, FF_result);
+        //        //if (!dic.ContainsKey(item.sndFilename))
+        //        //    dic.Add(item.sndFilename, loadF2);
+        //    }
+        //    //           var ls = new List<IEnumerable<IDictionary<string, object>>>();
+        //    //           foreach (var item in dic)
+        //    //           {
+        //    //               ls.Add(item.Value);
+        //    //           }
+        //    //           //{
+        //    //           //    f1,f2,f3
+        //    //           //};
+        //    //           // left outer join
+        //    //           var key = linkageData.First().firstField;
+        //    //           var result = ls
+        //    //               .SelectMany(dict => dict)
+        //    //                        .ToLookup(pair => pair[key], pair => pair)
+        //    //                        .ToDictionary(group => group.Key, group => group.SelectMany(c=>c)
+        //    //                        .GroupBy(k=>k.Key)
+        //    //                        .Select(k=>k.FirstOrDefault(p=>!string.IsNullOrEmpty(p.Value.ToString())))
+        //    //                        //.GroupBy(k => k.Key)
+        //    ////.Where(g => g.Count() > 1)
+        //    ////.Select(g => g)
+        //    //);
+
+        //    //           //.ToDictionary(group => group.Key, group => group.SelectMany(c =>c));
+        //    //           // refilter to left inner join
+        //    //           //var lsResult = from p in dic[linkageData.First().firstFilename]
+        //    //           //               join pp in result
+        //    //           //               on p[key] equals pp.Key
+        //    //           //               select pp.Value
+        //    //           //               ;
+        //    //           var _rs = new List<IDictionary<string, object>>();
+
+        //    //           //foreach (var rec in lsResult)
+        //    //           //{
+        //    //           //    _rs.Add(rec.ToDictionary(x => x.Key, x => x.Value));
+        //    //           //    //_rs.Add(rec);
+        //    //           //}
+        //    //           foreach (var rec in result)
+        //    //           {
+        //    //               _rs.Add(rec.Value.ToDictionary(x => x.Key, x => x.Value));
+        //    //               //_rs.Add(rec);
+        //    //           }
+
+        //    Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
+        //        "testLinkage.csv", FF_result);
+        //    //foreach (var key in result)
+        //    //{
+        //    //    //key.Value.ToDictionary()
+        //    //    //foreach (var item in key.Value)
+        //    //    //{
+        //    //    //    item.Value
+        //    //    //}
+        //    //}
+        //    //var result = f1.Union(f2);
+        //    //var aa=result.ToDictionary(d => d.Keys, d => d.First().Value);
+        //    //var j1=from p1 in f1 
+        //    //       join p2 in f2
+        //    //       on p1["PARCEL_NUMBER"] equals p2["PARCEL_NUMBER"]
+        //    //       into a
+        //    //       from b in a.DefaultIfEmpty()
+        //    //       select new
+        //    //       {
+        //    //           b[""],
+        //    //           Name = bk.BookNm,
+        //    //           b.PaymentMode
+        //    //       };
+        //}
+        //public void testLinkage2(int id)
+        //{
+
+        //    var db = new BL.DA_Model();
+        //    var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
+
+        //    if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
+
+
+        //    var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
+        //    var dic = new Dictionary<string, IEnumerable<IDictionary<string, object>>>();
+        //    var limit = 200000;// 2*1000*1000*1000;
+        //                       //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
+        //                       //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
+
+
+        //    var files = new List<int>();
+        //    foreach (var item in linkageData)
+        //    {
+        //        if (files.FirstOrDefault(p => p == item.firstId) == 0)
+        //        {
+        //            files.Add(item.firstId);
+        //        }
+        //        if (files.FirstOrDefault(p => p == item.sndId) == 0)
+        //        {
+        //            files.Add(item.sndId);
+        //        }
+        //    }
+        //    var ls = new List<IEnumerable<IDictionary<string, object>>>();
+        //    var allRec = new List<IDictionary<string, object>>();
+        //    var insRec = new Dictionary<string, object>();
+
+        //    foreach (var item in files)
+        //    {
+        //        var loadF1 = Process(item, limit: 1, addSequence: false, applyRules: false);
+        //        var firstF1 = loadF1.First();
+
+        //        foreach (var col in firstF1.Keys)
+        //        {
+        //            if (!insRec.ContainsKey(col))
+        //            {
+        //                insRec.Add(col, "");
+        //            }
+        //        }
+        //    }
+
+        //    var groupLinkageData = linkageData.GroupBy(p => p.firstId + p.sndId);
+        //    string key = groupLinkageData.First().First().firstField;
+        //    string sndKey = groupLinkageData.First().Last().firstField;
+        //    foreach (var item in groupLinkageData)
+        //    {
+        //        var FF_result = new List<IDictionary<string, object>>();
+        //        var loadF1 = Process(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
+
+        //        var loadF2 = Process(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
+
+        //        var firstF1 = loadF1.First();
+        //        var firstF2 = loadF2.First();
+
+
+
+        //        //missing field nếu ko join dc
+        //        var ff = from p in loadF1
+        //                 join pp in loadF2
+        //                 on new { a = p[item.First().firstField], b = p[item.Last().firstField] } equals new { a = pp[item.First().sndField], b = pp[item.Last().sndField] }
+        //                 into ps
+        //                 from g in ps//.DefaultIfEmpty()
+        //                 select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
+
+
+        //        foreach (var gg in ff)
+        //        {
+        //            var new_rec = insRec.ToDictionary(x => x.Key, x => x.Value);// new Dictionary<string, object>();
+        //            foreach (var col in gg)
+        //            {
+        //                if (!new_rec.ContainsKey(col.Key))
+        //                {
+        //                    new_rec.Add(col.Key, col.Value);
+        //                }
+        //                else
+        //                {
+        //                    //if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
+        //                    new_rec[col.Key] = col.Value;
+        //                }
+        //            }
+        //            //new_rec[col.] = col.Value;
+        //            FF_result.Add(new_rec);
+
+        //        }
+        //        ls.Add(FF_result);
+        //    }
+
+
+        //    var lsDataTable = new List<DataTable>();
+        //    foreach (var item in ls)
+        //    {
+        //        lsDataTable.Add(Ulti.ToDataTable(item));
+        //    }
+        //    var dtAll = Ulti.MergeAll(lsDataTable, "PARCEL_NUMBER");// new DataTable();
+        //    //           var result = ls
+        //    //               .SelectMany(dict => dict)
+        //    //                        //.ToLookup(pair => pair[key], pair => pair)
+        //    //                        .ToLookup(x => Tuple.Create(x[key], x[sndKey]))//pair[key], pair => pair)
+        //    //                        .ToDictionary(group => group.Key, group => group.SelectMany(c => c)
+        //    //                        //.Select(k=>k.fi)
+        //    //                        //.GroupBy(k => k.Key)
+        //    //                        //.Select(k => k.FirstOrDefault(p => !string.IsNullOrEmpty(p[])
+        //    //                        //.Select(k=>k.First())
+        //    //                        //)
+        //    //                        //)
+        //    //);
+        //    //           var a = Ulti.ToDataTable(ls.First().ToList());
+        //    //var aa = result.Select(p => p.Value.ToDictionary(x => x.Key, x => x.Value));//.ToDictionary(x => x.ToDictionary(y=>y.Key), x => x.ToDictionary(y => y.Value));
+        //    //var rs = new List<IDictionary<string, object>>();
+        //    //foreach (var rec in result.Select(p=>p.Value))
+        //    //{
+        //    //    var cols = new Dictionary<string, object>();
+        //    //    //var a = rec;
+        //    //    foreach (var col in rec)
+        //    //    {
+        //    //        if (!cols.ContainsKey(col.Key))
+        //    //            cols.Add(col.Key, col.Value);
+        //    //        else
+        //    //        {
+        //    //            if(string.IsNullOrEmpty(cols[col.Key].ToString()))
+        //    //                cols[col.Key] = col.Value;
+        //    //        }
+
+        //    //    }
+        //    //    rs.Add(cols);
+        //    //}
+        //    Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
+        //        "testLinkage.csv", dtAll);
+
+        //}
+        public void testLinkage3(int id)
         {
-            
+
             var db = new BL.DA_Model();
             var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
 
@@ -2350,14 +2440,14 @@ namespace Mvc_5_site.Controllers
             var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
             var dic = new Dictionary<string, IEnumerable<IDictionary<string, object>>>();
             var limit = 200000;// 2*1000*1000*1000;
-            //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
-            //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
-            
+                               //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
+                               //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
+
 
             var files = new List<int>();
             foreach (var item in linkageData)
             {
-                if(files.FirstOrDefault(p=>p==item.firstId) == 0)
+                if (files.FirstOrDefault(p => p == item.firstId) == 0)
                 {
                     files.Add(item.firstId);
                 }
@@ -2367,24 +2457,24 @@ namespace Mvc_5_site.Controllers
                 }
             }
             var ls = new List<IEnumerable<IDictionary<string, object>>>();
-            var allRec= new List<IDictionary<string, object>>();
-            var insRec = new Dictionary<string, object>();
-            
-            foreach (var item in files)
-            {
-                var loadF1 = Process(item, limit: 1, addSequence: false, applyRules: false);
-                var firstF1 = loadF1.First();
+            var allRec = new List<IDictionary<string, object>>();
+            //var insRec = new Dictionary<string, object>();
 
-                foreach (var col in firstF1.Keys)
-                {
-                    if (!insRec.ContainsKey(col))
-                    {
-                        insRec.Add(col, "");
-                    }
-                }
-            }
+            //foreach (var item in files)
+            //{
+            //    var loadF1 = Process(item, limit: 1, addSequence: false, applyRules: false);
+            //    var firstF1 = loadF1.First();
 
-            var groupLinkageData = linkageData.GroupBy(p => p.firstId+p.sndId);
+            //    foreach (var col in firstF1.Keys)
+            //    {
+            //        if (!insRec.ContainsKey(col))
+            //        {
+            //            insRec.Add(col, "");
+            //        }
+            //    }
+            //}
+
+            var groupLinkageData = linkageData.GroupBy(p => p.firstId + p.sndId);
             string key = groupLinkageData.First().First().firstField;
             string sndKey = groupLinkageData.First().Last().firstField;
             foreach (var item in groupLinkageData)
@@ -2402,7 +2492,7 @@ namespace Mvc_5_site.Controllers
                 //missing field nếu ko join dc
                 var ff = from p in loadF1
                          join pp in loadF2
-                         on new { a=p[item.First().firstField] , b=p[item.Last().firstField] } equals new { a=pp[item.First().sndField],b=pp[item.Last().sndField]}
+                         on new { a = p[item.First().firstField], b = p[item.Last().firstField] } equals new { a = pp[item.First().sndField], b = pp[item.Last().sndField] }
                          into ps
                          from g in ps//.DefaultIfEmpty()
                          select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
@@ -2410,33 +2500,67 @@ namespace Mvc_5_site.Controllers
 
                 foreach (var gg in ff)
                 {
-                    var new_rec = insRec.ToDictionary(x => x.Key, x => x.Value);// new Dictionary<string, object>();
+                    var new_rec = new Dictionary<string, object>(); //insRec.ToDictionary(x => x.Key, x => x.Value);// 
                     foreach (var col in gg)
                     {
+
                         if (!new_rec.ContainsKey(col.Key))
                         {
                             new_rec.Add(col.Key, col.Value);
                         }
                         else
                         {
-                            //if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
                             new_rec[col.Key] = col.Value;
                         }
                     }
                     //new_rec[col.] = col.Value;
+                    //FF_result.Add(new_rec.ToDictionary(x => x.key, x => x.value));
                     FF_result.Add(new_rec);
 
                 }
+                foreach (var f1 in loadF1)
+                {
+                    f1.Clear();
+                }
+                foreach (var f1 in loadF2)
+                {
+                    f1.Clear();
+                }
+                //foreach (var gg in ff)
+                //{
+                //    var new_rec = new List<KeyValue>(); //insRec.ToDictionary(x => x.Key, x => x.Value);// 
+                //    foreach (var col in gg)
+                //    {
+
+                //        if (new_rec.FirstOrDefault(x => x.key == col.Key) == null)
+                //        {
+                //            new_rec.Add(KeyValue.createNew(col.Key, col.Value));
+                //        }
+                //        //if (!new_rec.ContainsKey(col.Key))
+                //        //{
+                //        //    new_rec.Add(col.Key, col.Value);
+                //        //}
+                //        //else
+                //        //{
+                //        //    //if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
+                //        //    new_rec[col.Key] = col.Value;
+                //        //}
+                //    }
+                //    //new_rec[col.] = col.Value;
+                //    FF_result.Add(new_rec.ToDictionary(x => x.key, x => x.value));
+                //    //FF_result.Add(new_rec);
+
+                //}
                 ls.Add(FF_result);
             }
 
-            
+
             var lsDataTable = new List<DataTable>();
             foreach (var item in ls)
             {
                 lsDataTable.Add(Ulti.ToDataTable(item));
             }
-            var dtAll = Ulti.MergeAll(lsDataTable, "PARCEL_NUMBER");// new DataTable();
+            var dtAll = Ulti.MergeAll(lsDataTable, key);// new DataTable();
             //           var result = ls
             //               .SelectMany(dict => dict)
             //                        //.ToLookup(pair => pair[key], pair => pair)
@@ -2471,213 +2595,17 @@ namespace Mvc_5_site.Controllers
             //}
             Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
                 "testLinkage.csv", dtAll);
-
-        }
-        public void testLinkage(int id)
-        {
-            //var f1 = Process(3011,limit:10,addSequence:false,applyRules:false);
-            //var f2 = Process(3010, limit: 10, addSequence: false, applyRules: false);
-            //var f3 = Process(3009, limit: 10, addSequence: false, applyRules: false);
-
-            //var linkageData = new List<LinkageItem>();
-            //linkageData.Add(new LinkageItem
+            //foreach (var item in lsDataTable)
             //{
-            //    firstId = 3011,
-            //    firstFilename = "File_1.txt",
-            //    firstField = "PARCEL_NUMBER",
-            //    sndId = 3010,
-            //    sndFilename = "File_2.txt",
-            //    sndField = "PARCEL_NUMBER"
-            //});
-            //linkageData.Add(new LinkageItem
-            //{
-            //    firstId = 3010,
-            //    firstFilename = "File_2.txt",
-            //    firstField = "PARCEL_NUMBER",
-            //    sndId = 3009,
-            //    sndFilename = "File_3.txt",
-            //    sndField = "PARCELNUMBER"
-            //});
-            //linkageData.Add(new LinkageItem
-            //{
-            //    firstId = 3011,
-            //    firstFilename = "File_1.txt",
-            //    firstField = "PARCEL_NUMBER",
-            //    sndId = 3009,
-            //    sndFilename = "File_3.txt",
-            //    sndField = "PARCELNUMBER"
-            //});
-            var db = new BL.DA_Model();
-            var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
-
-            if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
-
-
-            var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
-            var dic = new Dictionary<string,IEnumerable<IDictionary<string, object>>>();
-            var limit = 10000;
-            //var ff_result = Enumerable.Empty<Enumerable.Empty<KeyValuePair<string, object>>>();//<IEnumerable<KeyValuePair<string, object>>>();
-            //var FF_result = new List<IEnumerable<KeyValuePair<string, object>>>();
-            var FF_result = new List<IDictionary<string, object>>();
-            foreach (var item in linkageData)
-            {
-                var loadF1 = Process(item.firstId, limit: limit, addSequence: false, applyRules: false);
-
-                var loadF2 = Process(item.sndId, limit: limit, addSequence: false, applyRules: false);
-
-                var firstF1 = loadF1.First();
-                var firstF2 = loadF2.First();
-                foreach (var col in firstF2.Keys)
-                {
-                    if (!firstF1.ContainsKey(col))
-                    {
-                        foreach (var rec in loadF1)
-                        {
-                            //var value = rec[item.firstField];
-                            //rec.Remove(item.sndField);
-                            rec.Add(col, "");
-                        }
-                    }
-                }
-
-                //if (!firstF1.ContainsKey(item.sndField))
-                //{
-                //    foreach (var rec in loadF1)
-                //    {
-                //        //var value = rec[item.firstField];
-                //        //rec.Remove(item.sndField);
-                //        rec.Add(item.sndField, rec[item.firstField]);
-                //    }
-                //}
-                foreach (var col in firstF1.Keys)
-                {
-                    if (!firstF2.ContainsKey(col))
-                    {
-                        foreach (var rec in loadF2)
-                        {
-                            //var value = rec[item.sndField];
-                            //rec.Remove(item.sndField);
-                            rec.Add(col, "");
-                        }
-                    }
-                }
-                //if (!firstF2.ContainsKey(item.firstField))
-                //{
-                //    foreach (var rec in loadF2)
-                //    {
-                //        //var value = rec[item.sndField];
-                //        //rec.Remove(item.sndField);
-                //        rec.Add(item.firstField, rec[item.sndField]);
-                //    }
-                //}
-
-
-                //missing field nếu ko join dc
-                var ff = from p in loadF1
-                         join pp in loadF2
-                         on p[item.firstField] equals pp[item.sndField]
-                         into ps
-                         from g in ps.DefaultIfEmpty()
-                         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() :g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
-
-
-                //FF_result= from p in FF_result
-                //           join pp in loadF1
-                //           on p. equals pp[item.sndField]
-                //           select p.Concat(pp.Where(kvp => !p.ContainsKey(kvp.Key)));
-                
-                foreach (var gg in ff)
-                {
-                    var new_rec = new Dictionary<string, object>();
-                    foreach (var col in gg)
-                    {
-                        if (!new_rec.ContainsKey(col.Key))
-                        {
-                            new_rec.Add(col.Key, col.Value);
-                        }
-                        else
-                        {
-                            if (string.IsNullOrEmpty(new_rec[col.Key].ToString()) && !string.IsNullOrEmpty(col.Value.ToString()))
-                                new_rec[col.Key] = col.Value;
-                        }
-                    }
-                    
-                    FF_result.Add(new_rec);
-                    
-                }
-
-                //var ff = loadF1.Concat(loadF2);//.GroupBy(d => d.Keys)             .ToDictionary(d => d.Key, d => d.First().Values);
-
-                if (!dic.ContainsKey(item.firstFilename+item.sndFilename))
-                    dic.Add(item.firstFilename + item.sndFilename, FF_result);
-                //if (!dic.ContainsKey(item.sndFilename))
-                //    dic.Add(item.sndFilename, loadF2);
-            }
- //           var ls = new List<IEnumerable<IDictionary<string, object>>>();
- //           foreach (var item in dic)
- //           {
- //               ls.Add(item.Value);
- //           }
- //           //{
- //           //    f1,f2,f3
- //           //};
- //           // left outer join
- //           var key = linkageData.First().firstField;
- //           var result = ls
- //               .SelectMany(dict => dict)
- //                        .ToLookup(pair => pair[key], pair => pair)
- //                        .ToDictionary(group => group.Key, group => group.SelectMany(c=>c)
- //                        .GroupBy(k=>k.Key)
- //                        .Select(k=>k.FirstOrDefault(p=>!string.IsNullOrEmpty(p.Value.ToString())))
- //                        //.GroupBy(k => k.Key)
- ////.Where(g => g.Count() > 1)
- ////.Select(g => g)
- //);
-           
- //           //.ToDictionary(group => group.Key, group => group.SelectMany(c =>c));
- //           // refilter to left inner join
- //           //var lsResult = from p in dic[linkageData.First().firstFilename]
- //           //               join pp in result
- //           //               on p[key] equals pp.Key
- //           //               select pp.Value
- //           //               ;
- //           var _rs = new List<IDictionary<string, object>>();
-
- //           //foreach (var rec in lsResult)
- //           //{
- //           //    _rs.Add(rec.ToDictionary(x => x.Key, x => x.Value));
- //           //    //_rs.Add(rec);
- //           //}
- //           foreach (var rec in result)
- //           {
- //               _rs.Add(rec.Value.ToDictionary(x => x.Key, x => x.Value));
- //               //_rs.Add(rec);
- //           }
-
-            Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
-                "testLinkage.csv", FF_result);
-            //foreach (var key in result)
-            //{
-            //    //key.Value.ToDictionary()
-            //    //foreach (var item in key.Value)
-            //    //{
-            //    //    item.Value
-            //    //}
+            //    item.Clear();
             //}
-            //var result = f1.Union(f2);
-            //var aa=result.ToDictionary(d => d.Keys, d => d.First().Value);
-            //var j1=from p1 in f1 
-            //       join p2 in f2
-            //       on p1["PARCEL_NUMBER"] equals p2["PARCEL_NUMBER"]
-            //       into a
-            //       from b in a.DefaultIfEmpty()
-            //       select new
-            //       {
-            //           b[""],
-            //           Name = bk.BookNm,
-            //           b.PaymentMode
-            //       };
+            lsDataTable.Clear();
+            lsDataTable = null;
+            dtAll.Dispose();
+            GC.Collect();
         }
+        #endregion
+
         public void test_groupby_keySort(int num)
         {
             var primaryKey = "PARCEL_NUMBER";

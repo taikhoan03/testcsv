@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Web;
 
-namespace Mvc_5_site.Helpers
+namespace ConsoleApplicationTest.Helpers
 {
     public static class ReadCSV
     {
@@ -17,20 +17,29 @@ namespace Mvc_5_site.Helpers
         public static List<IDictionary<string, object>> ReadAsDictionary(string name,string path, decimal limit)
         {
             name = name.Replace(".", EV.DOT);
+            //var data = Read(name, path, limit);
+            //var rs = new List<IDictionary<string, object>>();
+            //foreach (var item in data)
+            //{
+            //    var dictionary = new Dictionary<string, object>(item);
+            //    rs.Add(dictionary);
+            //}
+            //return rs;
             return readFromPath_AsDictionary(name,path, limit);
         }
+        
         public static List<IDictionary<string, object>> ReadAsDictionary(string path, decimal limit)
         {
             return readFromPath_AsDictionary(path, limit);
-        }
-        public static List<ExpandoObject> Read(string path, decimal limit)
-        {
-            return readFromPath(path, limit);
         }
         public static List<ExpandoObject> Read(string name, string path, decimal limit)
         {
             name = name.Replace(".", EV.DOT);
             return readFromPath(name, path, limit);
+        }
+        public static List<ExpandoObject> Read(string path, decimal limit)
+        {
+            return readFromPath(path, limit);
         }
         public static List<ExpandoObject> Read(string state,string county,string filename, decimal limit)
         {
@@ -102,7 +111,7 @@ namespace Mvc_5_site.Helpers
                 }
             }
         }
-        private static List<ExpandoObject> readFromPath(string name, string path, decimal limit)
+        private static List<ExpandoObject> readFromPath(string name,string path, decimal limit)
         {
             using (TextReader reader = System.IO.File.OpenText(path))
             {
@@ -321,6 +330,7 @@ namespace Mvc_5_site.Helpers
         }
         private static List<IDictionary<string, object>> readFromPath_AsDictionary(string name,string path, decimal limit, string delimiter = "\t")
         {
+
             using (TextReader reader = System.IO.File.OpenText(path))
             {
                 //var d = DateTime.Now;

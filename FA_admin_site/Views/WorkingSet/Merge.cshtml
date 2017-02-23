@@ -138,9 +138,9 @@
                 $('#reload').click();
             })
             //$.when(ajaxs).then(function () {
-                
+
             //});
-            
+
 
         });
         $('#isAppendToField').change(function () {
@@ -196,10 +196,16 @@
             }
             d.details = details;
             d.runAfterSave = true;
+            
             var url = '@Url.Action("postMerge", "WorkingSet")';
+            $.colorbox({ html: "<h3>Merging!!!, please wait...</h3>" });
             $.post(url, d)
                 .done(function (data) {
                     currentWs.click();
+                    $.colorbox.close();
+                    setTimeout(function () {
+                        $.colorbox({ html: "<h3>Merge done.</h3>" });
+                    }, 1000);
                 })
                 .fail(function (req) {
                     //files = [];
@@ -207,7 +213,7 @@
                 }).always(function () {
                     $('#btnsubmit').prop('disabled', false);
                 });
-            
+
             //console.log(d);
         });
     });
@@ -392,6 +398,19 @@ app.controller("myCtrl", function ($scope) {
                 }
             }
         } else {
+            var found = false;
+            var newName = $('#new_field_name').val().trim();
+            for (var i = 0; i < field_merge_rs.length; i++) {
+                var field_merge = field_merge_rs[i];
+                if (field_merge.new_name == newName) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found == true) {
+                alert("This name is already existed!!!");
+                return;
+            }
             field_merge_rs.push({
                 new_name: $('#new_field_name').val(),
                 merge_detail: _.without(fieldadded, '')

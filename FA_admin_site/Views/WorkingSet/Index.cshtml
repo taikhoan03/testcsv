@@ -1,4 +1,13 @@
-﻿<script src="~/scripts/custom/app.js"></script>
+﻿<style>
+    .divChkAll{
+        text-align: right; margin-right: 40px;
+        display:none;
+    }
+    .divChkAll input{
+        margin-right:10px
+    }
+</style>
+<script src="~/scripts/custom/app.js"></script>
 <script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
 <script src="~/scripts/custom/filesUpload.js"></script>
 <script type="text/javascript">
@@ -30,6 +39,7 @@
                             $('#tSample').show();
                             $('#tSample #tbody>tr:last').remove();
                         }).render(js_);
+                    $('.divChkAll').show();
                 }).fail(function (req) {
                     //console.log("1" + req.responseText);
                     alert(req.status + " : " + req.responseText);
@@ -77,6 +87,11 @@
                 });
         });
     });
+    function selectAll($chk) {
+        var status = $chk.prop("checked");
+        $('#tSample input[type="checkbox"]').prop("checked", status);
+        
+    }
 </script>
 <table id="sel_package" class="table">
 
@@ -95,13 +110,14 @@
 <table id="files" class="table">
     <tr></tr>
 </table>
-
-<div id="tSample" class="table" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+<div class="divChkAll"><input type="checkbox" onchange="selectAll($(this))" id="chkAll1" /><label for="chkAll1">Select All</label></div>
+<div id="tSample" class="table" style="display:none;width: 100%;overflow: scroll;background-color: #fff;margin-bottom:0px">
     <table class="table">
         <tr id="header"></tr>
         <tbody id="tbody"></tbody>
     </table>
 </div>
+<div class="divChkAll"><input type="checkbox" onchange="selectAll($(this))" id="chkAll2"/><label for="chkAll2">Select All</label></div>
 <input type="button" id="confirm-select" value="Continue" />
 <div id="extraInfo" style="display:none">
     Edition

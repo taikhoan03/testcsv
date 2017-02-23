@@ -72,7 +72,7 @@ namespace FA_admin_site.Controllers
             var ws = db.workingSets.Find(id);
             var req = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == id);
             if (req != null)
-                ViewBag.DownloadParam = Config.Get_local_control_site() + "/File/Download_outputFile?state=" + ws.State + "&county=" + ws.State + "&filename=" + req.OutputName;
+                ViewBag.DownloadParam = Config.Get_local_control_site() + "/File/Download_outputFile?state=" + ws.State + "&county=" + ws.County + "&filename=" + req.OutputName;
             else
                 ViewBag.DownloadParam = "";
             return View();

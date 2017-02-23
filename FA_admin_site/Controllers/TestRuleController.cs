@@ -67,7 +67,7 @@ namespace FA_admin_site.Controllers
             //}
 
 
-            var fields = concatAll.GetPlaceHolderName_ExpandObject();
+            var fields = concatAll.GetPlaceHolderName_ExpandObject().Distinct();
             return View(fields);
         }
         public class pairNameValue
@@ -152,7 +152,7 @@ namespace FA_admin_site.Controllers
                 {
 
                     var ruleForThisField = rule_.Where(p => p.OutputFieldId == group_field.Key).ToList();
-                    var fieldname = group_field.Key + EV.DOLLAR;
+                    var fieldname = group_field.First().FieldName + EV.DOLLAR;
                     foreach (var rule in ruleForThisField)
                     {
                         var rule_fullname = fieldname + rule.Name;

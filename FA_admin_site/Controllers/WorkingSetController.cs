@@ -206,6 +206,10 @@ namespace FA_admin_site.Controllers
             _mergeJob.Filenames = string.Join(",", mergeInfo.filenames);
             var now = DateTime.Now;
             _mergeJob.Finishdate = now;
+            foreach (var item in mergeInfo.details)
+            {
+                item.RenameTo = item.RenameTo.Trim().ReplaceUnusedCharacters();
+            }
             _mergeJob.MergeDetails = mergeInfo.details.XmlSerialize();
             _mergeJob.OutputFilename = mergeInfo.output_filename;
             _mergeJob.Runby = System.Web.HttpContext.Current.User.Identity.Name;
