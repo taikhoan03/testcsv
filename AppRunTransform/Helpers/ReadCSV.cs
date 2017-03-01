@@ -14,10 +14,10 @@ namespace AppRunTransform.Helpers
     public static class ReadCSV
     {
         private static decimal C_Default_limit = 90000000000;
-        public static List<IDictionary<string, object>> ReadAsDictionary(string name,string path, decimal limit)
+        public static List<Dictionary<string, object>> ReadAsDictionary(string name,string path, decimal limit)
         {
             name = name.Replace(".", EV.DOT);
-            return readFromPath_AsDictionary(name,path, limit);
+            return BL.Ulti.readFromPath_AsDictionary2(name,path, limit);
         }
         public static List<IDictionary<string, object>> ReadAsDictionary(string path, decimal limit)
         {
@@ -269,56 +269,160 @@ namespace AppRunTransform.Helpers
         }
         private static List<IDictionary<string, object>> readFromPath_AsDictionary(string name,string path, decimal limit, string delimiter = "\t")
         {
-            using (TextReader reader = System.IO.File.OpenText(path))
+            var w = System.Diagnostics.Stopwatch.StartNew();
+            var header_str = "";
+            int numOfRow = 0;
+            var hashedLine = new HashSet<string>();
+            var seperator = new string[] { delimiter };
+            //var header_str = reader.ReadLine();
+            var slipOption = StringSplitOptions.None;
+            using (StreamReader sr = File.OpenText(path))
             {
-                //var d = DateTime.Now;
-                //string line = reader.ReadLine();
-                //Console.WriteLine(line);
-                var header_str = reader.ReadLine();
-                var slipOption = StringSplitOptions.None;
-                var fields = header_str.Split(new string[] { delimiter }, slipOption)
-                    .Select(p => p.ReplaceUnusedCharacters()).ToArray();
-
-                var numOfField = fields.Length;
-
-                var lineArr = new string[numOfField];
-                string line;
-                var dic = new HashSet<CustomData>();
-                var rename = name + EV.DOLLAR;
-                dynamic MyDynamic;
-                IDictionary<string, object> myUnderlyingObject;
-                var data = new CustomData();
-                var seperator = new string[] { delimiter };
-                
-                while ((line = reader.ReadLine()) != null && limit > 0)
+                var header = sr.ReadLine();
+                header_str = header;
+                while (!sr.EndOfStream && limit > 0)
                 {
                     limit--;
-                    lineArr = line.Split(seperator, slipOption);
-                    MyDynamic = new ExpandoObject();
-                    myUnderlyingObject = MyDynamic;
-                    for (var i = 0; i < numOfField; i++)
-                    {
-                        myUnderlyingObject.Add(rename + fields[i], lineArr[i]);
 
+                    var line = sr.ReadLine();
+                    hashedLine.Add(line);
+                    numOfRow += 1;
 
-                    }
-                    data = new CustomData
-                    {
-                        Data = myUnderlyingObject,
-                        pureTextData = line,
-                    };
-                    dic.Add(data);
                 }
-                reader.Close();
-                reader.Dispose();
-                GC.Collect();
-                //foreach (var item in dic)
-                //{
-                //    item.pureTextData = null;
-                //}
-                return dic.Select(p => p.Data).ToList();
+            } //Finished. Close the file
 
+
+            var rename = name + EV.DOLLAR;
+            var fields = header_str.Split(new string[] { delimiter }, slipOption)
+                .Select(p => p.ReplaceUnusedCharacters()).ToArray();
+            var numOfField = fields.Length;
+            var arrNewFieldName = fields.Select(p => rename + p).ToArray();
+            var rs = new List<IDictionary<string, object>>(hashedLine.Count);
+
+            foreach (var line in hashedLine)
+            {
+                var MyDynamic = new ExpandoObject();
+                IDictionary<string, object> myUnderlyingObject = MyDynamic;
+                var linearr = line.Split(seperator, slipOption);
+                for (var j = 0; j < numOfField; j++)
+                {
+                    myUnderlyingObject.Add(arrNewFieldName[j], linearr[j]);
+                }
+                rs.Add(myUnderlyingObject);
             }
+
+            hashedLine.Clear();
+            hashedLine = null;
+            w.Stop();
+            Console.WriteLine("Elapsed TotalSeconds " + w.Elapsed.TotalSeconds + ", numOfRec:" + rs.Count);
+            return rs;
+
+            // code2
+            //var w = System.Diagnostics.Stopwatch.StartNew();
+            //var hashedLine = new List<string[]>();
+            //var numOfField = 0;
+            //var arrNewFieldName = new string[1];
+            //var rs = new List<IDictionary<string, object>>(hashedLine.Count);
+            //using (TextReader reader = System.IO.File.OpenText(path))
+            //{
+            //    var header_str = reader.ReadLine();
+            //    var slipOption = StringSplitOptions.None;
+            //    var fields = header_str.Split(new string[] { delimiter }, slipOption)
+            //        .Select(p => p.ReplaceUnusedCharacters()).ToArray();
+
+            //    numOfField = fields.Length;
+
+            //    var lineArr = new string[numOfField];
+            //    string line;
+            //    //var hs_line = new HashSet<string>();
+            //    var rename = name + EV.DOLLAR;
+            //    arrNewFieldName = fields.Select(p => rename + p).ToArray();
+
+            //    var seperator = new string[] { delimiter };
+
+
+            //    while (!string.IsNullOrWhiteSpace(line = reader.ReadLine()) && limit > 0)
+            //    {
+            //        limit--;
+
+            //        hashedLine.Add(line.Split(seperator, slipOption));
+            //    }
+
+            //    rs = new List<IDictionary<string, object>>(hashedLine.Count);
+
+
+
+            //}
+            //foreach (var ln in hashedLine)
+            //{
+            //    var MyDynamic = new ExpandoObject();
+            //    IDictionary<string, object> myUnderlyingObject = MyDynamic;
+            //    for (var i = 0; i < numOfField; i++)
+            //    {
+            //        myUnderlyingObject.Add(arrNewFieldName[i], ln[i]);
+            //    }
+            //    rs.Add(myUnderlyingObject);
+            //}
+            //hashedLine.Clear();
+            //hashedLine = null;
+            //Console.WriteLine("Elapsed TotalSeconds " + w.Elapsed.TotalSeconds + ", numOfRec:" + rs.Count);
+            //return rs.ToList();
+
+
+
+        }
+        private static List<Dictionary<string, object>> readFromPath_AsDictionary2(string name, string path, decimal limit, string delimiter = "\t")
+        {
+            var w = System.Diagnostics.Stopwatch.StartNew();
+            var header_str = "";
+            int numOfRow = 0;
+            var hashedLine = new HashSet<string>();
+            var seperator = new string[] { delimiter };
+            //var header_str = reader.ReadLine();
+            var slipOption = StringSplitOptions.None;
+            using (StreamReader sr = File.OpenText(path))
+            {
+                var header = sr.ReadLine();
+                header_str = header;
+                while (!sr.EndOfStream && limit > 0)
+                {
+                    limit--;
+
+                    var line = sr.ReadLine();
+                    hashedLine.Add(line);
+                    numOfRow += 1;
+
+                }
+            } //Finished. Close the file
+
+
+            var rename = name + EV.DOLLAR;
+            var fields = header_str.Split(new string[] { delimiter }, slipOption)
+                .Select(p => p.ReplaceUnusedCharacters()).ToArray();
+            var numOfField = fields.Length;
+            var arrNewFieldName = fields.Select(p => rename + p).ToArray();
+            var rs = new List<Dictionary<string, object>>(hashedLine.Count);
+
+            foreach (var line in hashedLine)
+            {
+                //var MyDynamic = new ExpandoObject();
+                Dictionary<string, object> myUnderlyingObject = new Dictionary<string, object>(numOfField);
+                var linearr = line.Split(seperator, slipOption);
+                for (var j = 0; j < numOfField; j++)
+                {
+                    myUnderlyingObject.Add(arrNewFieldName[j], linearr[j]);
+                }
+                rs.Add(myUnderlyingObject);
+            }
+
+            hashedLine.Clear();
+            hashedLine = null;
+            w.Stop();
+            Console.WriteLine("Elapsed TotalSeconds " + w.Elapsed.TotalSeconds + ", numOfRec:" + rs.Count);
+            return rs;
+
+
+
 
         }
         public static void Write(string path, List<IDictionary<string, object>> recs, string delimiter="\t")
@@ -430,13 +534,16 @@ namespace AppRunTransform.Helpers
 
             //public override bool Equals(object x)
             //{
-            //    return this.pureTextData== ((CustomData)x).pureTextData;// StringComparer.InvariantCultureIgnoreCase
-            //                 //.Equals(this.pureTextData, ((CustomData)x).pureTextData);
+            //    return true;
+            //    //return pureTextData.GetHashCode()== ((CustomData)x).pureTextData.GetHashCode();
+            //    //return this.pureTextData == ((CustomData)x).pureTextData;// StringComparer.InvariantCultureIgnoreCase
+            //    //.Equals(this.pureTextData, ((CustomData)x).pureTextData);
             //}
-            public override int GetHashCode()
-            {
-                return StringComparer.InvariantCultureIgnoreCase.GetHashCode(this.pureTextData);
-            }
+            //public override int GetHashCode()
+            //{
+            //    //var a=this.pureTextData.GetHashCode();
+            //    return base.GetHashCode();// StringComparer.InvariantCultureIgnoreCase.GetHashCode(this.pureTextData);
+            //}
             //public int GetHashCode(CustomData obj)
             //{
             //    //throw new NotImplementedException();

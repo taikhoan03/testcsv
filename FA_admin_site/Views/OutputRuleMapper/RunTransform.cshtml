@@ -24,11 +24,13 @@
     $(document).ready(function () {
         $.get('@Url.Action("verifyBeforeAddRequest", "OutputRuleMapper")?wsid=@ViewBag.ID')
             .done(function (data) {
-                //window.location.href = '@Config.Get_local_control_site()/File/Download_tmp_tam?state=a&county=b&filename=c'
+                
                 $('#cmd').show();
                 if (data != 'null') {
                     try {
+                        
                         var jsData = JSON.parse(data);
+                        console.log(jsData);
                         objData = jsData;
                         var downloadurl = '@ViewBag.DownloadParam';
                         if (downloadurl!='')
@@ -113,12 +115,7 @@
                     .fail()
                     .always();
                 }
-            @*$.get('@Config.Get_local_control_site()' + '/JSON/testMap?id=@ViewBag.ID&cleanUpResult=true&')
-            .done(function (data) {
-                window.location.href = '@Config.Get_local_control_site()/File/Download_tmp_tam?state=a&county=b&filename=c'
-            })
-            .fail()
-            .always();*@
+            
         });
     });
 </script>

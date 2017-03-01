@@ -17,8 +17,6 @@ namespace AppRunTransform
         static void Main(string[] args)
         {
             Console.WriteLine("App is running...");
-            //Console.WriteLine("PRess Enter");
-            //Console.ReadLine();
             //using (Process p = Process.GetCurrentProcess())
             //    p.PriorityClass = ProcessPriorityClass.BelowNormal;
             var db = new BL.DA_Model();
@@ -36,33 +34,14 @@ namespace AppRunTransform
                     db.SaveChanges();
                     try
                     {
-                        var oldOutputName = req.OutputName;
                         var watch = Stopwatch.StartNew();
-                        var outputname=runProcess(req.WorkingSetId, true);
-                        //remove old file
-                        if (outputname != oldOutputName)
-                        {
-                            var ws = db.workingSets.Find(req.WorkingSetId);
-                            var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
-                                            Config.Data.GetKey("output_folder_process"),
-                                            ws.State,
-                                            ws.County
-                                            );
-
-                            path = path + @"\" + oldOutputName;
-                            if(File.Exists(path) && !string.IsNullOrEmpty(oldOutputName))
-                                System.IO.File.Delete(path);
-                        }
+                        var outputname=testMap(req.WorkingSetId, true);
                         watch.Stop();
                         req.TimeCost = Convert.ToInt32(watch.Elapsed.TotalSeconds);
                         req.Status = 2;
                         req.Detail = "";
                         req.OutputName = outputname;
-                        
-                        
-                        //
                         db.SaveChanges();
-                        //Console.ReadLine();
                         continue;
                     }
                     catch (Exception ex)
@@ -100,7 +79,7 @@ namespace AppRunTransform
             public int WorkingSetId { get; set; }
             public string FieldName { get; set; }
         }
-        public static string runProcess(int id, bool cleanUpResult = false)
+        public static string testMap(int id, bool cleanUpResult = false)
         {
             
             
@@ -114,18 +93,32 @@ namespace AppRunTransform
             var limit =  2 * 1000 * 1000 * 1000;
 
 
+            //var files = new List<int>();
+            //if (linkageData != null)
+            //{
+            //    foreach (var item in linkageData)
+            //    {
+            //        if (files.FirstOrDefault(p => p == item.firstId) == 0)
+            //        {
+            //            files.Add(item.firstId);
+            //        }
+            //        if (files.FirstOrDefault(p => p == item.sndId) == 0)
+            //        {
+            //            files.Add(item.sndId);
+            //        }
+            //    }
+            //}
             //all recs
-            var all_rec = new List<Dictionary<string, object>>();// Enumerable.Empty<Dictionary<string, object>>();
+            var all_rec = new List<IDictionary<string, object>>();
 
 
             var dtAll = new DataTable();
             var numOfRun = 0;
-            var cached1 = Enumerable.Empty<Dictionary<string, object>>();
-            var cached2 = Enumerable.Empty<Dictionary<string, object>>();
-            var loadF1 = Enumerable.Empty<Dictionary<string, object>>();
-            var loadF2 = Enumerable.Empty<Dictionary<string, object>>();
+            var cached1 = Enumerable.Empty<IDictionary<string, object>>();
+            var cached2 = Enumerable.Empty<IDictionary<string, object>>();
+            var loadF1 = Enumerable.Empty<IDictionary<string, object>>();
+            var loadF2 = Enumerable.Empty<IDictionary<string, object>>();
             //declare RuleMapper 
-            var fileOutput = db.outputMappers.Find(ws.SeletedOutputId);
             var outputFields = db.outputFields.Where(p => p.OutputMapperId == ws.SeletedOutputId);
             var outputData = db.outputDatas.Where(p => outputFields.Any(c => c.Id == p.OutputFieldId) && p.WorkingSetId == ws.Id);
 
@@ -146,7 +139,7 @@ namespace AppRunTransform
             var seq1Name = "seq1";
             var seq2Name = "seq2";
             var outputDataWithNameList = outputDataWithName.ToList();
-            WorkingSetItem onlyRuleForOneFile = null;
+            
             ////END declare RuleMapper 
             //nạp dữ liệu vào all_rec
             if (linkageData != null)
@@ -164,8 +157,10 @@ namespace AppRunTransform
                     {
                         Console.WriteLine("Get data from file " + item.First().firstFilename);
                         loadF1 = Process_final(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
+                        GC.Collect();
                         Console.WriteLine("Get data from file " + item.First().sndFilename);
                         loadF2 = Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
+                        GC.Collect();
                         cached1 = loadF1;
                         cached2 = loadF2;
                         all_rec = loadF1.ToList();
@@ -176,6 +171,7 @@ namespace AppRunTransform
                         Console.WriteLine("Get data from file " + item.First().sndFilename);
                         loadF2 = Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
                     }
+                    GC.Collect();
                     numOfRun++;
                     var firstF1 = loadF1.First();
                     var firstF2 = loadF2.First();
@@ -204,12 +200,12 @@ namespace AppRunTransform
                              }
                              into ps
                              from g in ps//.DefaultIfEmpty()
-                             select p.Concat(g == null ? new Dictionary<string, object>() : g).ToDictionary(x => x.Key, x => x.Value);
-                    //select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g).ToDictionary(x => x.Key, x => x.Value);
+                             select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g).ToDictionary(x => x.Key, x => x.Value);
                     //TODO: slow here
-                    all_rec = ff.ToList();// new List<IDictionary<string, object>>(ff);// ff.ToDictionary(x=>x.Keys).ToList();
+                    all_rec = new List<IDictionary<string, object>>(ff);// ff.ToDictionary(x=>x.Keys).ToList();
                     loadF1 = null;
                     loadF2 = null;
+                    GC.Collect();
                 }
                 groupLinkageData = null;
             }
@@ -217,11 +213,11 @@ namespace AppRunTransform
             {
                 // neu ko có linkage, check tất cả các Rule có phải viết cho 1 file ?
                 // nếu có thì chọn xữ lý file đó
-                var firstFileName_TransferMapping = outputDataWithNameList.First().FileMapperName;
+                var firstFileName_InRule = outputDataWithNameList.First().FileMapperName;
                 //BL.WorkingSetItem onlyRuleForOneFile = null;
-                if (outputDataWithNameList.All(p => p.FileMapperName == firstFileName_TransferMapping))
+                if (outputDataWithNameList.All(p => p.FileMapperName == firstFileName_InRule))
                 {
-                    onlyRuleForOneFile = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == id && p.Filename == firstFileName_TransferMapping);
+                    var onlyRuleForOneFile = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == id && p.Filename == firstFileName_InRule);
                     if (onlyRuleForOneFile != null)
                     {
                         Console.WriteLine("Get data from file " + onlyRuleForOneFile.Filename);
@@ -237,6 +233,7 @@ namespace AppRunTransform
             cached2 = null;
             loadF1 = null;
             loadF2 = null;
+            GC.Collect();
             // apply rule mapper
             
             outputDataWithNameList.Add(new outputDataWithName
@@ -262,19 +259,16 @@ namespace AppRunTransform
             var outputData_ = outputDataWithNameList.GroupBy(c => c.OutputFieldId).ToList();
 
             var rule_ = rules.ToList();
-            //rename field in rule expression
             foreach (var rule in rule_)
             {
                 rule.ExpValue = rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
             }
-            
-            var numOfGroupItems = outputData_.Count;
-            var ls_outputFieldName = new string[numOfGroupItems];// List<string>();
-            var ls_mappers = new outputDataWithName[numOfGroupItems];// List<outputDataWithName>();
+
+            var ls_outputFieldName = new List<string>();
+            var ls_mappers = new List<outputDataWithName>();
             var ls_outputDataDetail = new Dictionary<string, List<OutputDataDetail>>();
-            var ls_numOfFields = new int[numOfGroupItems];// List<int>();
-            var ls_isSimpleInputType = new int[numOfGroupItems];// List<int>();
-            var index = 0;
+            var ls_numOfFields = new List<int>();
+            var ls_isSimpleInputType = new List<int>();
             foreach (var group_field in outputData_)
             {
 
@@ -282,13 +276,12 @@ namespace AppRunTransform
                     .Where(p => p.OutputFieldId == group_field.Key).ToList();
                 var fieldname = group_field.Key + EV.DOLLAR;
                 var mapper = group_field.First();
-                ls_outputFieldName[index]=fieldname;//.Add(fieldname);
+                ls_outputFieldName.Add(fieldname);
                 ls_outputDataDetail.Add(fieldname, rulesForThisField);
-                ls_mappers[index] =mapper;//.Add(mapper);
-                ls_numOfFields[index] = group_field.Count();//.Add(group_field.Count());
+                ls_mappers.Add(mapper);
+                ls_numOfFields.Add(group_field.Count());
 
                 var iIsSimpleInputType = 0;
-                
                 if (mapper.FieldMapperName != seq1Name && mapper.FieldMapperName != seq2Name)
                     if (rulesForThisField.Count == 0)
                     {
@@ -296,30 +289,35 @@ namespace AppRunTransform
                         {
                             if (!string.IsNullOrEmpty(mapper.FieldMapperName))
                             {
+                                //var _name = mapper.FileMapperName + ":" + mapper.FieldMapperName;
+                                //_name = _name.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
+                                //rec.Add(mapper.FieldName, rec[_name]);
                                 iIsSimpleInputType = 2;
                             }
                             else
                             {
+                                //var _name = mapper.FileMapperName + ":" + mapper.FieldMapperName;
+                                //_name = _name.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
+                                //rec.Add(mapper.FieldName, null);
                                 iIsSimpleInputType = 1;
                             }
 
                         }
 
                     }
-                ls_isSimpleInputType[index] = iIsSimpleInputType;//.Add(iIsSimpleInputType);
-                index++;
+                ls_isSimpleInputType.Add(iIsSimpleInputType);
             }
             var icount = 0;
             //var dyna = new DynaExp();
-            //transfer to editable
             using (var dt = new System.Data.DataTable())
             {
                 Console.WriteLine(DateTime.Now.ToShortTimeString());
                 Console.WriteLine("Applying Rules...");
                 //TODO: nếu ko viết Rule, và chỉ có 1 field dc chọn để map
+                
                 foreach (var rec in all_rec)
                 {
-                    for (int i = 0; i < ls_outputFieldName.Length; i++)
+                    for (int i = 0; i < ls_outputFieldName.Count; i++)
                     {
                         var fieldname = ls_outputFieldName[i];
                         var mapper = ls_mappers[i];
@@ -333,7 +331,7 @@ namespace AppRunTransform
                             rec.Add(mapper.FieldName, rec[_name]);
                         }else if (inputType == 1)
                         {
-                            rec.Add(mapper.FieldName, string.Empty);
+                            rec.Add(mapper.FieldName, null);
                         }
                         else
                         {
@@ -398,555 +396,30 @@ namespace AppRunTransform
                 }
                 else
                 {
-                    if (onlyRuleForOneFile != null)
-                    {
-                        primaryKey = onlyRuleForOneFile.Filename.Replace(".", EV.DOT) + EV.DOLLAR + onlyRuleForOneFile.PrimaryKey;
-                    }else
-                        primaryKey = firstFileId.Filename.Replace(".", EV.DOT) + EV.DOLLAR + firstFileId.PrimaryKey;
+                    primaryKey = firstFileId.Filename.Replace(".", EV.DOT) + EV.DOLLAR + firstFileId.PrimaryKey;
                 }
 
 
                 //var group1 = _ls.ToList().GroupBy(p => p[primaryKey]);
+                GC.Collect();
                 //add sequence
                 Console.WriteLine("Grouping and adding sequence");
-                #region Sequence
-                var seqType = 0;
-                var fileHasSeq1_only = new string[] { "Land","Land Use", "Assessor Ownership","Sales","Situs Address", "Parcel to Parcel Cross Reference", "Assessor Land Values" };
-                var fileHasSeq2 = new string[] { "Assessor Building Values","Assessor Exemption Type", "Building" };
-                var fileHasSeq3 = new string[] {  "Building Permit","Building Green Code","Extra Feature","Building Area" };
-
-                if (fileHasSeq1_only.Any(p => p == fileOutput.Name))
+                foreach (var _group in all_rec.GroupBy(p => p[primaryKey]))
                 {
-                    foreach (var item in all_rec)
+                    var increasement = 1;
+                    foreach (var record in _group)
                     {
-                        item["APN_SEQUENCE_NUMBER"] = 1;
-                    }
-                }
-                #region SEQ2
-                else if (fileHasSeq2.Any(p => p == fileOutput.Name))
-                {
-                    if (fileOutput.Name == "Building")
-                    {
-                        var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
-                        var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
-                        foreach (var _group in all_rec.GroupBy(p => p[primaryKey].ToString() + p[primaryKey].ToString()))
-                        {
-                            // chỉ có seq1
-                            var increasement = 1;
-
-                            if (hasBuildingSeqField)
-                            {
-                                foreach (var record in _group)
-                                {
-                                    record["APN_SEQUENCE_NUMBER"] = 1;
-                                    record[sndFieldKey] = increasement;
-                                    increasement++;
-                                }
-                            }
-                            else
-                            {
-                                foreach (var record in _group)
-                                {
-                                    record["APN_SEQUENCE_NUMBER"] = 1;
-                                    record.Add(sndFieldKey, increasement);
-                                    increasement++;
-                                }
-                            }
-
-
-                        }
-                    }
-
-                    else if (fileOutput.Name == "Assessor Building Values")
-                    {
-                        var mustHaveField = new string[] {
-                            "AVB_ASSD_IMPROVEMENT_VALUE",
-                            "AVB_MKT_IMPROVEMENT_VALUE",
-                            "AVB_APPR_IMPROVEMENT_VALUE",
-                            "AVB_TAXABLE_IMPROVEMENT_VALUE" };
-                        var sndFieldKey = "AVB_BUILDING_SEQ";
-                        var firstRec = all_rec.First();
-                        var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
-                        if (!mustHaveField.All(p => firstRec.ContainsKey(p)))
-                        {
-                            var message = "Adding Sequence: <strong>Transform Mapping</strong> should have <strong style='color:red'>{0}</strong> field in <strong>" + fileOutput.Name + "</strong> output file selected...";
-                            var argMessage = string.Join(",", mustHaveField);
-                            throw new Exception(string.Format(message, argMessage));
-                        }
-                        foreach (var _group in all_rec.GroupBy(p =>
-                        p[primaryKey].ToString()
-                        + p[mustHaveField[0]].ToString()
-                        + p[mustHaveField[1]].ToString()
-                        + p[mustHaveField[2]].ToString()
-                        + p[mustHaveField[3]].ToString()
-                        ))
-                        {
-                            // chỉ có seq1
-                            var increasement = 1;
-
-                            if (hasBuildingSeqField)
-                            {
-                                foreach (var record in _group)
-                                {
-                                    record["APN_SEQUENCE_NUMBER"] = 1;
-                                    record[sndFieldKey] = increasement;
-                                    increasement++;
-                                }
-                            }
-                            else
-                            {
-                                foreach (var record in _group)
-                                {
-                                    record["APN_SEQUENCE_NUMBER"] = 1;
-                                    record.Add(sndFieldKey, increasement);
-                                    increasement++;
-                                }
-                            }
-
-
-                        }
-                    }
-                    else if (fileOutput.Name == "Assessor Exemption Type")
-                    {
-                        var sndFieldKey = "AVE_EXEMPTION_SEQUENCE_NUMBER";
-                        var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
-
-                        foreach (var _group in all_rec.GroupBy(p => p[primaryKey].ToString()
-                        + p["AVE_COUNTY_EXEMPTION_CODE"].ToString()
-                        + p["AVE_EXEMPTION_AMOUNT"].ToString()
-                        ))
-                        {
-                            // chỉ có seq1
-                            var increasement = 1;
-                            if (hasBuildingSeqField)
-                            {
-                                foreach (var record in _group)
-                                {
-                                    record["APN_SEQUENCE_NUMBER"] = 1;
-                                    record[sndFieldKey] = increasement;
-                                    increasement++;
-                                }
-                            }
-                            else
-                            {
-                                foreach (var record in _group)
-                                {
-                                    record["APN_SEQUENCE_NUMBER"] = 1;
-                                    record.Add(sndFieldKey, increasement);
-                                    increasement++;
-                                }
-                            }
-
-
-                        }
+                        record.Add(seq1Name, 1);
+                        record.Add(seq2Name, increasement);
+                        increasement++;
                     }
 
                 }
-                #endregion SEQ2
-                #region SEQ3
-                else if (fileHasSeq3.Any(p => p == fileOutput.Name))
-                {
-                    var message = "Adding Sequence: <strong>Transform Mapping</strong> should have <strong style='color:red'>{0}</strong> field in <strong>" + fileOutput.Name + "</strong> output file selected...";
-                    #region Building Permit
-                    if (fileOutput.Name == "Building Permit")
-                    {
-                        var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
-                        var thrFieldKey = "BGP_BUILDING_PERMIT_SEQUENCE_NUMBER";
-                        var firstRec = all_rec.First();
-                        var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
-                        //gb=group building
-                        var mustHaveField = new string[] {
-                            "BGP_BUILDING_PERMIT_NBR",
-                            "BGP_BUILDING_PERMIT_REASON",
-
-                            "BGP_BUILDING_PERMIT_DATE",
-                            "BGP_BUILDING_PERMIT_ESTIMATED_AMT",
-                            "BGP_BUILDING_PERMIT_STATUS",
-                            "BGP_BUILDING_PERMIT_PERCENT_COMPLETE",
-                        };
-
-                        //if (!mustHaveField.Take(2).All(p => firstRec.ContainsKey(p)))
-                        //{
-                        //    var argMessage = string.Join(",", mustHaveField.Take(2));
-                        //    throw new Exception(string.Format(message, argMessage));
-                        //}
-                        //if (!firstRec.ContainsKey("BGP_BUILDING_PERMIT_NBR"))
-                        //{
-                        //    throw new Exception(string.Format(message, "BGP_BUILDING_PERMIT_NBR"));
-                        //}
-                        //if (!firstRec.ContainsKey("BGP_BUILDING_PERMIT_REASON"))
-                        //{
-                        //    throw new Exception(string.Format(message, "BGP_BUILDING_PERMIT_REASON"));
-                        //}
-                        foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
-                        {
-
-                            var ibuilding = 1;
-                            foreach (var gs3 in gb.GroupBy(p =>
-                            getIfNull(mustHaveField, p)
-                        //    p[mustHaveField[0]].ToString()
-                        //+ p[mustHaveField[1]].ToString() != "" ?
-
-                        //p[mustHaveField[0]].ToString()
-                        //+ p[mustHaveField[1]].ToString():
-                        ////fields phụ
-                        // p[mustHaveField[2]].ToString()
-                        //+ p[mustHaveField[3]].ToString()
-                        //+ p[mustHaveField[4]].ToString()
-                        //+ p[mustHaveField[5]].ToString()
-                        ))
-                            {
-                                var seq3 = 1;
-                                if (hasBuildingSeqField)
-                                {
-                                    foreach (var record in gs3)
-                                    {
-                                        record["APN_SEQUENCE_NUMBER"] = 1;
-                                        record[sndFieldKey] = ibuilding;
-                                        record[thrFieldKey] = seq3;
-                                        seq3++;
-                                    }
-                                }
-                                else
-                                {
-                                    foreach (var record in gs3)
-                                    {
-                                        record["APN_SEQUENCE_NUMBER"] = 1;
-                                        record.Add(sndFieldKey, ibuilding);
-                                        record.Add(thrFieldKey, seq3);
-                                        seq3++;
-                                    }
-                                }
-                                ibuilding++;
-                            }
-
-                        }
-
-                    }
-                    #endregion Building Permit
-                    #region Building Green Code
-                    else if (fileOutput.Name == "Building Green Code")
-                    {
-                        var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
-                        var thrFieldKey = "BGG_BUILDING_GREEN_SEQUENCE_NUMBER";
-                        var firstRec = all_rec.First();
-                        var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
-                        //gb=group building
-                        var mustHaveField = new string[] {
-                            "BGG_COUNTY_BUILDING_GREEN_CODE\\DESC"
-                        };
-
-                        if (!mustHaveField.All(p => firstRec.ContainsKey(p)))
-                        {
-                            var argMessage = string.Join(",", mustHaveField);
-                            throw new Exception(string.Format(message, argMessage));
-                        }
-
-                        //gb=group building
-
-                        foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
-                        {
-
-                            var ibuilding = 1;
-                            foreach (var gs3 in gb.GroupBy(p =>
-                            p[mustHaveField[0]].ToString()
-                        ))
-                            {
-                                var seq3 = 1;
-                                if (hasBuildingSeqField)
-                                {
-                                    foreach (var record in gs3)
-                                    {
-                                        record["APN_SEQUENCE_NUMBER"] = 1;
-                                        record[sndFieldKey] = ibuilding;
-                                        record[thrFieldKey] = seq3;
-                                        seq3++;
-                                    }
-                                }
-                                else
-                                {
-                                    foreach (var record in gs3)
-                                    {
-                                        record["APN_SEQUENCE_NUMBER"] = 1;
-                                        record.Add(sndFieldKey, ibuilding);
-                                        record.Add(thrFieldKey, seq3);
-                                        seq3++;
-                                    }
-                                }
-                                ibuilding++;
-                            }
-
-                        }
-                        //var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
-                        //var thrFieldKey = "BGG_BUILDING_GREEN_SEQUENCE_NUMBER";
-                        //var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
-                        ////gb=group building
-                        //var ibuilding = 1;
-                        //foreach (var gb in all_rec.GroupBy(p => p[primaryKey]))
-                        //{
-
-                        //    var seq3 = 1;
-                        //    foreach (var _group in gb.GroupBy(p => 
-                        //    p["BGG_COUNTY_BUILDING_GREEN_CODE\\DESC"].ToString()
-                        //))
-                        //    {
-                        //        if (hasBuildingSeqField)
-                        //        {
-                        //            foreach (var record in _group)
-                        //            {
-                        //                record["APN_SEQUENCE_NUMBER"] = 1;
-                        //                record[sndFieldKey] = ibuilding;
-                        //                record[thrFieldKey] = seq3;
-                        //            }
-                        //        }
-                        //        else
-                        //        {
-                        //            foreach (var record in _group)
-                        //            {
-                        //                record["APN_SEQUENCE_NUMBER"] = 1;
-                        //                record.Add(sndFieldKey, ibuilding);
-                        //                record.Add(thrFieldKey, seq3);
-                        //            }
-                        //        }
-                        //    }
-                        //    ibuilding++;
-                        //}
-
-                    }
-                    #endregion Building Green Code
-                    #region Extra Feature
-                    else if (fileOutput.Name == "Extra Feature")
-                    {
-                        var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
-                        var thrFieldKey = "FEATURE_ID/SEQ";
-                        var firstRec = all_rec.First();
-                        var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
-                        //gb=group building
-                        var mustHaveField = new string[] {
-                            "EX_COUNTY_FEATURE_TYPE_ID",
-                            "EX_COUNTY_FEATURE_RAW/DESC",
-                            "EX_ASSESSED_FEATURE_VALUE",
-
-                            "EX_LENGTH",
-                            "EX_WIDTH",
-                            "EX_HEIGHT",
-                            "EX_MEASURE_UNITS",
-                            "EX_FEATURE_YEAR_BUILT",
-                        };
-
-                        //if (!mustHaveField.Take(3).All(p => firstRec.ContainsKey(p)))
-                        //{
-                        //    var argMessage = string.Join(",", mustHaveField.Take(3));
-                        //    throw new Exception(string.Format(message, argMessage));
-                        //}
-                        //if (!firstRec.ContainsKey("EX_COUNTY_FEATURE_TYPE_ID"))
-                        //{
-                        //    throw new Exception(string.Format(message, "EX_COUNTY_FEATURE_TYPE_ID"));
-                        //}
-                        //if (!firstRec.ContainsKey("EX_COUNTY_FEATURE_RAW/DESC"))
-                        //{
-                        //    throw new Exception(string.Format(message, "EX_COUNTY_FEATURE_RAW/DESC"));
-                        //}
-                        //if (!firstRec.ContainsKey("EX_ASSESSED_FEATURE_VALUE"))
-                        //{
-                        //    throw new Exception(string.Format(message, "EX_ASSESSED_FEATURE_VALUE"));
-                        //}
-                        //gb=group building
-
-                        foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
-                        {
-
-                            var ibuilding = 1;
-                            foreach (var gs3 in gb.GroupBy(p =>
-                                getIfNull(mustHaveField,p)
-                        //p[mustHaveField[0]].ToString()
-                        //+ p[mustHaveField[1]].ToString()
-                        //+ p[mustHaveField[2]].ToString() != "" ?
-                        //p[mustHaveField[0]].ToString()
-                        //+ p[mustHaveField[1]].ToString()
-                        //+ p[mustHaveField[2]].ToString() :
-                        ////fields phu.
-                        // p[mustHaveField[3]].ToString()
-                        //+ p[mustHaveField[4]].ToString()
-                        //+ p[mustHaveField[5]].ToString()
-                        //+ p[mustHaveField[6]].ToString()
-                        //+ p[mustHaveField[7]].ToString()
-                        ))
-                            {
-                                var seq3 = 1;
-                                if (hasBuildingSeqField)
-                                {
-                                    foreach (var record in gs3)
-                                    {
-                                        record["APN_SEQUENCE_NUMBER"] = 1;
-                                        record[sndFieldKey] = ibuilding;
-                                        record[thrFieldKey] = seq3;
-                                        seq3++;
-                                    }
-                                }
-                                else
-                                {
-                                    foreach (var record in gs3)
-                                    {
-                                        record["APN_SEQUENCE_NUMBER"] = 1;
-                                        record.Add(sndFieldKey, ibuilding);
-                                        record.Add(thrFieldKey, seq3);
-                                        seq3++;
-                                    }
-                                }
-                                ibuilding++;
-                            }
-
-                        }
-                        //var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
-                        //var thrFieldKey = "FEATURE_ID/SEQ";
-                        //var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
-                        ////gb=group building
-                        //var ibuilding = 1;
-                        //foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
-                        //{
-
-                        //    var seq3 = 1;
-                        //    foreach (var _group in gb.GroupBy(p =>
-                        //    p["EX_COUNTY_FEATURE_TYPE_ID"].ToString()
-                        //    + p["EX_COUNTY_FEATURE_RAW/DESC"].ToString()
-                        //    + p["EX_ASSESSED_FEATURE_VALUE"].ToString()
-                        //))
-                        //    {
-                        //        if (hasBuildingSeqField)
-                        //        {
-                        //            foreach (var record in _group)
-                        //            {
-                        //                record["APN_SEQUENCE_NUMBER"] = 1;
-                        //                record[sndFieldKey] = ibuilding;
-                        //                record[thrFieldKey] = seq3;
-                        //            }
-                        //        }
-                        //        else
-                        //        {
-                        //            foreach (var record in _group)
-                        //            {
-                        //                record["APN_SEQUENCE_NUMBER"] = 1;
-                        //                record.Add(sndFieldKey, ibuilding);
-                        //                record.Add(thrFieldKey, seq3);
-                        //            }
-                        //        }
-                        //    }
-                        //    ibuilding++;
-                        //}
-
-                    }
-                    #endregion Extra Feature
-                    #region Building Area
-                    else if (fileOutput.Name == "Building Area")
-                    {
-                        var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
-                        var thrFieldKey = "BGA_BUILDING_AREA_SEQUENCE_NUMBER";
-                        var firstRec = all_rec.First();
-                        var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
-                        //gb=group building
-                        var mustHaveField = new string[] {
-                            "BGA_COUNTY_BUILDING_AREA_CODE\\DESC",
-                            "BGA_BUILDING_AREA"
-                        };
-
-                        if (!mustHaveField.All(p => firstRec.ContainsKey(p)))
-                        {
-                            var argMessage = string.Join(",", mustHaveField);
-                            throw new Exception(string.Format(message, argMessage));
-                        }
-                        //if (!firstRec.ContainsKey("BGA_COUNTY_BUILDING_AREA_CODE\\DESC"))
-                        //{
-                        //    throw new Exception(string.Format(message, "BGA_COUNTY_BUILDING_AREA_CODE\\DESC"));
-                        //}
-                        //if (!firstRec.ContainsKey("BGA_BUILDING_AREA"))
-                        //{
-                        //    throw new Exception(string.Format(message, "BGA_BUILDING_AREA"));
-                        //}
-                        //gb=group building
-
-                        foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
-                        {
-
-                            var ibuilding = 1;
-                            foreach (var gs3 in gb.GroupBy(p =>
-                                p[mustHaveField[0]].ToString()
-                            + p[mustHaveField[1]].ToString()
-                        ))
-                            {
-                                var seq3 = 1;
-                                if (hasBuildingSeqField)
-                                {
-                                    foreach (var record in gs3)
-                                    {
-                                        record["APN_SEQUENCE_NUMBER"] = 1;
-                                        record[sndFieldKey] = ibuilding;
-                                        record[thrFieldKey] = seq3;
-                                        seq3++;
-                                    }
-                                }
-                                else
-                                {
-                                    foreach (var record in gs3)
-                                    {
-                                        record["APN_SEQUENCE_NUMBER"] = 1;
-                                        record.Add(sndFieldKey, ibuilding);
-                                        record.Add(thrFieldKey, seq3);
-                                        seq3++;
-                                    }
-                                }
-                                ibuilding++;
-                            }
-
-                        }
-                        //var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
-                        //var thrFieldKey = "BGA_BUILDING_AREA_SEQUENCE_NUMBER";
-                        //var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
-                        ////gb=group building
-                        //var ibuilding = 1;
-                        //foreach (var gb in all_rec.GroupBy(p => p[primaryKey]))
-                        //{
-
-                        //    var seq3 = 1;
-                        //    foreach (var _group in gb.GroupBy(p => 
-                        //    p["BGP_BUILDING_PERMIT_NBR"].ToString()
-                        //+ p["BGP_BUILDING_PERMIT_REASON"].ToString()))
-                        //    {
-                        //        if (hasBuildingSeqField)
-                        //        {
-                        //            foreach (var record in _group)
-                        //            {
-                        //                record["APN_SEQUENCE_NUMBER"] = 1;
-                        //                record[sndFieldKey] = ibuilding;
-                        //                record[thrFieldKey] = seq3;
-                        //            }
-                        //        }
-                        //        else
-                        //        {
-                        //            foreach (var record in _group)
-                        //            {
-                        //                record["APN_SEQUENCE_NUMBER"] = 1;
-                        //                record.Add(sndFieldKey, ibuilding);
-                        //                record.Add(thrFieldKey, seq3);
-                        //            }
-                        //        }
-                        //    }
-                        //    ibuilding++;
-                        //}
-
-                    }
-                    #endregion Building Area
-
-                }
-                #endregion SEQ3
-
-
-                #endregion
-
+                GC.Collect();
                 Console.WriteLine("Transforming data");
                 dtAll = Ulti.ToDataTable(all_rec);
                 //remove columns
-                Console.WriteLine("Cleaning result");
+                Console.WriteLine("Cleaning columns");
                 if (cleanUpResult)
                 {
                     var list_col_to_remove = new List<DataColumn>();
@@ -971,28 +444,27 @@ namespace AppRunTransform
                     if (item.ColumnName != seq1Name && item.ColumnName != seq2Name)
                         colFields.Add(item.ColumnName);
                 }
-                var outputDic = outputFields.Where(c => colFields.Any(d => d == c.Name)).ToDictionary(x => x.Name, x => x);
+                var outputDic = outputFields.Where(c => colFields.Any(d => d == c.Name)).ToList().ToDictionary(x => x.Name, x => x);
                 foreach (DataRow row in dtAll.Rows)
                 {
-                    foreach (var colName in colFields)
+                    foreach (var col in colFields)
                     {
-                        var fieldInfo = outputDic[colName];
-                        var cell = row[colName];
+                        var formatCell = outputDic[col];
+                        var cell = row[col];
                         var content = cell.ToString();
-                        if (fieldInfo.Type == EV.TYPE_NUM)
+                        if (formatCell.Type == EV.TYPE_NUM)
                         {
                             try
                             {
                                 if (!string.IsNullOrEmpty(content))
-                                    cell = Math.Round(Convert.ToDecimal(cell), fieldInfo.Decimal);
+                                    cell = Math.Round(Convert.ToDecimal(cell), formatCell.Decimal);
                             }
                             catch (Exception ex)
                             {
 
-                                throw new Exception("Binding driver field FAIL:column=" + colName + ", value=" + content + Environment.NewLine
-                                    + "Decimal=" + fieldInfo.Decimal + Environment.NewLine
-                                    
-                                    //+ Newtonsoft.Json.JsonConvert.SerializeObject(row) + Environment.NewLine
+                                throw new Exception("Binding driver field FAIL:column=" + col + ", value=" + content + Environment.NewLine
+                                    + "Decimal=" + formatCell.Decimal + Environment.NewLine
+                                    + Newtonsoft.Json.JsonConvert.SerializeObject(row) + Environment.NewLine
                                     + ex.Message + Environment.NewLine
                                     + ex.StackTrace
 
@@ -1003,20 +475,20 @@ namespace AppRunTransform
                         {
                             
                             
-                            if (!string.IsNullOrEmpty(content) && content.Length >= fieldInfo.Length)
+                            if (!string.IsNullOrEmpty(content) && content.Length >= formatCell.Length)
                             {
-                                cell = content.Substring(0, fieldInfo.Length);
+                                cell = content.Substring(0, formatCell.Length);
                             }
                         }
+                        formatCell = null;
                     }
                 }
                 Console.WriteLine("Writing file");
-                
+                var fileOutput = db.outputMappers.Find(ws.SeletedOutputId);
                 var name = DateTime.Now.ToString("yyyyMMdd") + "_" + fileOutput.Name + "_" + ws.User + ".csv";
                 Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("output_folder_process") + "\\" +
                     ws.State + "\\" + ws.County + "\\" + name, dtAll);
                 all_rec.Clear();
-                all_rec = null;
                 dtAll.Clear();
                 dtAll.Dispose();
                 GC.Collect();
@@ -1024,7 +496,7 @@ namespace AppRunTransform
                 return name;
             }
         }
-        private static IEnumerable<Dictionary<string, object>> Process_final(int fileid, decimal limit = 100, bool writeFile = false, int showLimit = 1000, bool addSequence = true, bool applyRules = true)
+        private static IEnumerable<IDictionary<string, object>> Process_final(int fileid, decimal limit = 100, bool writeFile = false, int showLimit = 1000, bool addSequence = true, bool applyRules = true)
         {
             //int limit = 100;
             //const string tab = "\t";
@@ -1071,7 +543,7 @@ namespace AppRunTransform
                 }
 
 
-                var allrecs = new List<Dictionary<string, object>>();
+                var allrecs = new List<IDictionary<string, object>>();
 
                 var sortActions = fields_sort.OrderBy(p => p.Value.duplicateAction);
                 var hasKeepAllRows = sortActions.Count(p => p.Value.duplicateAction == DuplicateAction.KeepAllRows) > 0;
@@ -1081,10 +553,9 @@ namespace AppRunTransform
                     //declare
                     var breakOtherRecords = false;
                     var ignoreAll = false;
-                    //var record = _group.FirstOrDefault();
+                    var record = _group.FirstOrDefault();
                     var isResponseWithError = false;
-                    var r_last = _group.Last();
-                    var r_first = _group.First();
+
                     foreach (var sortField in sortActions)
                     {
                         var action = sortField.Value.duplicateAction;
@@ -1103,8 +574,8 @@ namespace AppRunTransform
                                 //var v = _group.FirstOrDefault()[sortField.Key];
                                 foreach (var rec in _group)
                                 {
-                                    //rec[sortField.Key] = _group.FirstOrDefault()[sortField.Key];
-                                    rec[sortField.Key] = r_first[sortField.Key];
+                                    rec[sortField.Key] = _group.FirstOrDefault()[sortField.Key];
+
                                 }
 
                             }
@@ -1114,8 +585,7 @@ namespace AppRunTransform
                                 //var v = _group.LastOrDefault()[sortField.Key];
                                 foreach (var rec in _group)
                                 {
-                                    //rec[sortField.Key] = _group.LastOrDefault()[sortField.Key];
-                                    rec[sortField.Key] = r_last[sortField.Key];
+                                    rec[sortField.Key] = _group.LastOrDefault()[sortField.Key];
 
                                 }
 
@@ -1126,7 +596,6 @@ namespace AppRunTransform
                                 //var v = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
                                 foreach (var rec in _group)
                                 {
-                                    //rec[sortField.Key] = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
                                     rec[sortField.Key] = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
 
                                 }
@@ -1182,7 +651,7 @@ namespace AppRunTransform
                         catch (Exception ex)
                         {
 
-                            throw new Exception("ProcessFinal_Sorting_FAIL at: " + sortField.Key
+                            throw new Exception("ProcessFinal_FAIL at: " + sortField.Key
                                 + ", sortType: " + action + Environment.NewLine + "Record: " + Environment.NewLine +
                                 Newtonsoft.Json.JsonConvert.SerializeObject(_group, Newtonsoft.Json.Formatting.Indented)+ Environment.NewLine +
                                 ex.Message+" "+ex.StackTrace
@@ -1221,7 +690,7 @@ namespace AppRunTransform
                 file1 = null;
                 //Sorting
 
-                var sorted_file1 = Enumerable.Empty<Dictionary<string, object>>().OrderBy(x => 1);
+                var sorted_file1 = Enumerable.Empty<IDictionary<string, object>>().OrderBy(x => 1);
                 var sortFieldsNotNONE = fields_sort.Where(p => p.Value.sortType != SortType.None);
                 var firstOrderItem = sortFieldsNotNONE.FirstOrDefault().Value;
                 if (firstOrderItem != null)
@@ -1329,21 +798,8 @@ namespace AppRunTransform
                 db.Dispose();
                 return sorted_file1;
             }
-         
         }
-        private static string getIfNull(string[] shouldHaveField, Dictionary<string, object> dic)
-        {
-            var str = "";
-            for (int i = 0; i < shouldHaveField.Length; i++)
-            {
-                str += dic[shouldHaveField[i]];
-                if (!string.IsNullOrEmpty(str))
-                {
-                    return str;
-                }
-            }
-            return "";
-        }
+
         public enum DuplicateAction
         {
             ResponseWithError = 0,
@@ -1384,7 +840,7 @@ namespace AppRunTransform
         }
 
         private static DynaExp dyna = new DynaExp();
-        private static void CallFunction(IOrderedQueryable<FieldRule> rules, IOrderedEnumerable<Dictionary<string, object>> sorted_file1)
+        private static void CallFunction(IOrderedQueryable<FieldRule> rules, IOrderedEnumerable<IDictionary<string, object>> sorted_file1)
         {
 
             using (var dt = new System.Data.DataTable())
@@ -1395,6 +851,9 @@ namespace AppRunTransform
                     {
                         foreach (var rec in sorted_file1)
                         {
+                            //var myUnderlyingObject = rec;
+                            //var rule_result = rule.ExpValue.FormatWith(rec);
+                            //TODO: dòng này xữ lý chậm
                             rec.Add(rule.Name, dt.Compute(rule.ExpValue.FormatWith(rec), ""));// target.Eval(rule_result));
 
 
@@ -1404,6 +863,9 @@ namespace AppRunTransform
                     {
                         foreach (var rec in sorted_file1)
                         {
+                            //var myUnderlyingObject = rec;
+                            //var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+                            //TODO: dòng này xữ lý chậm
                             rec.Add(rule.Name, dyna.IS(rule.ExpValue.FormatWith(rec)));
 
 
@@ -1413,6 +875,9 @@ namespace AppRunTransform
                     {
                         foreach (var rec in sorted_file1)
                         {
+                            //var myUnderlyingObject = rec;
+                            //var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                            //TODO: dòng này xữ lý chậm
                             rec.Add(rule.Name, dyna.FORMAT(rule.ExpValue.FormatWith(rec)));
 
 
@@ -1422,6 +887,9 @@ namespace AppRunTransform
                     {
                         foreach (var rec in sorted_file1)
                         {
+                            //var myUnderlyingObject = rec;
+                            //var rule_result = dyna.FUNC_Num(rule.ExpValue.FormatWith(rec));
+                            //TODO: dòng này xữ lý chậm
                             rec.Add(rule.Name, dyna.FUNC_Num(rule.ExpValue.FormatWith(rec)));
 
 
@@ -1431,6 +899,9 @@ namespace AppRunTransform
                     {
                         foreach (var rec in sorted_file1)
                         {
+                            //var myUnderlyingObject = rec;
+                            //var rule_result = dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec));
+                            //TODO: dòng này xữ lý chậm
                             rec.Add(rule.Name, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
 
 

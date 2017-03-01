@@ -91,6 +91,11 @@ namespace FA_admin_site.Controllers
         public string addRunTransformRequest(int wsid)
         {
             var db = new BL.DA_Model();
+            var item_found = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == wsid);
+            if (item_found != null)
+            {
+                throw new Exception("This request is already existed");
+            }
             var req = new BL.RunTransformRequest();
             req.CreatedBy = System.Web.HttpContext.Current.User.Identity.Name;
             req.CreatedDate = DateTime.Now;
@@ -119,7 +124,7 @@ namespace FA_admin_site.Controllers
                 req.IsReady = true;
                 req.IsDeleted = false;
             }
-            var item_found = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == wsid);
+            
             db.runTransformRequests.Add(req);
             db.SaveChanges();
             return "OK";
@@ -190,7 +195,7 @@ namespace FA_admin_site.Controllers
             var rule_count = db.outputDataDetails.Where(p => p.WorkingSetId == wsid).Count();
             if (rule_count > 0)
                 hasRule = true;
-            if(!hasRule || !hasPrimaryKey)
+            if(!hasPrimaryKey)
             {
                 return "Your request should not ready!!! (Missing Primary or rule to transform)";
             }

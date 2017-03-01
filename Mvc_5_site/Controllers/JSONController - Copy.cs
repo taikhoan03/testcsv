@@ -685,7 +685,7 @@ namespace Mvc_5_site.Controllers
 
             var group1 = file1.ToList().GroupBy(p => p[primaryKey]);
 
-            var allrecs = new List<Dictionary<string, object>>();
+            var allrecs = new List<IDictionary<string, object>>();
 
             var sortActions = fields_sort.OrderBy(p => p.Value.duplicateAction);
             foreach (var _group in group1)
@@ -842,7 +842,7 @@ namespace Mvc_5_site.Controllers
             
             //Sorting
 
-            var sorted_file1 = Enumerable.Empty<Dictionary<string, object>>().OrderBy(x => 1);
+            var sorted_file1 = Enumerable.Empty<IDictionary<string, object>>().OrderBy(x => 1);
             var sortFieldsNotNONE = fields_sort.Where(p => p.Value.sortType != SortType.None);
             var firstOrderItem = sortFieldsNotNONE.FirstOrDefault().Value;
             if (firstOrderItem != null)
@@ -1096,7 +1096,7 @@ namespace Mvc_5_site.Controllers
 
             var group1 = file1.ToList().GroupBy(p => p[primaryKey]);
 
-            var allrecs = new List<Dictionary<string, object>>();
+            var allrecs = new List<IDictionary<string, object>>();
 
             var sortActions = fields_sort.OrderBy(p => p.Value.duplicateAction);
             foreach (var _group in group1)
@@ -1115,6 +1115,7 @@ namespace Mvc_5_site.Controllers
 
                         if (action == DuplicateAction.ResponseWithError)
                         {
+                            //throw new Exception("ResponseWithError");
                             isResponseWithError = true;
                         }
                         else if (action == DuplicateAction.PickupFirstValue)
@@ -1383,308 +1384,341 @@ namespace Mvc_5_site.Controllers
         }
         private IEnumerable<Dictionary<string, object>> Process_final(int fileid, decimal limit = 100, bool writeFile = false, int showLimit = 1000, bool addSequence = true, bool applyRules = true)
         {
-            using (var db = new DA_Model())
+            //int limit = 100;
+            var tab = "\t";
+            var db = new BL.DA_Model();
+
+            //var wsFiles = db.workingSetItems.Where(p => p.Id == fileid);
+            var wsFile = db.workingSetItems.FirstOrDefault(p => p.Id == fileid);
+            var ws = db.workingSets.FirstOrDefault(p => p.Id == wsFile.WorkingSetId);
+
+            var sortAndActions = db.fieldOrderAndActions.Where(p => p.WorkingSetItemId == fileid).Select(p => new {
+                ConcatenateWithDelimiter = p.ConcatenateWithDelimiter,
+                DuplicatedAction = p.DuplicatedAction,
+                DuplicatedActionType = p.DuplicatedActionType,
+                FieldName = p.FieldName,
+                Id = p.Id,
+                Order = p.Order,
+                OrderType = p.OrderType,
+                WorkingSetItemId = p.WorkingSetItemId,
+                FileName = wsFile.Filename
+            });
+            
+            var fields_sort = sortAndActions.OrderBy(x => x.Order)
+                .ToDictionary(x => x.FileName.Replace(".", EV.DOT) + EV.DOLLAR + x.FieldName, x => new SortField
+                {
+                    name = x.FieldName,
+                    duplicateAction = (DuplicateAction)x.DuplicatedAction,
+                    sortType = (SortType)x.OrderType,
+                    duplicateActionType = x.DuplicatedActionType
+                }
+                
+                );
+            var fieldTypes = db.jobFileLayouts.Where(p => p.WorkingSetItemId == fileid).ToDictionary(p => p.Fieldname, p => p.Type);
+            var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
+                                    Config.Data.GetKey("input_folder_process"),
+                                    ws.State,
+                                    ws.County
+                                    );
+            path = path + @"\" + wsFile.Filename;
+            var file1 = Helpers.ReadCSV.ReadAsDictionary(wsFile.Filename, path, limit);
+            var primaryKey = wsFile.Filename.Replace(".", EV.DOT) + EV.DOLLAR + wsFile.PrimaryKey.ReplaceUnusedCharacters();
+            if (string.IsNullOrEmpty(primaryKey))
             {
-                var wsFile = db.workingSetItems.FirstOrDefault(p => p.Id == fileid);
-                var ws = db.workingSets.FirstOrDefault(p => p.Id == wsFile.WorkingSetId);
-
-                var sortAndActions = db.fieldOrderAndActions.Where(p => p.WorkingSetItemId == fileid).Select(p => new
-                {
-                    ConcatenateWithDelimiter = p.ConcatenateWithDelimiter,
-                    DuplicatedAction = p.DuplicatedAction,
-                    DuplicatedActionType = p.DuplicatedActionType,
-                    FieldName = p.FieldName,
-                    Id = p.Id,
-                    Order = p.Order,
-                    OrderType = p.OrderType,
-                    WorkingSetItemId = p.WorkingSetItemId,
-                    FileName = wsFile.Filename
-                }).ToList();
-
-                var fields_sort = sortAndActions.OrderBy(x => x.Order)
-                    .ToDictionary(x => x.FileName.Replace(".", EV.DOT) + EV.DOLLAR + x.FieldName, x => new SortField
-                    {
-                        name = x.FieldName,
-                        duplicateAction = (DuplicateAction)x.DuplicatedAction,
-                        sortType = (SortType)x.OrderType,
-                        duplicateActionType = x.DuplicatedActionType
-                    }
-
-                    );
-                var fieldTypes = db.jobFileLayouts.Where(p => p.WorkingSetItemId == fileid).ToDictionary(p => p.Fieldname, p => p.Type);
-                var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
-                                        Config.Data.GetKey("input_folder_process"),
-                                        ws.State,
-                                        ws.County
-                                        );
-                path = path + @"\" + wsFile.Filename;
-                var file1 = Helpers.ReadCSV.ReadAsDictionary(wsFile.Filename, path, limit);
-                var primaryKey = wsFile.Filename.Replace(".", EV.DOT) + EV.DOLLAR + wsFile.PrimaryKey.ReplaceUnusedCharacters();
-                if (string.IsNullOrEmpty(primaryKey))
-                {
-                    throw new Exception("No Primary Key, Please select 1 first");
-                }
-
-
-                var allrecs = new List<Dictionary<string, object>>();
-
-                var sortActions = fields_sort.OrderBy(p => p.Value.duplicateAction);
-                var hasKeepAllRows = sortActions.Count(p => p.Value.duplicateAction == DuplicateAction.KeepAllRows) > 0;
-
-                foreach (var _group in file1.GroupBy(p => p[primaryKey]))
-                {
-                    //declare
-                    var breakOtherRecords = false;
-                    var ignoreAll = false;
-                    //var record = _group.FirstOrDefault();
-                    var isResponseWithError = false;
-                    var r_last = _group.Last();
-                    var r_first = _group.First();
-                    foreach (var sortField in sortActions)
-                    {
-                        var action = sortField.Value.duplicateAction;
-
-                        try
-                        {
-
-                            if (action == DuplicateAction.ResponseWithError)
-                            {
-                                isResponseWithError = true;
-                            }
-                            else if (action == DuplicateAction.PickupFirstValue)
-                            {
-                                if (!hasKeepAllRows) breakOtherRecords = true;
-                                //var v = _group.FirstOrDefault()[sortField.Key];
-                                foreach (var rec in _group)
-                                {
-                                    //rec[sortField.Key] = _group.FirstOrDefault()[sortField.Key];
-                                    rec[sortField.Key] = r_first[sortField.Key];
-                                }
-
-                            }
-                            else if (action == DuplicateAction.PickupLastValue)
-                            {
-                                if (!hasKeepAllRows) { breakOtherRecords = true; }
-                                //var v = _group.LastOrDefault()[sortField.Key];
-                                foreach (var rec in _group)
-                                {
-                                    //rec[sortField.Key] = _group.LastOrDefault()[sortField.Key];
-                                    rec[sortField.Key] = r_last[sortField.Key];
-
-                                }
-
-                            }
-                            else if (action == DuplicateAction.PickupFirstUn_NULL_value)
-                            {
-                                if (!hasKeepAllRows) breakOtherRecords = true;
-                                //var v = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
-                                foreach (var rec in _group)
-                                {
-                                    //rec[sortField.Key] = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
-                                    rec[sortField.Key] = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
-
-                                }
-                            }
-                            else if (action == DuplicateAction.PickupMaximumValue)
-                            {
-                                if (!hasKeepAllRows) breakOtherRecords = true;
-                                //var v = _group.Max(p => Convert.ToDecimal(p[sortField.Key]));
-                                foreach (var rec in _group)
-                                {
-                                    rec[sortField.Key] = _group.Max(p => Convert.ToDecimal(p[sortField.Key]));
-
-                                }
-                            }
-                            else if (action == DuplicateAction.PickupMinimumValue)
-                            {
-                                if (!hasKeepAllRows) breakOtherRecords = true;
-                                //var v = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
-                                foreach (var rec in _group)
-                                {
-                                    rec[sortField.Key] = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
-
-                                }
-                            }
-                            else if (action == DuplicateAction.SumAllRow)
-                            {
-                                if (!hasKeepAllRows) breakOtherRecords = true;
-                                //var v = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
-                                foreach (var rec in _group)
-                                {
-                                    rec[sortField.Key] = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
-
-                                }
-                            }
-                            //TODO: ConcatenateWithDelimiter phải xác định delimeter
-                            else if (action == DuplicateAction.ConcatenateWithDelimiter)
-                            {
-                                if (!hasKeepAllRows) breakOtherRecords = true;
-
-                                //var v = string.Join(",", _group.Select(i => i[sortField.Key]));
-                                foreach (var rec in _group)
-                                {
-                                    rec[sortField.Key] = string.Join(",", _group.Select(i => i[sortField.Key]));
-
-                                }
-                            }
-                            else if (action == DuplicateAction.KeepAllRows)
-                            {
-                                breakOtherRecords = false;
-
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-
-                            throw new Exception("ProcessFinal_Sorting_FAIL at: " + sortField.Key
-                                + ", sortType: " + action + Environment.NewLine + "Record: " + Environment.NewLine +
-                                Newtonsoft.Json.JsonConvert.SerializeObject(_group, Newtonsoft.Json.Formatting.Indented) + Environment.NewLine +
-                                ex.Message + " " + ex.StackTrace
-                                );
-                        }
-                    }
-                    foreach (var rec in _group)
-                    {
-
-                        if (ignoreAll)
-                            break;
-
-                        //rec.Add(wsFile.Filename + EV.DOLLAR + "isDuplicated", 0);// = 0;
-                        //var numOfPrimaryKeyFound = _group.Count();
-                        //rec.Add(wsFile.Filename + EV.DOLLAR + "numOfPrimaryKeyFound", numOfPrimaryKeyFound);
-                        //if (numOfPrimaryKeyFound > 1)
-                        //{
-                        //    if (isResponseWithError)
-                        //        throw new Exception("ResponseWithError");
-                        //    rec[wsFile.Filename + EV.DOLLAR + "isDuplicated"] = 1;
-
-                        //}
-
-                        allrecs.Add(rec);
-
-                        if (breakOtherRecords)
-                        {
-
-                            break;
-                        }
-
-                    }
-
-                }
-                file1.Clear();
-                file1 = null;
-                //Sorting
-
-                var sorted_file1 = Enumerable.Empty<Dictionary<string, object>>().OrderBy(x => 1);
-                var sortFieldsNotNONE = fields_sort.Where(p => p.Value.sortType != SortType.None);
-                var firstOrderItem = sortFieldsNotNONE.FirstOrDefault().Value;
-                if (firstOrderItem != null)
-                {
-                    if (firstOrderItem.sortType == SortType.Asccending)
-                    {
-                        if (fieldTypes.ContainsKey(firstOrderItem.name))
-                        {
-                            if (fieldTypes[firstOrderItem.name] == 0)//int
-                            {
-                                sorted_file1 = allrecs.OrderBy(x => Convert.ToDecimal(x[firstOrderItem.name]));
-                            }
-                            else
-                            {
-                                sorted_file1 = allrecs.OrderBy(x => x[firstOrderItem.name].ToString());
-                            }
-                        }
-                    }
-                    else if (firstOrderItem.sortType == SortType.Deccending)
-                    {
-                        if (fieldTypes.ContainsKey(firstOrderItem.name))
-                        {
-                            if (fieldTypes[firstOrderItem.name] == 0)//int
-                            {
-                                sorted_file1 = allrecs.OrderByDescending(x => Convert.ToDecimal(x[firstOrderItem.name]));
-                            }
-                            else
-                            {
-                                sorted_file1 = allrecs.OrderByDescending(x => x[firstOrderItem.name].ToString());
-                            }
-                        }
-                    }
-
-
-                    foreach (var item in sortFieldsNotNONE.Skip(1))
-                    {
-                        if (item.Value.sortType == SortType.Asccending)
-                        {
-                            if (fieldTypes.ContainsKey(item.Key))
-                            {
-                                if (fieldTypes[item.Key] == 0)//int
-                                {
-                                    sorted_file1 = sorted_file1.ThenBy(x => Convert.ToDecimal((decimal)x[item.Key]));
-                                }
-                                else
-                                {
-                                    sorted_file1 = sorted_file1.ThenBy(x => x[item.Key].ToString());
-                                }
-                            }
-
-                        }
-                        else if (item.Value.sortType == SortType.Deccending)
-                        {
-                            if (fieldTypes.ContainsKey(item.Key))
-                            {
-                                if (fieldTypes[item.Key] == 0)//int
-                                {
-                                    sorted_file1 = sorted_file1.ThenByDescending(x => Convert.ToDecimal((decimal)x[item.Key]));
-                                }
-                                else
-                                {
-                                    sorted_file1 = sorted_file1.ThenByDescending(x => x[item.Key].ToString());
-                                }
-                            }
-
-                        }
-                    }
-                }
-                else
-                {
-                    sorted_file1 = allrecs.OrderBy(x => 1);
-                }
-
-
-                //add sequence
-                //if (addSequence)
-                //    foreach (var _group in sorted_file1.GroupBy(p => p[primaryKey]))
-                //    {
-                //        var increasement = 1;
-                //        foreach (var record in _group)
-                //        {
-                //            record.Add("seq", 1);
-                //            record.Add("seq2", increasement);
-                //            increasement++;
-                //        }
-
-                //    }
-                //GC.Collect();
-
-                //apply rules
-                if (applyRules)
-                {
-                    var rules = db.fieldRules.Where(p => p.WorkingSetItemId == fileid).OrderBy(p => p.Order);
-                    //update rules as part of fieldType
-                    foreach (var rule in rules)
-                    {
-                        fieldTypes.Add(rule.Name, rule.Type);
-                    }
-                    CallFunction(rules, sorted_file1);
-                    rules = null;
-
-                }
-
-                GC.Collect();
-                db.Dispose();
-                return sorted_file1;
+                throw new Exception("No Primary Key, Please select 1 first");
             }
+
+            var group1 = file1.ToList().GroupBy(p => p[primaryKey]);
+
+            var allrecs = new List<IDictionary<string, object>>();
+
+            var sortActions = fields_sort.OrderBy(p => p.Value.duplicateAction);
+            foreach (var _group in group1)
+            {
+                var breakOtherRecords = false;
+                var ignoreAll = false;
+                var record = _group.FirstOrDefault();
+                var isResponseWithError = false;
+                var hasKeepAllRows = sortActions.Where(p => p.Value.duplicateAction == DuplicateAction.KeepAllRows).Count() > 0;
+                foreach (var sortField in sortActions)
+                {
+                    var action = sortField.Value.duplicateAction;
+
+                    try
+                    {
+
+                        if (action == DuplicateAction.ResponseWithError)
+                        {
+                            //throw new Exception("ResponseWithError");
+                            isResponseWithError = true;
+                        }
+                        else if (action == DuplicateAction.PickupFirstValue)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.FirstOrDefault()[sortField.Key];
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+
+                        }
+                        else if (action == DuplicateAction.PickupLastValue)
+                        {
+                            if (!hasKeepAllRows) { breakOtherRecords = true; }
+                            var v = _group.LastOrDefault()[sortField.Key];
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+
+                        }
+                        else if (action == DuplicateAction.PickupFirstUn_NULL_value)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        else if (action == DuplicateAction.PickupMaximumValue)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.Max(p => Convert.ToDecimal(p[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        else if (action == DuplicateAction.PickupMinimumValue)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        else if (action == DuplicateAction.SumAllRow)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+                            var v = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        //TODO: ConcatenateWithDelimiter phải xác định delimeter
+                        else if (action == DuplicateAction.ConcatenateWithDelimiter)
+                        {
+                            if (!hasKeepAllRows) breakOtherRecords = true;
+
+                            var v = string.Join(",", _group.Select(i => i[sortField.Key]));
+                            foreach (var rec in _group)
+                            {
+                                rec[sortField.Key] = v;
+
+                            }
+                        }
+                        else if (action == DuplicateAction.KeepAllRows)
+                        {
+                            breakOtherRecords = false;
+
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+
+                        throw new Exception("FAIL at: " + sortField.Key
+                            + ", sortType: " + action + Environment.NewLine + "Record: " + Environment.NewLine +
+                            Newtonsoft.Json.JsonConvert.SerializeObject(_group, Newtonsoft.Json.Formatting.Indented));
+                    }
+                }
+                foreach (var rec in _group)
+                {
+
+                    if (ignoreAll)
+                        break;
+
+                    rec.Add(wsFile.Filename + EV.DOLLAR + "isDuplicated", 0);// = 0;
+                    var numOfPrimaryKeyFound = _group.Count();
+                    rec.Add(wsFile.Filename + EV.DOLLAR + "numOfPrimaryKeyFound", numOfPrimaryKeyFound);
+                    if (numOfPrimaryKeyFound > 1)
+                    {
+                        if (isResponseWithError)
+                            throw new Exception("ResponseWithError");
+                        rec[wsFile.Filename + EV.DOLLAR + "isDuplicated"] = 1;
+
+                    }
+
+                    allrecs.Add(rec);
+
+                    if (breakOtherRecords)
+                    {
+
+                        break;
+                    }
+
+                }
+
+            }
+
+            //Sorting
+
+            var sorted_file1 = Enumerable.Empty<IDictionary<string, object>>().OrderBy(x => 1);
+            var sortFieldsNotNONE = fields_sort.Where(p => p.Value.sortType != SortType.None);
+            var firstOrderItem = sortFieldsNotNONE.FirstOrDefault().Value;
+            if (firstOrderItem != null)
+            {
+                if (firstOrderItem.sortType == SortType.Asccending)
+                {
+                    if (fieldTypes.ContainsKey(firstOrderItem.name))
+                    {
+                        if (fieldTypes[firstOrderItem.name] == 0)//int
+                        {
+                            sorted_file1 = allrecs.OrderBy(x => Convert.ToDecimal(x[firstOrderItem.name]));
+                        }
+                        else
+                        {
+                            sorted_file1 = allrecs.OrderBy(x => x[firstOrderItem.name].ToString());
+                        }
+                    }
+                }
+                else if (firstOrderItem.sortType == SortType.Deccending)
+                {
+                    if (fieldTypes.ContainsKey(firstOrderItem.name))
+                    {
+                        if (fieldTypes[firstOrderItem.name] == 0)//int
+                        {
+                            sorted_file1 = allrecs.OrderByDescending(x => Convert.ToDecimal(x[firstOrderItem.name]));
+                        }
+                        else
+                        {
+                            sorted_file1 = allrecs.OrderByDescending(x => x[firstOrderItem.name].ToString());
+                        }
+                    }
+                }
+
+
+                foreach (var item in sortFieldsNotNONE.Skip(1))
+                {
+                    if (item.Value.sortType == SortType.Asccending)
+                    {
+                        if (fieldTypes.ContainsKey(item.Key))
+                        {
+                            if (fieldTypes[item.Key] == 0)//int
+                            {
+                                sorted_file1 = sorted_file1.ThenBy(x => Convert.ToDecimal((decimal)x[item.Key]));
+                            }
+                            else
+                            {
+                                sorted_file1 = sorted_file1.ThenBy(x => x[item.Key].ToString());
+                            }
+                        }
+
+                    }
+                    else if (item.Value.sortType == SortType.Deccending)
+                    {
+                        if (fieldTypes.ContainsKey(item.Key))
+                        {
+                            if (fieldTypes[item.Key] == 0)//int
+                            {
+                                sorted_file1 = sorted_file1.ThenByDescending(x => Convert.ToDecimal((decimal)x[item.Key]));
+                            }
+                            else
+                            {
+                                sorted_file1 = sorted_file1.ThenByDescending(x => x[item.Key].ToString());
+                            }
+                        }
+
+                    }
+                }
+            }
+            else
+            {
+                sorted_file1 = allrecs.OrderBy(x => 1);
+            }
+
+
+            group1 = sorted_file1.ToList().GroupBy(p => p[primaryKey]);
+            //add sequence
+            if (addSequence)
+                foreach (var _group in group1)
+                {
+                    var increasement = 1;
+                    foreach (var record in _group)
+                    {
+                        record.Add("seq", 1);
+                        record.Add("seq2", increasement);
+                        increasement++;
+                    }
+
+                }
+
+
+            //apply rules
+            if (applyRules)
+            {
+                var rules = db.fieldRules.Where(p => p.WorkingSetItemId == fileid).OrderBy(p => p.Order);
+                //update rules as part of fieldType
+                foreach (var rule in rules)
+                {
+                    fieldTypes.Add(rule.Name, rule.Type);
+                }
+                CallFunction(rules, sorted_file1);
+                //var dyna = new DynaExp();
+                //var dt = new System.Data.DataTable();
+                //foreach (var rule in rules)
+                //{
+                //    if (rule.Type == 0)
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            var rule_result = rule.ExpValue.FormatWith(rec);
+                //            //TODO: dòng này xữ lý chậm
+                //            myUnderlyingObject.Add(rule.Name, dt.Compute(rule_result, ""));// target.Eval(rule_result));
+
+
+                //        }
+                //    }
+                //    else if (rule.Type == 2)//bool
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            var rule_result = dyna.IS(rule.ExpValue.FormatWith(rec));
+                //            //TODO: dòng này xữ lý chậm
+                //            myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                //        }
+                //    }
+                //    else if (rule.Type == 1)//string
+                //    {
+                //        foreach (var rec in sorted_file1)
+                //        {
+                //            IDictionary<string, object> myUnderlyingObject = rec;
+                //            var rule_result = dyna.FORMAT(rule.ExpValue.FormatWith(rec));
+                //            //TODO: dòng này xữ lý chậm
+                //            myUnderlyingObject.Add(rule.Name, rule_result);
+
+
+                //        }
+                //    }
+
+                //}
+            }
+
+            return sorted_file1;
         }
-        public void CallFunction(IOrderedQueryable<FieldRule> rules, IOrderedEnumerable<Dictionary<string, object>> sorted_file1)
+        public void CallFunction(IOrderedQueryable<FieldRule> rules, IOrderedEnumerable<IDictionary<string, object>> sorted_file1)
         {
             var dyna = new DynaExp();
             var dt = new System.Data.DataTable();
@@ -1753,103 +1787,76 @@ namespace Mvc_5_site.Controllers
 
             }
         }
-        public class outputDataWithName
-        {
-            public string FieldMapperName { get; set; }
-            public string FileMapperName { get; set; }
-            public int Id { get; set; }
-            public int Order { get; set; }
-            public int OutputFieldId { get; set; }
-            public int WorkingSetId { get; set; }
-            public string FieldName { get; set; }
-        }
+        
         public void testMap(int id,bool cleanUpResult=false)
         {
+
             var db = new BL.DA_Model();
             var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
             var firstFileId = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == id);
+            //if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
 
 
             var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
-            var limit = 2 * 1000 * 1000 * 1000;
+            var dic = new Dictionary<string, IEnumerable<IDictionary<string, object>>>();
+            var limit = 2*1000*1000*1000;
 
 
-            //all recs
-            var all_rec = new List<Dictionary<string, object>>();// Enumerable.Empty<Dictionary<string, object>>();
+            var files = new List<int>();
+            if (linkageData != null)
+            {
+                foreach (var item in linkageData)
+                {
+                    if (files.FirstOrDefault(p => p == item.firstId) == 0)
+                    {
+                        files.Add(item.firstId);
+                    }
+                    if (files.FirstOrDefault(p => p == item.sndId) == 0)
+                    {
+                        files.Add(item.sndId);
+                    }
+                }
+            }
+            
+            var ls = new List<IEnumerable<IDictionary<string, object>>>();
+            var _ls= new List<IDictionary<string, object>>();
+            var allRec = new List<IDictionary<string, object>>();
 
-
+            
             var dtAll = new DataTable();
-            var numOfRun = 0;
-            var cached1 = Enumerable.Empty<Dictionary<string, object>>();
-            var cached2 = Enumerable.Empty<Dictionary<string, object>>();
-            var loadF1 = Enumerable.Empty<Dictionary<string, object>>();
-            var loadF2 = Enumerable.Empty<Dictionary<string, object>>();
-            //declare RuleMapper 
-            var outputFields = db.outputFields.Where(p => p.OutputMapperId == ws.SeletedOutputId);
-            var outputData = db.outputDatas.Where(p => outputFields.Any(c => c.Id == p.OutputFieldId) && p.WorkingSetId == ws.Id);
-
-            var outputDataWithName = from p in outputData
-                                     join pp in outputFields
-                                     on p.OutputFieldId equals pp.Id
-                                     select new outputDataWithName
-                                     {
-                                         FieldMapperName = p.FieldMapperName,
-                                         FileMapperName = p.FileMapperName,
-                                         Id = p.Id,
-                                         Order = p.Order,
-                                         OutputFieldId = p.OutputFieldId,
-                                         WorkingSetId = p.WorkingSetId,
-                                         FieldName = pp.Name
-                                     };
-            var rules = db.outputDataDetails.Where(p => p.OutputFileId == ws.SeletedOutputId && p.WorkingSetId == id).ToList();//.OrderBy(p => p.Order);
-            var seq1Name = "seq1";
-            var seq2Name = "seq2";
-            var outputDataWithNameList = outputDataWithName.ToList();
-
-            ////END declare RuleMapper 
-            //nạp dữ liệu vào all_rec
             if (linkageData != null)
             {
                 var groupLinkageData = linkageData.GroupBy(p => p.firstId + p.sndId);
-                var key = groupLinkageData.First().First().firstField;
-                var sndKey = groupLinkageData.First().Last().firstField;
+                string key = groupLinkageData.First().First().firstField;
+                string sndKey = groupLinkageData.First().Last().firstField;
                 foreach (var item in groupLinkageData)
                 {
-                    //var FF_result = new List<IDictionary<string, object>>();
-                    //Process_final(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
+                    var FF_result = new List<IDictionary<string, object>>();
+                    var loadF1 = Process_final(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
 
-                    //Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
-                    if (numOfRun == 0)
-                    {
-                        Console.WriteLine("Get data from file " + item.First().firstFilename);
-                        loadF1 = Process_final(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
-                        Console.WriteLine("Get data from file " + item.First().sndFilename);
-                        loadF2 = Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
-                        cached1 = loadF1;
-                        cached2 = loadF2;
-                        all_rec = loadF1.ToList();
-                    }
-                    else
-                    {
-                        loadF1 = cached2;
-                        Console.WriteLine("Get data from file " + item.First().sndFilename);
-                        loadF2 = Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
-                    }
-                    numOfRun++;
+                    var loadF2 = Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
+
                     var firstF1 = loadF1.First();
                     var firstF2 = loadF2.First();
 
 
 
-                    //if (_ls.Count == 0)
-                    //{
-                    //    _ls = loadF1.ToList();
-                    //}
+                    //missing field nếu ko join dc
+                    //var ff = from p in loadF1
+                    //         join pp in loadF2
+                    //         on new { a = p[item.First().firstField], b = p[item.Last().firstField] } equals new { a = pp[item.First().sndField], b = pp[item.Last().sndField] }
+                    //         into ps
+                    //         from g in ps//.DefaultIfEmpty()
+                    //         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g);// g.Where(kvp => !p.ContainsKey(kvp.Key)));//
+                    if (_ls.Count == 0)
+                    {
+                        _ls = loadF1.ToList();
+                    }
                     var left1 = item.First().firstFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.First().firstField;
                     var right1 = item.Last().firstFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.Last().firstField;
                     var left2 = item.First().sndFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.First().sndField;
                     var right2 = item.Last().sndFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.Last().sndField;
-                    var ff = from p in all_rec
+                    var ff = from p in _ls
                              join pp in loadF2
                              on new
                              {
@@ -1863,42 +1870,53 @@ namespace Mvc_5_site.Controllers
                              }
                              into ps
                              from g in ps//.DefaultIfEmpty()
-                             select p.Concat(g == null ? new Dictionary<string, object>() : g).ToDictionary(x => x.Key, x => x.Value);
-                    //select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g).ToDictionary(x => x.Key, x => x.Value);
-                    //TODO: slow here
-                    all_rec = ff.ToList();// new List<IDictionary<string, object>>(ff);// ff.ToDictionary(x=>x.Keys).ToList();
-                    loadF1 = null;
-                    loadF2 = null;
+                             select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g).ToDictionary(x => x.Key, x => x.Value);
+                    //var ff = from p in _ls
+                    //         join pp in loadF2
+                    //         on new
+                    //         {
+                    //             a = p[item.First().firstFilename + EV.DOLLAR + item.First().firstField],
+                    //             b = p[item.Last().firstFilename + EV.DOLLAR + item.Last().firstField]
+                    //         }
+                    //         equals new
+                    //         {
+                    //             a = pp[item.First().sndFilename + EV.DOLLAR + item.First().sndField],
+                    //             b = pp[item.Last().sndFilename + EV.DOLLAR + item.Last().sndField]
+                    //         }
+                    //         into ps
+                    //         from g in ps//.DefaultIfEmpty()
+                    //         select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g).ToDictionary(x=>x.Key,x=>x.Value);
+                    _ls = new List<IDictionary<string, object>>(ff);// ff.ToDictionary(x=>x.Keys).ToList();
+
                 }
-                groupLinkageData = null;
-            }
-            else
+            }else
             {
-                // neu ko có linkage, check tất cả các Rule có phải viết cho 1 file ?
-                // nếu có thì chọn xữ lý file đó
-                var firstFileName_InRule = outputDataWithNameList.First().FileMapperName;
-                //BL.WorkingSetItem onlyRuleForOneFile = null;
-                if (outputDataWithNameList.All(p => p.FileMapperName == firstFileName_InRule))
-                {
-                    var onlyRuleForOneFile = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == id && p.Filename == firstFileName_InRule);
-                    if (onlyRuleForOneFile != null)
-                    {
-                        Console.WriteLine("Get data from file " + onlyRuleForOneFile.Filename);
-                        loadF1 = Process_final(onlyRuleForOneFile.Id, limit: limit, addSequence: false, applyRules: false);
-                        all_rec = loadF1.ToList();
-                    }
-
-                }
-
-                // new List<IDictionary<string, object>>(loadF1);
+                var loadF1 = Process_final(firstFileId.Id, limit: limit, addSequence: false, applyRules: false);
+                _ls = loadF1.ToList();// new List<IDictionary<string, object>>(loadF1);
             }
-            cached1 = null;
-            cached2 = null;
-            loadF1 = null;
-            loadF2 = null;
+            
             // apply rule mapper
-
-            outputDataWithNameList.Add(new outputDataWithName
+            var outputFields = db.outputFields.Where(p => p.OutputMapperId == ws.SeletedOutputId);
+            var outputData = db.outputDatas.Where(p => outputFields.Any(c => c.Id == p.OutputFieldId) && p.WorkingSetId==ws.Id);
+            
+            var outputDataWithName = from p in outputData
+                                     join pp in outputFields
+                                     on p.OutputFieldId equals pp.Id
+                                     select new
+                                     {
+                                         FieldMapperName = p.FieldMapperName,
+                                         FileMapperName = p.FileMapperName,
+                                         Id = p.Id,
+                                         Order = p.Order,
+                                         OutputFieldId = p.OutputFieldId,
+                                         WorkingSetId = p.WorkingSetId,
+                                         FieldName = pp.Name
+                                     };
+            var rules = db.outputDataDetails.Where(p => p.OutputFileId == ws.SeletedOutputId && p.WorkingSetId==id).ToList();//.OrderBy(p => p.Order);
+            var seq1Name = "seq1";
+            var seq2Name = "seq2";
+            var outputDataWithNameList = outputDataWithName.ToList();
+            outputDataWithNameList.Add(new
             {
                 FieldMapperName = seq1Name,
                 FileMapperName = seq1Name,
@@ -1908,7 +1926,7 @@ namespace Mvc_5_site.Controllers
                 WorkingSetId = ws.Id,
                 FieldName = seq1Name
             });
-            outputDataWithNameList.Add(new outputDataWithName
+            outputDataWithNameList.Add(new
             {
                 FieldMapperName = seq2Name,
                 FileMapperName = seq2Name,
@@ -1918,244 +1936,134 @@ namespace Mvc_5_site.Controllers
                 WorkingSetId = ws.Id,
                 FieldName = seq2Name
             });
-            var outputData_ = outputDataWithNameList.GroupBy(c => c.OutputFieldId).ToList();
-
+            var outputData_ = outputDataWithNameList.GroupBy(c=>c.OutputFieldId);
+            
             var rule_ = rules.ToList();
-            //rename field in rule expression
             foreach (var rule in rule_)
             {
                 rule.ExpValue = rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
             }
+            
 
-            var numOfGroupItems = outputData_.Count;
-            var ls_outputFieldName = new string[numOfGroupItems];// List<string>();
-            var ls_mappers = new outputDataWithName[numOfGroupItems];// List<outputDataWithName>();
-            var ls_outputDataDetail = new Dictionary<string, List<OutputDataDetail>>();
-            var ls_numOfFields = new int[numOfGroupItems];// List<int>();
-            var ls_isSimpleInputType = new int[numOfGroupItems];// List<int>();
-            var index = 0;
-            foreach (var group_field in outputData_)
-            {
-
-                var rulesForThisField = rule_
-                    .Where(p => p.OutputFieldId == group_field.Key).ToList();
-                var fieldname = group_field.Key + EV.DOLLAR;
-                var mapper = group_field.First();
-                ls_outputFieldName[index] = fieldname;//.Add(fieldname);
-                ls_outputDataDetail.Add(fieldname, rulesForThisField);
-                ls_mappers[index] = mapper;//.Add(mapper);
-                ls_numOfFields[index] = group_field.Count();//.Add(group_field.Count());
-
-                var iIsSimpleInputType = 0;
-
-                if (mapper.FieldMapperName != seq1Name && mapper.FieldMapperName != seq2Name)
-                    if (rulesForThisField.Count == 0)
-                    {
-                        if (group_field.Count() == 1)
-                        {
-                            if (!string.IsNullOrEmpty(mapper.FieldMapperName))
-                            {
-                                iIsSimpleInputType = 2;
-                            }
-                            else
-                            {
-                                iIsSimpleInputType = 1;
-                            }
-
-                        }
-
-                    }
-                ls_isSimpleInputType[index] = iIsSimpleInputType;//.Add(iIsSimpleInputType);
-                index++;
-            }
-            var icount = 0;
             var dyna = new DynaExp();
-            //transfer to editable
-            using (var dt = new System.Data.DataTable())
+            var dt = new System.Data.DataTable();
+            foreach (var rec in _ls)
             {
-                Console.WriteLine(DateTime.Now.ToShortTimeString());
-                Console.WriteLine("Applying Rules...");
-                //TODO: nếu ko viết Rule, và chỉ có 1 field dc chọn để map
-
-                foreach (var rec in all_rec)
+                IDictionary<string, object> myUnderlyingObject = rec;
+                foreach (var group_field in outputData_)
                 {
-                    for (int i = 0; i < ls_outputFieldName.Length; i++)
+
+                    var ruleForThisField = rule_.Where(p => p.OutputFieldId == group_field.Key).ToList();
+                    var fieldname = group_field.Key+EV.DOLLAR;
+                    foreach (var rule in ruleForThisField)
                     {
-                        var fieldname = ls_outputFieldName[i];
-                        var mapper = ls_mappers[i];
-                        var rulesForThisField = ls_outputDataDetail[fieldname];
-                        var numOfFields = ls_numOfFields[i];
-                        var inputType = ls_isSimpleInputType[i];
-                        if (inputType == 2)
+                        var rule_fullname = fieldname + rule.Name;
+                        if (rule.Type == 0)
                         {
-                            var _name = mapper.FileMapperName + ":" + mapper.FieldMapperName;
-                            _name = _name.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
-                            rec.Add(mapper.FieldName, rec[_name]);
+                            //var rule_result = rule.ExpValue.FormatWith(rec);
+                            //TODO: dòng này xữ lý chậm
+                            myUnderlyingObject.Add(rule_fullname, dt.Compute(rule.ExpValue.FormatWith(rec), ""));// target.Eval(rule_result));
                         }
-                        else if (inputType == 1)
+                        else if (rule.Type == 2)//bool
                         {
-                            rec.Add(mapper.FieldName, null);
+                            myUnderlyingObject.Add(rule_fullname, dyna.IS(rule.ExpValue.FormatWith(rec)));
                         }
-                        else
+                        else if (rule.Type == 1)//string
                         {
-                            foreach (var rule in rulesForThisField)
-                            {
-                                try
-                                {
-                                    var rule_fullname = fieldname + rule.Name;
-                                    if (rule.Type == 0)
-                                    {
-                                        //var rule_result = rule.ExpValue.FormatWith(rec);
-                                        //TODO: dòng này xữ lý chậm
-                                        rec.Add(rule_fullname, dt.Compute(rule.ExpValue.FormatWith(rec), ""));// target.Eval(rule_result));
-                                    }
-                                    else if (rule.Type == 2)//bool
-                                    {
-                                        rec.Add(rule_fullname, dyna.IS(rule.ExpValue.FormatWith(rec)));
-                                    }
-                                    else if (rule.Type == 1)//string
-                                    {
-                                        //var a= rule.ExpValue;
-                                        //var a = rule.ExpValue.FormatWith(rec);
-                                        //icount++;
-                                        rec.Add(rule_fullname, dyna.FORMAT(rule.ExpValue.FormatWith(rec)));
-                                    }
-                                    else if (rule.Type == 3)//string
-                                    {
-                                        rec.Add(rule_fullname, dyna.FUNC_Num(rule.ExpValue.FormatWith(rec)));
-                                    }
-                                    else if (rule.Type == 4)//string
-                                    {
-                                        rec.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
-                                    }
-                                    if (rule == rulesForThisField.Last())
-                                    {
-                                        rec.Add(mapper.FieldName, rec[rule_fullname]);
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-
-                                    throw new Exception("Fail to run Rule:" + rule.ExpValue + Environment.NewLine +
-                                        " rec: " + Newtonsoft.Json.JsonConvert.SerializeObject(rec) + Environment.NewLine +
-                                        " Message:" + ex.Message
-                                        );
-                                }
-                            }
+                            myUnderlyingObject.Add(rule_fullname, dyna.FORMAT(rule.ExpValue.FormatWith(rec)));
                         }
-
-
-                    }
-
-
-                }
-                Console.WriteLine("-----" + icount);
-                Console.WriteLine("Done apply Rules: " + DateTime.Now.ToShortTimeString());
-                var primaryKey = string.Empty;
-                if (linkageData != null)
-                {
-                    var firstLinkage = linkageData.First();
-                    primaryKey = firstLinkage.firstFilename.Replace(".", EV.DOT) + EV.DOLLAR + firstLinkage.firstField;
-                }
-                else
-                {
-                    primaryKey = firstFileId.Filename.Replace(".", EV.DOT) + EV.DOLLAR + firstFileId.PrimaryKey;
-                }
-
-
-                //var group1 = _ls.ToList().GroupBy(p => p[primaryKey]);
-                //add sequence
-                Console.WriteLine("Grouping and adding sequence");
-                foreach (var _group in all_rec.GroupBy(p => p[primaryKey]))
-                {
-                    var increasement = 1;
-                    foreach (var record in _group)
-                    {
-                        record.Add(seq1Name, 1);
-                        record.Add(seq2Name, increasement);
-                        increasement++;
-                    }
-
-                }
-                Console.WriteLine("Transforming data");
-                dtAll = Ulti.ToDataTable(all_rec);
-                //remove columns
-                Console.WriteLine("Cleaning result");
-                if (cleanUpResult)
-                {
-                    var list_col_to_remove = new List<DataColumn>();
-                    foreach (DataColumn col in dtAll.Columns)
-                    {
-                        if (!outputData_.Any(c => c.First().FieldName == col.ColumnName))
+                        else if (rule.Type == 3)//string
                         {
-                            list_col_to_remove.Add(col);
+                            myUnderlyingObject.Add(rule_fullname, dyna.FUNC_Num(rule.ExpValue.FormatWith(rec)));
                         }
-                    }
-                    foreach (var col in list_col_to_remove)
-                    {
-                        dtAll.Columns.Remove(col);
-                    }
-                    list_col_to_remove.Clear();
-                }
-                //format, and length
-
-                var colFields = new List<string>();
-                foreach (DataColumn item in dtAll.Columns)
-                {
-                    if (item.ColumnName != seq1Name && item.ColumnName != seq2Name)
-                        colFields.Add(item.ColumnName);
-                }
-                var outputDic = outputFields.Where(c => colFields.Any(d => d == c.Name)).ToDictionary(x => x.Name, x => x);
-                foreach (DataRow row in dtAll.Rows)
-                {
-                    foreach (var colName in colFields)
-                    {
-                        var fieldInfo = outputDic[colName];
-                        var cell = row[colName];
-                        var content = cell.ToString();
-                        if (fieldInfo.Type == EV.TYPE_NUM)
+                        else if (rule.Type == 4)//string
                         {
-                            try
-                            {
-                                if (!string.IsNullOrEmpty(content))
-                                    cell = Math.Round(Convert.ToDecimal(cell), fieldInfo.Decimal);
-                            }
-                            catch (Exception ex)
-                            {
-
-                                throw new Exception("Binding driver field FAIL:column=" + colName + ", value=" + content + Environment.NewLine
-                                    + "Decimal=" + fieldInfo.Decimal + Environment.NewLine
-                                    //+ Newtonsoft.Json.JsonConvert.SerializeObject(row) + Environment.NewLine
-                                    + ex.Message + Environment.NewLine
-                                    + ex.StackTrace
-
-                                    );
-                            }
+                            myUnderlyingObject.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
                         }
-                        else
+                        
+                        if (rule == ruleForThisField.Last())
                         {
-
-
-                            if (!string.IsNullOrEmpty(content) && content.Length >= fieldInfo.Length)
-                            {
-                                cell = content.Substring(0, fieldInfo.Length);
-                            }
+                            myUnderlyingObject.Add(group_field.First().FieldName, myUnderlyingObject[rule_fullname]);
                         }
                     }
                 }
-                Console.WriteLine("Writing file");
-                var fileOutput = db.outputMappers.Find(ws.SeletedOutputId);
-                var name = DateTime.Now.ToString("yyyyMMdd") + "_" + fileOutput.Name + "_" + ws.User + ".csv";
-                Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("output_folder_process") + "\\" +
-                    ws.State + "\\" + ws.County + "\\" + name, dtAll);
-                all_rec.Clear();
-                all_rec = null;
-                dtAll.Clear();
-                dtAll.Dispose();
-                GC.Collect();
-                //Console.WriteLine("-----------------------------");
-                //return name;
             }
+
+            var a = 1;
+            var firstLinkage = linkageData.First();
+            var primaryKey = firstLinkage.firstFilename.Replace(".", EV.DOT) + EV.DOLLAR + firstLinkage.firstField;
+            
+            var group1 = _ls.ToList().GroupBy(p => p[primaryKey]);
+            
+            //add sequence
+            foreach (var _group in group1)
+            {
+                var increasement = 1;
+                foreach (var record in _group)
+                {
+                    record.Add(seq1Name, 1);
+                    record.Add(seq2Name, increasement);
+                    increasement++;
+                }
+
+            }
+            
+
+            dtAll = Ulti.ToDataTable(_ls);
+            //remove columns
+            if (cleanUpResult)
+            {
+                var list_col_to_remove = new List<DataColumn>();
+                foreach (DataColumn col in dtAll.Columns)
+                {
+                    if (!outputData_.Any(c => c.First().FieldName == col.ColumnName))
+                    {
+                        list_col_to_remove.Add(col);
+                    }
+                }
+                foreach (var col in list_col_to_remove)
+                {
+                    dtAll.Columns.Remove(col);
+                }
+            }
+            //format, and length
+            
+            var colFields = new List<string>();
+            foreach (DataColumn item in dtAll.Columns)
+            {
+                if(item.ColumnName!=seq1Name && item.ColumnName!=seq2Name)
+                    colFields.Add(item.ColumnName);
+            }
+            var outputDic = outputFields.Where(c => colFields.Any(d => d==c.Name)).ToList().ToDictionary(x => x.Name, x => x);
+            foreach (DataRow row in dtAll.Rows)
+            {
+                foreach (var col in colFields)
+                {
+                    var formatCell = outputDic[col];
+                    if (formatCell.Type == EV.TYPE_NUM)
+                    {
+                        var cell = row[col];
+                        cell = Math.Round(Convert.ToDecimal(cell), formatCell.Decimal);
+                    }
+                    else
+                    {
+                        var cell = row[col];
+                        var content = cell.ToString();
+                        if (!string.IsNullOrEmpty(content) && content.Length >= formatCell.Length)
+                        {
+                            row[col] = content.Substring(0, formatCell.Length);
+                        }
+                    }
+                }
+            }
+
+
+            Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("tmp_folder_process") + "\\" +
+                "testFinalOutput.csv", dtAll);
+            _ls.Clear();
+            dtAll.Clear();
+            dtAll.Dispose();
+            GC.Collect();
         }
 
         #region TestLinkage
@@ -2677,197 +2585,197 @@ namespace Mvc_5_site.Controllers
         }
         #endregion
 
-        //public void test_groupby_keySort(int num)
-        //{
-        //    var primaryKey = "PARCEL_NUMBER";
-        //    var concatField = "TAX_DESCRIPTION_LINE";
-        //    var fields_sort = new List<SortField>();
-        //    var sort_key1 = new SortField { name="LINE_NUMBER", duplicateAction=DuplicateAction.PickupLastValue,sortType=SortType.Asccending };
-        //    var sort_key2 = new SortField { name = "TAX_DESCRIPTION_LINE", duplicateAction = DuplicateAction.PickupFirstUn_NULL_value };
-        //    fields_sort.Add(sort_key1);
-        //    //fields_sort.Add(sort_key2);
-        //    fields_sort = fields_sort.OrderBy(p => p.duplicateAction).ToList();
+        public void test_groupby_keySort(int num)
+        {
+            var primaryKey = "PARCEL_NUMBER";
+            var concatField = "TAX_DESCRIPTION_LINE";
+            var fields_sort = new List<SortField>();
+            var sort_key1 = new SortField { name="LINE_NUMBER", duplicateAction=DuplicateAction.PickupLastValue,sortType=SortType.Asccending };
+            var sort_key2 = new SortField { name = "TAX_DESCRIPTION_LINE", duplicateAction = DuplicateAction.PickupFirstUn_NULL_value };
+            fields_sort.Add(sort_key1);
+            //fields_sort.Add(sort_key2);
+            fields_sort = fields_sort.OrderBy(p => p.duplicateAction).ToList();
 
-        //    var tab = "\t";
-        //    var file1 = Helpers.ReadCSV.ReadAsDictionary(@"D:\FA_in_out\InputFile\Tax_description_TAB.txt", num);
-        //    //var arr_sort = new List<string>();
-        //    ////var str_sort = primaryKey + " ASC";
-        //    //arr_sort.Add(primaryKey + " ASC");
-        //    //foreach (var item in fields_sort)
-        //    //{
-        //    //    if (item.sortType == SortType.Accending)
-        //    //    {
-        //    //        arr_sort.Add(item.name + " ASC");
-        //    //    }
-        //    //    else if (item.sortType == SortType.Deccending)
-        //    //    {
-        //    //        arr_sort.Add(item.name + " DESC");
-        //    //    }
-        //    //}
-        //    //var str_sort = string.Join(",", arr_sort);
-        //    //group1 = group1.OrderBy(str_sort);
-        //    //var sorted_file1 = file1.OrderBy(x => Convert.ToDecimal(x[primaryKey]));//.Select(p => (IDictionary<string, object>)p)
-        //    var sorted_file1 = file1.OrderBy(x => x[primaryKey].ToString());//.Select(p => (IDictionary<string, object>)p)
-        //    foreach (var item in fields_sort)
-        //    {
-        //        if (item.sortType == SortType.Asccending)
-        //        {
-        //            sorted_file1 = sorted_file1.ThenBy(x => x[item.name]);
-        //        }
-        //        else if (item.sortType == SortType.Deccending)
-        //        {
-        //            sorted_file1 = sorted_file1.ThenByDescending(x => x[item.name]);
-        //        }
-        //    }
-        //    var group1 = sorted_file1.ToList().GroupBy(p => p[primaryKey]);//Select(p => (IDictionary<string, object>)p)
-        //    var allrecs = new List<IDictionary<string, object>>();
+            var tab = "\t";
+            var file1 = Helpers.ReadCSV.ReadAsDictionary(@"D:\FA_in_out\InputFile\Tax_description_TAB.txt", num);
+            //var arr_sort = new List<string>();
+            ////var str_sort = primaryKey + " ASC";
+            //arr_sort.Add(primaryKey + " ASC");
+            //foreach (var item in fields_sort)
+            //{
+            //    if (item.sortType == SortType.Accending)
+            //    {
+            //        arr_sort.Add(item.name + " ASC");
+            //    }
+            //    else if (item.sortType == SortType.Deccending)
+            //    {
+            //        arr_sort.Add(item.name + " DESC");
+            //    }
+            //}
+            //var str_sort = string.Join(",", arr_sort);
+            //group1 = group1.OrderBy(str_sort);
+            //var sorted_file1 = file1.OrderBy(x => Convert.ToDecimal(x[primaryKey]));//.Select(p => (IDictionary<string, object>)p)
+            var sorted_file1 = file1.OrderBy(x => x[primaryKey].ToString());//.Select(p => (IDictionary<string, object>)p)
+            foreach (var item in fields_sort)
+            {
+                if (item.sortType == SortType.Asccending)
+                {
+                    sorted_file1 = sorted_file1.ThenBy(x => x[item.name]);
+                }
+                else if (item.sortType == SortType.Deccending)
+                {
+                    sorted_file1 = sorted_file1.ThenByDescending(x => x[item.name]);
+                }
+            }
+            var group1 = sorted_file1.ToList().GroupBy(p => p[primaryKey]);//Select(p => (IDictionary<string, object>)p)
+            var allrecs = new List<IDictionary<string, object>>();
             
-        //    foreach (var _group in group1)
-        //    {
-        //        //foreach (var record in _group)
-        //        //{
+            foreach (var _group in group1)
+            {
+                //foreach (var record in _group)
+                //{
 
-        //        //}
-        //        var breakOtherRecords = false;
-        //        var ignoreAll = false;
-        //        var record = _group.FirstOrDefault();
-        //        foreach (var sortField in fields_sort)
-        //        {
-        //            if (sortField.duplicateAction == DuplicateAction.ResponseWithError)
-        //            {
-        //                throw new Exception("ResponseWithError");
-        //            }
+                //}
+                var breakOtherRecords = false;
+                var ignoreAll = false;
+                var record = _group.FirstOrDefault();
+                foreach (var sortField in fields_sort)
+                {
+                    if (sortField.duplicateAction == DuplicateAction.ResponseWithError)
+                    {
+                        throw new Exception("ResponseWithError");
+                    }
 
-        //            //else if(sortField.duplicateAction == DuplicateAction.KeepAllRows)
-        //            //{
-        //            //    breakOtherRecords = false;
-        //            //    break;
-        //            //}
-        //            //else if (sortField.duplicateAction == DuplicateAction.DropAllRows)
-        //            //{
-        //            //    //breakOtherRecords = true;
-        //            //    ignoreAll = true;
-        //            //    break;
-        //            //}
-        //            else if (sortField.duplicateAction == DuplicateAction.PickupFirstValue)
-        //            {
-        //                breakOtherRecords = true;
+                    //else if(sortField.duplicateAction == DuplicateAction.KeepAllRows)
+                    //{
+                    //    breakOtherRecords = false;
+                    //    break;
+                    //}
+                    //else if (sortField.duplicateAction == DuplicateAction.DropAllRows)
+                    //{
+                    //    //breakOtherRecords = true;
+                    //    ignoreAll = true;
+                    //    break;
+                    //}
+                    else if (sortField.duplicateAction == DuplicateAction.PickupFirstValue)
+                    {
+                        breakOtherRecords = true;
                         
-        //                //ignoreAll = true;
-        //                break;
-        //            }
-        //            else if (sortField.duplicateAction == DuplicateAction.PickupLastValue)
-        //            {
-        //                breakOtherRecords = true;
-        //                record[sortField.name] = _group.LastOrDefault()[sortField.name];
-        //                //ignoreAll = true;
-        //                break;
-        //            }
-        //            else if (sortField.duplicateAction == DuplicateAction.PickupFirstUn_NULL_value)
-        //            {
-        //                breakOtherRecords = true;
-        //                record[sortField.name] = _group.FirstOrDefault(p=>!string.IsNullOrEmpty(p[sortField.name].ToString()))[sortField.name];
-        //                //ignoreAll = true;
-        //                break;
-        //            }
-        //            else if (sortField.duplicateAction == DuplicateAction.PickupMaximumValue)
-        //            {
-        //                breakOtherRecords = true;
-        //                record[sortField.name] = _group.Max(p=>Convert.ToDecimal(p[sortField.name]));
-        //                //ignoreAll = true;
-        //                break;
-        //            }
-        //            else if (sortField.duplicateAction == DuplicateAction.PickupMinimumValue)
-        //            {
-        //                breakOtherRecords = true;
-        //                record[sortField.name] = _group.Min(p => Convert.ToDecimal(p[sortField.name]));
-        //                //ignoreAll = true;
-        //                break;
-        //            }
-        //            else if (sortField.duplicateAction == DuplicateAction.SumAllRow)
-        //            {
-        //                breakOtherRecords = true;
-        //                record[sortField.name] = _group.Sum(p => Convert.ToDecimal(p[sortField.name]));
-        //                //ignoreAll = true;
-        //                break;
-        //            }
-        //            //TODO: ConcatenateWithDelimiter phải xác định delimeter
-        //            else if (sortField.duplicateAction == DuplicateAction.ConcatenateWithDelimiter)
-        //            {
-        //                breakOtherRecords = true;
-        //                record[sortField.name] = string.Join(",", _group.Select(i => i[sortField.name]));
-        //                //ignoreAll = true;
-        //                break;
-        //            }
+                        //ignoreAll = true;
+                        break;
+                    }
+                    else if (sortField.duplicateAction == DuplicateAction.PickupLastValue)
+                    {
+                        breakOtherRecords = true;
+                        record[sortField.name] = _group.LastOrDefault()[sortField.name];
+                        //ignoreAll = true;
+                        break;
+                    }
+                    else if (sortField.duplicateAction == DuplicateAction.PickupFirstUn_NULL_value)
+                    {
+                        breakOtherRecords = true;
+                        record[sortField.name] = _group.FirstOrDefault(p=>!string.IsNullOrEmpty(p[sortField.name].ToString()))[sortField.name];
+                        //ignoreAll = true;
+                        break;
+                    }
+                    else if (sortField.duplicateAction == DuplicateAction.PickupMaximumValue)
+                    {
+                        breakOtherRecords = true;
+                        record[sortField.name] = _group.Max(p=>Convert.ToDecimal(p[sortField.name]));
+                        //ignoreAll = true;
+                        break;
+                    }
+                    else if (sortField.duplicateAction == DuplicateAction.PickupMinimumValue)
+                    {
+                        breakOtherRecords = true;
+                        record[sortField.name] = _group.Min(p => Convert.ToDecimal(p[sortField.name]));
+                        //ignoreAll = true;
+                        break;
+                    }
+                    else if (sortField.duplicateAction == DuplicateAction.SumAllRow)
+                    {
+                        breakOtherRecords = true;
+                        record[sortField.name] = _group.Sum(p => Convert.ToDecimal(p[sortField.name]));
+                        //ignoreAll = true;
+                        break;
+                    }
+                    //TODO: ConcatenateWithDelimiter phải xác định delimeter
+                    else if (sortField.duplicateAction == DuplicateAction.ConcatenateWithDelimiter)
+                    {
+                        breakOtherRecords = true;
+                        record[sortField.name] = string.Join(",", _group.Select(i => i[sortField.name]));
+                        //ignoreAll = true;
+                        break;
+                    }
 
 
 
-        //            //if (sortField[1] == "0")
-        //            //{
-        //            //    record[sortField[0]] = _group.Last()[sortField[0]];
-        //            //    breakOtherRecords = true;
-        //            //}
-        //            //else if (sortField[1] == "1")
-        //            //{
-        //            //    record[sortField[0]] = _group.Last()[sortField[0]];
+                    //if (sortField[1] == "0")
+                    //{
+                    //    record[sortField[0]] = _group.Last()[sortField[0]];
+                    //    breakOtherRecords = true;
+                    //}
+                    //else if (sortField[1] == "1")
+                    //{
+                    //    record[sortField[0]] = _group.Last()[sortField[0]];
 
-        //            //}
-        //        }
-        //        foreach (var rec in _group)
-        //        {
-        //            if (ignoreAll)
-        //                break;
+                    //}
+                }
+                foreach (var rec in _group)
+                {
+                    if (ignoreAll)
+                        break;
 
-        //            allrecs.Add(rec);
+                    allrecs.Add(rec);
 
-        //            if (breakOtherRecords)
-        //                break;
-        //        }
+                    if (breakOtherRecords)
+                        break;
+                }
                 
-        //    }
-        //    //regroup
-        //    sorted_file1 = allrecs.OrderBy(x => x[primaryKey].ToString());//.Select(p => (IDictionary<string, object>)p)
-        //    foreach (var item in fields_sort)
-        //    {
-        //        if (item.sortType == SortType.Asccending)
-        //        {
-        //            sorted_file1 = sorted_file1.ThenBy(x => x[item.name]);
-        //        }
-        //        else if (item.sortType == SortType.Deccending)
-        //        {
-        //            sorted_file1 = sorted_file1.ThenByDescending(x => x[item.name]);
-        //        }
-        //    }
-        //    group1 = sorted_file1.ToList().GroupBy(p => p[primaryKey]);
-        //    //add sequence
+            }
+            //regroup
+            sorted_file1 = allrecs.OrderBy(x => x[primaryKey].ToString());//.Select(p => (IDictionary<string, object>)p)
+            foreach (var item in fields_sort)
+            {
+                if (item.sortType == SortType.Asccending)
+                {
+                    sorted_file1 = sorted_file1.ThenBy(x => x[item.name]);
+                }
+                else if (item.sortType == SortType.Deccending)
+                {
+                    sorted_file1 = sorted_file1.ThenByDescending(x => x[item.name]);
+                }
+            }
+            group1 = sorted_file1.ToList().GroupBy(p => p[primaryKey]);
+            //add sequence
 
-        //    foreach (var _group in group1)
-        //    {
-        //        var increasement = 1;
-        //        foreach (var record in _group)
-        //        {
-        //            record.Add("seq", 1);
-        //            record.Add("seq2", increasement);
-        //            increasement++;
-        //        }
+            foreach (var _group in group1)
+            {
+                var increasement = 1;
+                foreach (var record in _group)
+                {
+                    record.Add("seq", 1);
+                    record.Add("seq2", increasement);
+                    increasement++;
+                }
 
-        //    }
-        //    //test tach cot thanh dong`
-        //    var rs = breakColumnsIntoRecords(sorted_file1.ToList(),"newField");
-        //    rs = test_divide(sorted_file1.ToList(), "LINE_NUMBER", "divided_LineNUmber",2);
-        //    var sb = new System.Text.StringBuilder();
+            }
+            //test tach cot thanh dong`
+            var rs = breakColumnsIntoRecords(sorted_file1.ToList(),"newField");
+            rs = test_divide(sorted_file1.ToList(), "LINE_NUMBER", "divided_LineNUmber",2);
+            var sb = new System.Text.StringBuilder();
 
-        //    //var header = primaryKey + tab + concatField + Environment.NewLine;
-        //    //sb.Append(header);
-        //    //foreach (var item in group2)
-        //    //{
-        //    //    sb.Append(item.Key + tab + item.TAX_DESCRIPTION_LINE + Environment.NewLine);
-        //    //}
-        //    //System.IO.StreamWriter file = new System.IO.StreamWriter(@"D:\hereIam.txt");
-        //    //file.Write(sb.ToString());
-        //    //file.Close();
-        //    //file.Dispose();
-        //}
+            //var header = primaryKey + tab + concatField + Environment.NewLine;
+            //sb.Append(header);
+            //foreach (var item in group2)
+            //{
+            //    sb.Append(item.Key + tab + item.TAX_DESCRIPTION_LINE + Environment.NewLine);
+            //}
+            //System.IO.StreamWriter file = new System.IO.StreamWriter(@"D:\hereIam.txt");
+            //file.Write(sb.ToString());
+            //file.Close();
+            //file.Dispose();
+        }
         public class Param_TransferColumnsIntoRecords
         {
             /// <summary>
