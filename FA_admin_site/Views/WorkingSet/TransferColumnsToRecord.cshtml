@@ -1,0 +1,165 @@
+﻿@model IEnumerable<BL.WorkingSetItem>
+    <style>
+        label{
+            font-weight:normal;
+        }
+        #divSelected{
+            color:white;
+        }
+        #moreInfo>div{
+            padding:10px;
+        }
+        #showtbl input[type=checkbox]:checked + label{
+            font-weight:bold
+        }
+        /*input[type=checkbox]:checked + label{
+            font-weight:bold
+        }*/
+    </style>
+<script src="~/Content/js/plugins/jquery-ui.min.js"></script>
+<script src="~/scripts/angular.min.js"></script>
+<script src="~/scripts/angular-checklist-model.js"></script>
+<div ng-app="myApp" ng-controller="myCtrl">
+    <table class="table">
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.WorkingSetId)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Filename)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PrimaryKey)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.SecondaryKeys)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsMerged)
+            </th>
+            <th></th>
+        </tr>
+
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.WorkingSetId)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Filename)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.PrimaryKey)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.SecondaryKeys)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.IsMerged)
+                </td>
+                <td>
+                    <a href="#" ng-click="loadfields(@item.Id,'@item.Filename')">Select</a>
+                </td>
+            </tr>
+        }
+
+    </table>
+    
+    <div >
+        <table id="showtbl"  style="display:none;width: 100%">
+            <tr>
+                <td>
+                    <div id="divFieldsSelect">
+                        <div  ng-repeat="x in fields">
+                            
+                                <input id="{{x.Fieldname}}" type="checkbox" 
+                                       checklist-model="selected_fields" 
+                                       checklist-value="x.Fieldname"> 
+                            <label for="{{x.Fieldname}}">{{x.Fieldname}}</label>
+                            
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    ===>
+                </td>
+                <td style="background:#0094ff;padding:20px;border-right:solid 1px #ffddcc">
+                    <div id="divSelected">
+                        <strong>Fields selected:</strong>
+                        <div ng-model="selected_fields" ng-repeat="x in selected_fields">
+                            <label>{{$index +' - '+ x }}</label>
+                        </div>
+                    </div>
+                </td>
+                <td style="background:#0094ff">
+                    
+                    <div id="moreInfo">
+                        <div>Name of new field: 
+                        <input type="text" name="newFieldName" ng-model="newFieldName" required /></div>
+                        <div>
+                            New file name:
+
+                            <input type="text" name="newFileName" ng-model="newFileName" required />
+                        </div>
+                        
+                        @*<div style="font-weight:bold">{{newFieldName}}</div>*@
+                    </div>
+                    <div>
+                        <input type="button" value="Save" ng-click="save()" style="width:200px;line-height: 30px;margin: 20px"/>
+                    </div>
+                </td>
+            </tr>
+        </table>
+       
+
+    </div>
+
+
+</div>
+<script type="text/javascript">
+    var app = angular.module('myApp', ["checklist-model"]);
+    app.controller('myCtrl', function($scope,$http) {
+        $scope.newFieldName = "new_field_name";
+        $scope.newFileName = "FILE_NAME";
+        $scope.fileid = 0;
+        $scope.selected_fields = [];
+        $scope.clear = function () {
+            $scope.selected_fields = [];
+        }
+        $scope.loadfields = function (id,name) {
+            $http.get('@Url.Action("GetLayout", "WorkingSet")?fileid='+id).success(function (root) {
+                $scope.fields = root;
+                $scope.fileid=id;
+                var _time=$.datepicker.formatDate('yymmdd', new Date());
+                $scope.newFileName=name.replace(/.txt/gi,'').replace(/.csv/gi,'')+'_'+_time+'.csv';
+                $('#showtbl').show();
+                $scope.clear();
+            });
+
+        }
+        $scope.save = function () {
+            var fields = $('#divFieldsSelect input[type="checkbox"]:checked');
+            console.log($scope.fields);
+            console.log($scope.newFieldName);
+            console.log($scope.newFileName);
+            console.log($scope.selected_fields);
+            if($scope.selected_fields.length==0){
+                alert('Please select at least one or more columns');
+                return;
+            }
+            $.colorbox({ html: "<h5>This proccess could run a little longer, please wait</h5>" });
+            $.post('@Url.Action("postTransferColumnsToRecord", "WorkingSet")', { wsiId :$scope.fileid,columns:$scope.selected_fields,newField:$scope.newFieldName,newFile:$scope.newFileName})
+            .done(function () {
+                $.colorbox.close();
+                setTimeout(function () {
+                    $.colorbox({ html: "<h3>Done :), <a href='@Url.Action("Manage","WorkingSet")'>Go to view this new file?</a></h3>" });
+                }, 1000);
+            })
+            .fail(function (rs) {
+                alert(rs.responseText);
+            })
+            .always();
+        }
+    });
+</script>

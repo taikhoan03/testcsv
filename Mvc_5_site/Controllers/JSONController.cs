@@ -1684,6 +1684,183 @@ namespace Mvc_5_site.Controllers
                 return sorted_file1;
             }
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="wsiId"></param>
+        /// <param name="strcolumns">seperatedBy:";];"</param>
+        /// <param name="toNewName"></param>
+        /// <param name="newFileName"></param>
+        public void TransferColumnsToRecord(int wsiId,string strcolumns,string toNewName, string newFileName)
+        {
+            var db = new BL.DA_Model();
+            var wsItem = db.workingSetItems.Find(wsiId);
+            var ws = db.workingSets.Find(wsItem.WorkingSetId);
+            var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
+                                        Config.Data.GetKey("input_folder_process"),
+                                        ws.State,
+                                        ws.County
+                                        );
+            path = path + @"\" + wsItem.Filename;
+
+            //test
+            //path = @"D:\FA_in_out\InputFile\pa4\pa4\File_1.txt";
+
+            var columns = strcolumns.Split(new string[] { ";];" }, StringSplitOptions.RemoveEmptyEntries);
+            var numOfColumns = columns.Length;
+
+            var file1 = Helpers.ReadCSV.ReadAsDictionary(null, path, int.MaxValue);
+            var arrFields = new Dictionary<string, object>(file1.First());
+
+
+            columns = columns.Select(p => p.ReplaceUnusedCharacters()).ToArray();
+            var leftCols = arrFields.Select(p => p.Key).Except(columns).ToArray();
+            var numOfLeftItem = leftCols.Count();
+            //toNewName = toNewName.ReplaceUnusedCharacters();
+
+            var numOfItems = file1.Count;
+            var cloney = new List<Dictionary<string, object>>(numOfItems);//[numOfItems];
+
+            //file1.CopyTo(cloney);
+            //cloney=file1.Select(p=>p.Select(c=>))
+            
+            for (int i = 0; i < numOfItems; i++)
+            {
+                var c= new Dictionary<string, object>(numOfLeftItem);
+                for (int j = 0; j < numOfLeftItem; j++)
+                {
+                    c.Add(leftCols[j], file1[i][leftCols[j]]);
+                }
+                cloney.Add(c);
+            }
+            
+            foreach (var rec in file1)
+            {
+                for (int i = 0; i < numOfLeftItem; i++)
+                {
+                    rec.Remove(leftCols[i]);
+                }
+            }
+            GC.Collect();
+            //file1.Clear();
+            var calTotalItem = numOfItems * numOfColumns;
+            var tmp = new Dictionary<string, object>[calTotalItem];// List<Dictionary<string, object>>(calTotalItem);
+            
+            var index = 1;
+            for (int i = numOfItems - 1; i >= 0; i--)
+            {
+                // some code
+                // safePendingList.RemoveAt(i);
+                var newRec = cloney[i];//.Last();
+                var recContainCol = file1[i];
+                //var irow = 0;
+                for (int j = numOfColumns-1; j >=0; j--)
+                {
+                    var tmpRec = newRec.ToDictionary(x => x.Key, x => x.Value);
+                    tmpRec.Add(toNewName, recContainCol[columns[j]]);
+                    tmp[calTotalItem - index] = tmpRec;
+                    index++;
+                }
+                newRec.Clear();
+                newRec = null;
+                recContainCol.Clear();
+                recContainCol = null;
+
+                //file1[i].Clear();
+                //file1[i]=null;
+                file1.RemoveAt(i);
+                //cloney[i].Clear();
+                //cloney[i] = null;
+                cloney.RemoveAt(i);
+            }
+            
+            cloney.Clear();
+            cloney = null;
+            file1.Clear();
+            file1 = null;
+
+
+            //var recs_after_add_seqs = tmp;// new List<Dictionary<string, object>>();
+            var sndSEQ_FieldName = "seq2".ReplaceUnusedCharacters();
+            // file1.First().ToList();
+            foreach (var col in columns)
+            {
+                arrFields.Remove(col);
+            }
+            var firstRec = arrFields;// file1.First();
+            //set primaryKey
+            var primaryKeyName = "UNFORMATTED_APN";
+            if (!string.IsNullOrEmpty(wsItem.PrimaryKey))
+            {
+                if (firstRec.ContainsKey(wsItem.PrimaryKey))
+                {
+                    primaryKeyName = wsItem.PrimaryKey;
+                }
+            }
+            var seq1FieldName = "APN_SEQUENCE_NUMBER";
+            var hasSEQ1Field= firstRec.ContainsKey(seq1FieldName.ToString());
+            var hasSndField = firstRec.ContainsKey(sndSEQ_FieldName.ToString());
+            var dicKey = new Dictionary<string, object>();
+            //var seq2 = 1;
+            //foreach (var record in tmp)
+            //{
+            //    if (dicKey.ContainsKey(record[primaryKeyName].ToString()))
+            //    {
+            //        seq2++;
+            //    }
+            //    else
+            //    {
+            //        seq2 = 1;
+            //    }
+
+            //    if (hasSEQ1Field)
+            //        record[seq1FieldName] = 1;
+            //    else
+            //        record.Add(seq1FieldName, 1);
+
+            //    if (hasSndField)
+            //        record[sndSEQ_FieldName] = seq2;
+            //    else
+            //        record.Add(sndSEQ_FieldName, seq2);
+            //}
+            foreach (var gb in tmp.GroupBy(p => p[primaryKeyName].ToString()))
+            {
+                var seq2 = 1;
+
+                foreach (var record in gb)
+                {
+                    record.Add("seq1", 1);
+                    record.Add("seq2", seq2);
+                    //if (hasSEQ1Field)
+                    //    record[seq1FieldName] = 1;
+                    //else
+                    //    record.Add(seq1FieldName, 1);
+
+                    //if (hasSndField)
+                    //    record[sndSEQ_FieldName] = seq2;
+                    //else
+                    //    record.Add(sndSEQ_FieldName, seq2);
+                    //record[sndSEQ_FieldName] = seq2;
+                    //recs_after_add_seqs.Add(record);
+
+
+
+                    seq2++;
+                }
+
+
+            }
+                
+                Helpers.ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("input_folder_process") + "\\" +
+                    ws.State + "\\" + ws.County + "\\" + newFileName, tmp);
+            //dtAll.Clear();
+            //dtAll.Dispose();
+            tmp = null;
+            GC.Collect();
+            //Helpers.ReadCSV.Write(@"D:\abc.csv", dtAll);
+
+
+        }
         public void CallFunction(IOrderedQueryable<FieldRule> rules, IOrderedEnumerable<Dictionary<string, object>> sorted_file1)
         {
             var dyna = new DynaExp();

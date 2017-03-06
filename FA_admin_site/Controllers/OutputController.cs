@@ -158,6 +158,26 @@ namespace FA_admin_site.Controllers
             //}
 
         }
+        
+        [HttpPost]
+        public void clearDataForField(int id)
+        {
+            var db = new BL.DA_Model();
+            var itemMapped = db.outputDatas.Find(id);
+            var fieldOutput = itemMapped.OutputFieldId;
+            var allItem = db.outputDatas.Where(p => p.WorkingSetId == itemMapped.WorkingSetId && p.OutputFieldId == fieldOutput);
+
+            var ruleoutputs = db.outputDataDetails.Where(p => p.WorkingSetId == itemMapped.WorkingSetId && p.OutputFieldId == fieldOutput);
+            foreach (var item in ruleoutputs)
+            {
+                db.outputDataDetails.Remove(item);
+            }
+            foreach (var item in allItem)
+            {
+                db.outputDatas.Remove(item);
+            }
+            db.SaveChanges();
+        }
         public ActionResult Map(int id)
         {
             var db = new BL.DA_Model();

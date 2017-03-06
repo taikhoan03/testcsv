@@ -27,8 +27,10 @@
             
             @if (System.Web.HttpContext.Current.Session[BL.EV.KEY_UserSession] != null)
             {
-                <li class="header">TRANSFORM</li>
                 var user = (BL.UserData)System.Web.HttpContext.Current.Session[BL.EV.KEY_UserSession];
+                <li><a href="@Url.Action("TransferColumnsToRecord", "WorkingSet")/?id=@user.Current_wsid"><i class="fa fa-pie-chart"></i> <span>=> Columns -> records</span></a></li>
+                <li class="header">TRANSFORM</li>
+                
                 <li><a href="@Url.Action("Index", "Linkage")/?id=@user.Current_wsid"><i class="fa fa-share"></i> <span>Linkage</span></a></li>
                 <li><a href="@Url.Action("select", "output")/?id=@user.Current_wsid"><i class="fa fa-share"></i> <span>Transform Mapping </span></a></li>
                 <li><a href="@Url.Action("Index", "outputRuleMapper")/?wsid=@user.Current_wsid"><i class="fa fa-share"></i> <span>Transform Rule</span></a></li>

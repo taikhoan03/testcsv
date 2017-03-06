@@ -24,22 +24,31 @@
     $(document).ready(function () {
         $.get('@Url.Action("verifyBeforeAddRequest", "OutputRuleMapper")?wsid=@ViewBag.ID')
             .done(function (data) {
-                
+
                 $('#cmd').show();
                 if (data != 'null') {
                     try {
-                        
+
                         var jsData = JSON.parse(data);
                         console.log(jsData);
                         objData = jsData;
                         var downloadurl = '@ViewBag.DownloadParam';
-                        if (downloadurl!='')
-                            objData.downloadurl = "<a href='@ViewBag.DownloadParam'>Download</a>";
+                        if (objData != "Processing") {
+                            objData.downloadurl = '';
+                        } else {
+                            if (downloadurl != '')
+                                objData.downloadurl = "<a href='@ViewBag.DownloadParam'>Download</a>";
+                        }
+
+                        
                         if (jsData.Status == 1 || jsData.Status == 0) {
                             $("#runTranformJob").remove();
                         }
                         if (jsData.Status == 1) {
                             $("#detach").remove();
+                            setTimeout(function () {
+                                window.location.href = window.location.href;
+                            }, 15 * 1000);
                         }
                         var arr = [];
                         arr.push(jsData)
@@ -49,14 +58,14 @@
                             $('#tSample tr td:nth(4)').hide();
                             $('#tSample tr th:nth(4)').hide();
                         });
-                        
+
                     } catch (e) {
-                        
+
                         $("#runTranformJob").remove();
                         $("#detach").remove();
                         $('#cmd').html('<h2 style="color:gray">' + data + '</h2>');
                     }
-                    
+
 
                 }
             })
@@ -97,7 +106,7 @@
                     //du lieu da co
 
                 var jsData = data;
-                
+
                     if (jsData.Status == 0) {
                         alert('This request is alreay existed and still in-queue');
                         return;//alreay add and still in-queue
@@ -115,7 +124,7 @@
                     .fail()
                     .always();
                 }
-            
+
         });
     });
 </script>

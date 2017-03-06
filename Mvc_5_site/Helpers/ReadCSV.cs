@@ -16,7 +16,8 @@ namespace Mvc_5_site.Helpers
         private static decimal C_Default_limit = 90000000000;
         public static List<Dictionary<string, object>> ReadAsDictionary(string name,string path, decimal limit)
         {
-            name = name.Replace(".", EV.DOT);
+            if(!string.IsNullOrEmpty(name))
+                name = name.Replace(".", EV.DOT);
             return BL.Ulti.readFromPath_AsDictionary2(name,path, limit);
         }
         public static List<Dictionary<string, object>> ReadAsDictionary(string path, decimal limit)
@@ -416,8 +417,57 @@ namespace Mvc_5_site.Helpers
                 }
                 finally
                 {
-                    sw.Close();
-                    sw.Dispose();
+                    //sw.Close();
+                    //sw.Dispose();
+                }
+
+            }
+        }
+        public static void Write(string path, Dictionary<string, object>[] recs, string delimiter = "\t")
+        {
+
+            var filename = Path.GetFileName(path);
+            var path_ = path.Replace("\\" + filename, "");
+            if (!System.IO.Directory.Exists(path_))
+            {
+                System.IO.Directory.CreateDirectory(path_);
+            }
+
+
+            var header = recs[0].Select(p => p.Key).ToArray();
+            var str_line = string.Join(delimiter, header);
+            using (StreamWriter sw = new StreamWriter(path))
+            {
+                //write header
+                try
+                {
+                    sw.WriteLine(str_line);
+                    sw.Flush();
+                    //write content
+                    //while (!sr.EndOfStream)
+                    //{
+                    //    string line = sr.ReadLine();
+                    //    //do some modifications
+                    //    sw.WriteLine(line);
+                    //    sw.Flush(); //force line to be written to disk
+                    //}
+                    foreach (var rec in recs)
+                    {
+                        var line = rec.Select(p => p.Value).ToArray();
+                        str_line = string.Join(delimiter, line);
+                        sw.WriteLine(str_line);
+                        sw.Flush();
+                    }
+                }
+                catch (Exception)
+                {
+
+                    throw;
+                }
+                finally
+                {
+                    //sw.Close();
+                    //sw.Dispose();
                 }
 
             }
@@ -465,8 +515,8 @@ namespace Mvc_5_site.Helpers
                 }
                 finally
                 {
-                    sw.Close();
-                    sw.Dispose();
+                    //sw.Close();
+                    //sw.Dispose();
                 }
                 
             }
@@ -506,6 +556,7 @@ namespace Mvc_5_site.Helpers
                     foreach (DataRow rec in table.Rows)
                     {
                         var line = rec.ItemArray;//.Select(p => p.Value).ToArray();
+                        
                         str_line = string.Join(delimiter, line);
                         sw.WriteLine(str_line);
                         sw.Flush();
@@ -518,8 +569,8 @@ namespace Mvc_5_site.Helpers
                 }
                 finally
                 {
-                    sw.Close();
-                    sw.Dispose();
+                    //sw.Close();
+                    //sw.Dispose();
                 }
 
             }

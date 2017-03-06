@@ -414,12 +414,7 @@ namespace AppRunTransform
                 var fileHasSeq1_only = new string[] { "Land","Land Use", "Assessor Ownership","Sales","Situs Address", "Parcel to Parcel Cross Reference", "Assessor Land Values" };
                 var fileHasSeq2 = new string[] { "Assessor Building Values","Assessor Exemption Type", "Building" };
                 var fileHasSeq3 = new string[] {  "Building Permit","Building Green Code","Extra Feature","Building Area" };
-                var outputPrimaryKey = "UNFORMATTED_APN";
-                var firstRec = all_rec.First();
-                if (!firstRec.ContainsKey(outputPrimaryKey))
-                {
-                    throw new Exception("<strong>Transform Mapping</strong> field <strong>" + outputPrimaryKey + "</strong> must be selected");
-                }
+
                 if (fileHasSeq1_only.Any(p => p == fileOutput.Name))
                 {
                     foreach (var item in all_rec)
@@ -430,136 +425,121 @@ namespace AppRunTransform
                 #region SEQ2
                 else if (fileHasSeq2.Any(p => p == fileOutput.Name))
                 {
-                    #region Building
                     if (fileOutput.Name == "Building")
                     {
                         var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
                         var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
-                        var mustHaveField = new string[] {
-                            "BG_YEAR_BUILT",
-                            "BG_ACTUAL_YEAR_BUILT",
+                        foreach (var _group in all_rec.GroupBy(p => p[primaryKey].ToString() + p[primaryKey].ToString()))
+                        {
+                            // chỉ có seq1
+                            var increasement = 1;
 
-                            "BG_REMODEL_MAJOR_YEAR_BUILT",
-                            "BG_REMODEL_PARTIAL_YEAR_BUILT",
-                            "BG_TOTAL_NBR_OF_ROOMS",
-                            "BG_TOTAL_NBR_OF_BEDROOMS",
-                            "BG_TOTAL_NBR_OF_BATHROOMS",
-                            "BG_NBR_OF_PARTIAL_BATHS",
-                            "BG_FULL_BATHS",
-                            "BG_HALF_BATHS",
-                            "BG_1_QTR_BATHS",
-                            "BG_3_QTR_BATHS",
-                            "BG_BATH_FIXTURES",
-                            "BG_COUNTY_BATH_IMPROVEMENT_CODE\\DESC",
-                            "BG_NBR_OF_PLUMBING_FIXTURES",
-                            "BG_NBR_OF_DINING_ROOMS",
-                            "BG_NBR_OF_FAMILY_ROOMS",
-                            "BG_NBR_OF_LIVING_ROOMS",
-                            "BG_NBR_OF_OTHER_ROOMS",
-                            "BG_COUNTY_OTHER_ROOMS_DESCRIPTION_CODE\\DESC",
-                            "BG_COUNTY_STORIES_NBR",
-                            "BG_COUNTY_STORIES_CODE\\DESC",
-                            "BG_STORY_HEIGHT",
-                            "BG_COUNTY_CONSTRUCTION_TYPE_CODE\\DESC",
-                            "BG_COUNTY_BUILDING_FIRE_INS_CLASS_CODE\\DESC",
-                            "BG_COUNTY_BUILDING_CURRENT_CONDITION_CODE\\DESC",
-                            "BG_COUNTY_BUILDING_QUALITY_CODE\\DESC",
-                            "BG_COUNTY_BUILDING_TYPE_CODE\\DESC",
-                            "BG_COUNTY_BUILDING_IMPROVE_CODE\\DESC",
-                            "BG_COUNTY_STYLE_CODE\\DESC",
-                            "BG_COUNTY_AIR_CONDITIONING_CODE\\DESC",
-                            "BG_COUNTY_ATTIC_FINISH_CODE\\DESC",
-                            "BG_COUNTY_BASEMENT_FINISH_CODE\\DESC",
-                            "BG_COUNTY_ELECTRIC\\ENERGY_CODE\\DESC",
-                            "BG_COUNTY_ELEVATOR_CODE\\DESC",
-                            "BG_COUNTY_EXTERIOR_WALLS_CODE\\DESC",
-                            "BG_FIREPLACE_NUMBER",
-                            "BG_COUNTY_FIREPLACE_TYPE_CODE\\DESC",
-                            "BG_COUNTY_FLOOR_CONSTRUCTION_CODE\\DESC",
-                            "BG_COUNTY_FLOOR_COVERING_CODE\\DESC",
-                            "BG_COUNTY_FOUNDATION_CODE\\DESC",
-                            "BG_COUNTY_HEATING_CODE\\DESC",
-                            "BG_COUNTY_HEATING_FUEL_TYPE_CODE\\DESC",
-                            "BG_COUNTY_INTERIOR_WALLS_CODE\\DESC",
-                            "BG_COUNTY_ROOF_COVER_CODE\\DESC",
-                            "BG_COUNTY_ROOF_FRAME_CODE\\DESC",
-                            "BG_COUNTY_ROOF_SHAPE_CODE\\DESC",
-                            "BG_COUNTY_WATER_HEATER_CODE\\DESC",
-                            "BG_COUNTY_WATER_HEATER_CODE\\DESC",
-                            "BG_PATIO_SQUARE_FOOTAGE",
-                            "BG_COUNTY_POOL_CODE\\DESC",
-                            "BG_POOL_SQUARE_FOOTAGE",
-                            "BG_COUNTY_PORCH_CODE\\DESC",
-                            "BG_PORCH_SQUARE_FOOTAGE",
-                            "BG_MANUFACTURED_HOME_LENGTH",
-                            "BG_MANUFACTURED_HOME_WIDTH",
-                            "BG_UNIVERSAL_BUILDING_SQ_FEET",
-                            "BG_COUNTY_BUILDING_SQ_FEET_IND_CODE\\DESC",
-                            "BG_SUM_OF_BUILDING_SQ_FEET",
-                            "BG_SUM_OF_LIVING_SQ_FEET",
-                            "BG_SUM_OF_GROUND_FLOOR_SQ_FEET",
-                            "BG_SUM_OF_GROSS_SQ_FEET",
-                            "BG_SUM_OF_ADJUSTED_GROSS_SQ_FEET",
-                            "BG_SUM_OF_BASEMENT_SQ_FEET",
-                            "BG_SUM_OF_ATTIC_SQ_FEET",
-                            "BG_SUM_OF_GARAGE/PARKING_SQ_FT",
-                            "BG_SUM_OF_ABOVE_GRADE_LIVING_SQ_FEET",
-                            "BG_ADDITIONS_SQ_FEET",
-                            "BG_LEED_CERTIFIED_YEAR",
-                            "BG_COUNTY_LEED_CERTIFIED_SCORE_CODE\\DESC",
-                            "BG_NAAB/NGBS_YEAR",
-                            "BG_COUNTY_NAAB\\NGBS_SCORE_CODE\\DESC",
-                            "BG_HERS_YEAR",
-                            "BG_HERS_RATING",
-                            "BG_ENERGY_STAR_QUALIFIED_YEAR",
-                            "BG_OTHER_GREEN_CERTIFIED"
-
-                        };
-                        var hasSndMapped = ls_mappers.Any(p => p.FieldName == sndFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
-                        //var hasThrMapped = ls_mappers.Any(p => p.FieldName == thrFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
-                        var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
+                            if (hasBuildingSeqField)
+                            {
+                                foreach (var record in _group)
+                                {
+                                    record["APN_SEQUENCE_NUMBER"] = 1;
+                                    record[sndFieldKey] = increasement;
+                                    increasement++;
+                                }
+                            }
+                            else
+                            {
+                                foreach (var record in _group)
+                                {
+                                    record["APN_SEQUENCE_NUMBER"] = 1;
+                                    record.Add(sndFieldKey, increasement);
+                                    increasement++;
+                                }
+                            }
 
 
-                        all_rec = addSeq2(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, hasSndMapped, true);
-
-
-
+                        }
                     }
-                    #endregion Building
-                    #region Assessor Building Values
+
                     else if (fileOutput.Name == "Assessor Building Values")
                     {
-
-                        var sndFieldKey = "AVB_BUILDING_SEQ";
-                        var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
-                        var hasSndMapped = ls_mappers.Any(p => p.FieldName == sndFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
                         var mustHaveField = new string[] {
                             "AVB_ASSD_IMPROVEMENT_VALUE",
                             "AVB_MKT_IMPROVEMENT_VALUE",
                             "AVB_APPR_IMPROVEMENT_VALUE",
                             "AVB_TAXABLE_IMPROVEMENT_VALUE" };
-                        var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-                        all_rec = addSeq2(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, hasSndMapped, true);
+                        var sndFieldKey = "AVB_BUILDING_SEQ";
+                        var firstRec = all_rec.First();
+                        var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
+                        if (!mustHaveField.All(p => firstRec.ContainsKey(p)))
+                        {
+                            var message = "Adding Sequence: <strong>Transform Mapping</strong> should have <strong style='color:red'>{0}</strong> field in <strong>" + fileOutput.Name + "</strong> output file selected...";
+                            var argMessage = string.Join(",", mustHaveField);
+                            throw new Exception(string.Format(message, argMessage));
+                        }
+                        foreach (var _group in all_rec.GroupBy(p =>
+                        p[primaryKey].ToString()
+                        + p[mustHaveField[0]].ToString()
+                        + p[mustHaveField[1]].ToString()
+                        + p[mustHaveField[2]].ToString()
+                        + p[mustHaveField[3]].ToString()
+                        ))
+                        {
+                            // chỉ có seq1
+                            var increasement = 1;
+
+                            if (hasBuildingSeqField)
+                            {
+                                foreach (var record in _group)
+                                {
+                                    record["APN_SEQUENCE_NUMBER"] = 1;
+                                    record[sndFieldKey] = increasement;
+                                    increasement++;
+                                }
+                            }
+                            else
+                            {
+                                foreach (var record in _group)
+                                {
+                                    record["APN_SEQUENCE_NUMBER"] = 1;
+                                    record.Add(sndFieldKey, increasement);
+                                    increasement++;
+                                }
+                            }
+
+
+                        }
                     }
-                    #endregion Assessor Building Values
-                    #region Assessor Exemption Type
                     else if (fileOutput.Name == "Assessor Exemption Type")
                     {
                         var sndFieldKey = "AVE_EXEMPTION_SEQUENCE_NUMBER";
                         var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
-                        var hasSndMapped = ls_mappers.Any(p => p.FieldName == sndFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
-                        var mustHaveField = new string[] {
-                            "AVE_COUNTY_EXEMPTION_CODE",
-                            "AVE_COUNTY_EXEMPTION_DESCRIPTION",
-                            "AVE_EXEMPTION_AMOUNT",
-                            "AVE_EXEMPTION_PERCENTAGE" };
-                        var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-                        all_rec = addSeq2(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, hasSndMapped, true);
-                        
+
+                        foreach (var _group in all_rec.GroupBy(p => p[primaryKey].ToString()
+                        + p["AVE_COUNTY_EXEMPTION_CODE"].ToString()
+                        + p["AVE_EXEMPTION_AMOUNT"].ToString()
+                        ))
+                        {
+                            // chỉ có seq1
+                            var increasement = 1;
+                            if (hasBuildingSeqField)
+                            {
+                                foreach (var record in _group)
+                                {
+                                    record["APN_SEQUENCE_NUMBER"] = 1;
+                                    record[sndFieldKey] = increasement;
+                                    increasement++;
+                                }
+                            }
+                            else
+                            {
+                                foreach (var record in _group)
+                                {
+                                    record["APN_SEQUENCE_NUMBER"] = 1;
+                                    record.Add(sndFieldKey, increasement);
+                                    increasement++;
+                                }
+                            }
+
+
+                        }
                     }
-                    #endregion Assessor Exemption Type
-
-
 
                 }
                 #endregion SEQ2
@@ -572,6 +552,7 @@ namespace AppRunTransform
                     {
                         var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
                         var thrFieldKey = "BGP_BUILDING_PERMIT_SEQUENCE_NUMBER";
+                        var firstRec = all_rec.First();
                         var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
                         //gb=group building
                         var mustHaveField = new string[] {
@@ -583,12 +564,69 @@ namespace AppRunTransform
                             "BGP_BUILDING_PERMIT_STATUS",
                             "BGP_BUILDING_PERMIT_PERCENT_COMPLETE",
                         };
-                        var hasSndMapped = ls_mappers.Any(p => p.FieldName == sndFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
-                        var hasThrMapped = ls_mappers.Any(p => p.FieldName == thrFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
-                        var hasThrField=firstRec.ContainsKey(thrFieldKey);
-                        var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-                        
-                        all_rec = addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
+
+                        //if (!mustHaveField.Take(2).All(p => firstRec.ContainsKey(p)))
+                        //{
+                        //    var argMessage = string.Join(",", mustHaveField.Take(2));
+                        //    throw new Exception(string.Format(message, argMessage));
+                        //}
+                        //if (!firstRec.ContainsKey("BGP_BUILDING_PERMIT_NBR"))
+                        //{
+                        //    throw new Exception(string.Format(message, "BGP_BUILDING_PERMIT_NBR"));
+                        //}
+                        //if (!firstRec.ContainsKey("BGP_BUILDING_PERMIT_REASON"))
+                        //{
+                        //    throw new Exception(string.Format(message, "BGP_BUILDING_PERMIT_REASON"));
+                        //}
+                        foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
+                        {
+
+                            var ibuilding = 1;
+                            //foreach (var item in gb)
+                            //{
+                            //    item[sndFieldKey] = ibuilding;
+                            //    ibuilding
+                            //}
+                            foreach (var gs3 in gb.GroupBy(p =>
+                            getIfNull(mustHaveField, p)
+                        //    p[mustHaveField[0]].ToString()
+                        //+ p[mustHaveField[1]].ToString() != "" ?
+
+                        //p[mustHaveField[0]].ToString()
+                        //+ p[mustHaveField[1]].ToString():
+                        ////fields phụ
+                        // p[mustHaveField[2]].ToString()
+                        //+ p[mustHaveField[3]].ToString()
+                        //+ p[mustHaveField[4]].ToString()
+                        //+ p[mustHaveField[5]].ToString()
+                        ))
+                            {
+                                var seq3 = 1;
+                                if (hasBuildingSeqField)
+                                {
+                                    foreach (var record in gs3)
+                                    {
+                                        record["APN_SEQUENCE_NUMBER"] = 1;
+                                        record[sndFieldKey] = ibuilding;
+                                        record[thrFieldKey] = seq3;
+                                        seq3++;
+                                    }
+                                }
+                                else
+                                {
+                                    foreach (var record in gs3)
+                                    {
+                                        record["APN_SEQUENCE_NUMBER"] = 1;
+                                        record.Add(sndFieldKey, ibuilding);
+                                        record.Add(thrFieldKey, seq3);
+                                        seq3++;
+                                    }
+                                }
+                                ibuilding++;
+                            }
+
+                        }
+
                     }
                     #endregion Building Permit
                     #region Building Green Code
@@ -596,18 +634,89 @@ namespace AppRunTransform
                     {
                         var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
                         var thrFieldKey = "BGG_BUILDING_GREEN_SEQUENCE_NUMBER";
+                        var firstRec = all_rec.First();
                         var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
                         //gb=group building
-                        var hasSndMapped = ls_mappers.Any(p => p.FieldName == sndFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
-                        var hasThrMapped = ls_mappers.Any(p => p.FieldName == thrFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
                         var mustHaveField = new string[] {
                             "BGG_COUNTY_BUILDING_GREEN_CODE\\DESC"
                         };
 
-                        var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-                        var hasThrField = firstRec.ContainsKey(thrFieldKey);
+                        if (!mustHaveField.All(p => firstRec.ContainsKey(p)))
+                        {
+                            var argMessage = string.Join(",", mustHaveField);
+                            throw new Exception(string.Format(message, argMessage));
+                        }
 
-                        all_rec = addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
+                        //gb=group building
+
+                        foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
+                        {
+
+                            var ibuilding = 1;
+                            foreach (var gs3 in gb.GroupBy(p =>
+                            p[mustHaveField[0]].ToString()
+                        ))
+                            {
+                                var seq3 = 1;
+                                if (hasBuildingSeqField)
+                                {
+                                    foreach (var record in gs3)
+                                    {
+                                        record["APN_SEQUENCE_NUMBER"] = 1;
+                                        record[sndFieldKey] = ibuilding;
+                                        record[thrFieldKey] = seq3;
+                                        seq3++;
+                                    }
+                                }
+                                else
+                                {
+                                    foreach (var record in gs3)
+                                    {
+                                        record["APN_SEQUENCE_NUMBER"] = 1;
+                                        record.Add(sndFieldKey, ibuilding);
+                                        record.Add(thrFieldKey, seq3);
+                                        seq3++;
+                                    }
+                                }
+                                ibuilding++;
+                            }
+
+                        }
+                        //var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
+                        //var thrFieldKey = "BGG_BUILDING_GREEN_SEQUENCE_NUMBER";
+                        //var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
+                        ////gb=group building
+                        //var ibuilding = 1;
+                        //foreach (var gb in all_rec.GroupBy(p => p[primaryKey]))
+                        //{
+
+                        //    var seq3 = 1;
+                        //    foreach (var _group in gb.GroupBy(p => 
+                        //    p["BGG_COUNTY_BUILDING_GREEN_CODE\\DESC"].ToString()
+                        //))
+                        //    {
+                        //        if (hasBuildingSeqField)
+                        //        {
+                        //            foreach (var record in _group)
+                        //            {
+                        //                record["APN_SEQUENCE_NUMBER"] = 1;
+                        //                record[sndFieldKey] = ibuilding;
+                        //                record[thrFieldKey] = seq3;
+                        //            }
+                        //        }
+                        //        else
+                        //        {
+                        //            foreach (var record in _group)
+                        //            {
+                        //                record["APN_SEQUENCE_NUMBER"] = 1;
+                        //                record.Add(sndFieldKey, ibuilding);
+                        //                record.Add(thrFieldKey, seq3);
+                        //            }
+                        //        }
+                        //    }
+                        //    ibuilding++;
+                        //}
+
                     }
                     #endregion Building Green Code
                     #region Extra Feature
@@ -615,9 +724,8 @@ namespace AppRunTransform
                     {
                         var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
                         var thrFieldKey = "FEATURE_ID/SEQ";
+                        var firstRec = all_rec.First();
                         var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
-                        var hasSndMapped = ls_mappers.Any(p => p.FieldName == sndFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
-                        var hasThrMapped = ls_mappers.Any(p => p.FieldName == thrFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
                         //gb=group building
                         var mustHaveField = new string[] {
                             "EX_COUNTY_FEATURE_TYPE_ID",
@@ -631,56 +739,105 @@ namespace AppRunTransform
                             "EX_FEATURE_YEAR_BUILT",
                         };
 
-                        
-                        var hasThrField = firstRec.ContainsKey(thrFieldKey);
-                        var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-                        
-                        
-                        all_rec = addSeq3(outputPrimaryKey,all_rec, mustHaveFieldFiltered.ToArray(),sndFieldKey,thrFieldKey, hasSndMapped,hasThrMapped,true, hasThrField);
-                        //foreach (var gb in all_rec.GroupBy(p => p[outputPrimaryKey].ToString()))
+                        //if (!mustHaveField.Take(3).All(p => firstRec.ContainsKey(p)))
                         //{
-                        //    var seq2 = 1;
+                        //    var argMessage = string.Join(",", mustHaveField.Take(3));
+                        //    throw new Exception(string.Format(message, argMessage));
+                        //}
+                        //if (!firstRec.ContainsKey("EX_COUNTY_FEATURE_TYPE_ID"))
+                        //{
+                        //    throw new Exception(string.Format(message, "EX_COUNTY_FEATURE_TYPE_ID"));
+                        //}
+                        //if (!firstRec.ContainsKey("EX_COUNTY_FEATURE_RAW/DESC"))
+                        //{
+                        //    throw new Exception(string.Format(message, "EX_COUNTY_FEATURE_RAW/DESC"));
+                        //}
+                        //if (!firstRec.ContainsKey("EX_ASSESSED_FEATURE_VALUE"))
+                        //{
+                        //    throw new Exception(string.Format(message, "EX_ASSESSED_FEATURE_VALUE"));
+                        //}
+                        //gb=group building
+
+                        foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
+                        {
+
+                            var ibuilding = 1;
+                            foreach (var gs3 in gb.GroupBy(p =>
+                                getIfNull(mustHaveField,p)
+                        //p[mustHaveField[0]].ToString()
+                        //+ p[mustHaveField[1]].ToString()
+                        //+ p[mustHaveField[2]].ToString() != "" ?
+                        //p[mustHaveField[0]].ToString()
+                        //+ p[mustHaveField[1]].ToString()
+                        //+ p[mustHaveField[2]].ToString() :
+                        ////fields phu.
+                        // p[mustHaveField[3]].ToString()
+                        //+ p[mustHaveField[4]].ToString()
+                        //+ p[mustHaveField[5]].ToString()
+                        //+ p[mustHaveField[6]].ToString()
+                        //+ p[mustHaveField[7]].ToString()
+                        ))
+                            {
+                                var seq3 = 1;
+                                if (hasBuildingSeqField)
+                                {
+                                    foreach (var record in gs3)
+                                    {
+                                        record["APN_SEQUENCE_NUMBER"] = 1;
+                                        record[sndFieldKey] = ibuilding;
+                                        record[thrFieldKey] = seq3;
+                                        seq3++;
+                                    }
+                                }
+                                else
+                                {
+                                    foreach (var record in gs3)
+                                    {
+                                        record["APN_SEQUENCE_NUMBER"] = 1;
+                                        record.Add(sndFieldKey, ibuilding);
+                                        record.Add(thrFieldKey, seq3);
+                                        seq3++;
+                                    }
+                                }
+                                ibuilding++;
+                            }
+
+                        }
+                        //var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
+                        //var thrFieldKey = "FEATURE_ID/SEQ";
+                        //var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
+                        ////gb=group building
+                        //var ibuilding = 1;
+                        //foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
+                        //{
+
                         //    var seq3 = 1;
-                        //    var dic = new Dictionary<string, string>();
-                        //    foreach (var record in gb)
+                        //    foreach (var _group in gb.GroupBy(p =>
+                        //    p["EX_COUNTY_FEATURE_TYPE_ID"].ToString()
+                        //    + p["EX_COUNTY_FEATURE_RAW/DESC"].ToString()
+                        //    + p["EX_ASSESSED_FEATURE_VALUE"].ToString()
+                        //))
                         //    {
-                        //        var str = "";
-                        //        var builder = new StringBuilder();
-                        //        builder.Append(str);
-                        //        foreach (var item in mustHaveFieldFiltered)
+                        //        if (hasBuildingSeqField)
                         //        {
-                        //            builder.Append(record[item]);
-                        //        }
-                        //        str = builder.ToString();
-
-                        //        if (!dic.ContainsKey(str))
-                        //        {
-                        //            dic.Add(str, null);
-                        //            record[sndFieldKey] = seq2;
-                        //            tmp_all_rec.Add(record);
-
-
-                        //            if (hasThrField)
+                        //            foreach (var record in _group)
                         //            {
-                        //                if (!hasThrMapped)
-                        //                {
-                        //                    if (!hasSndMapped && !hasThrMapped)
-                        //                    {
-                        //                        record[thrFieldKey] = seq2;
-                        //                    }
-                        //                    else
-                        //                    {
-                        //                        record[thrFieldKey] = seq3;
-                        //                    }
-                        //                }
-
+                        //                record["APN_SEQUENCE_NUMBER"] = 1;
+                        //                record[sndFieldKey] = ibuilding;
+                        //                record[thrFieldKey] = seq3;
                         //            }
-                        //            seq2++;
-                        //            seq3++;
+                        //        }
+                        //        else
+                        //        {
+                        //            foreach (var record in _group)
+                        //            {
+                        //                record["APN_SEQUENCE_NUMBER"] = 1;
+                        //                record.Add(sndFieldKey, ibuilding);
+                        //                record.Add(thrFieldKey, seq3);
+                        //            }
                         //        }
                         //    }
-
-
+                        //    ibuilding++;
                         //}
 
                     }
@@ -690,28 +847,104 @@ namespace AppRunTransform
                     {
                         var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
                         var thrFieldKey = "BGA_BUILDING_AREA_SEQUENCE_NUMBER";
+                        var firstRec = all_rec.First();
                         var hasBuildingSeqField = firstRec.ContainsKey(sndFieldKey);
-                        var hasSndMapped = ls_mappers.Any(p => p.FieldName == sndFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
-                        var hasThrMapped = ls_mappers.Any(p => p.FieldName == thrFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
                         //gb=group building
                         var mustHaveField = new string[] {
                             "BGA_COUNTY_BUILDING_AREA_CODE\\DESC",
                             "BGA_BUILDING_AREA"
                         };
 
+                        if (!mustHaveField.All(p => firstRec.ContainsKey(p)))
+                        {
+                            var argMessage = string.Join(",", mustHaveField);
+                            throw new Exception(string.Format(message, argMessage));
+                        }
+                        //if (!firstRec.ContainsKey("BGA_COUNTY_BUILDING_AREA_CODE\\DESC"))
+                        //{
+                        //    throw new Exception(string.Format(message, "BGA_COUNTY_BUILDING_AREA_CODE\\DESC"));
+                        //}
+                        //if (!firstRec.ContainsKey("BGA_BUILDING_AREA"))
+                        //{
+                        //    throw new Exception(string.Format(message, "BGA_BUILDING_AREA"));
+                        //}
+                        //gb=group building
 
-                        var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-                        var hasThrField = firstRec.ContainsKey(thrFieldKey);
+                        foreach (var gb in all_rec.GroupBy(p => p[primaryKey].ToString()))
+                        {
 
-                        all_rec = addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
+                            var ibuilding = 1;
+                            foreach (var gs3 in gb.GroupBy(p =>
+                                p[mustHaveField[0]].ToString()
+                            + p[mustHaveField[1]].ToString()
+                        ))
+                            {
+                                var seq3 = 1;
+                                if (hasBuildingSeqField)
+                                {
+                                    foreach (var record in gs3)
+                                    {
+                                        record["APN_SEQUENCE_NUMBER"] = 1;
+                                        record[sndFieldKey] = ibuilding;
+                                        record[thrFieldKey] = seq3;
+                                        seq3++;
+                                    }
+                                }
+                                else
+                                {
+                                    foreach (var record in gs3)
+                                    {
+                                        record["APN_SEQUENCE_NUMBER"] = 1;
+                                        record.Add(sndFieldKey, ibuilding);
+                                        record.Add(thrFieldKey, seq3);
+                                        seq3++;
+                                    }
+                                }
+                                ibuilding++;
+                            }
 
+                        }
+                        //var sndFieldKey = "BUILDING_SEQUENCE_NUMBER";
+                        //var thrFieldKey = "BGA_BUILDING_AREA_SEQUENCE_NUMBER";
+                        //var hasBuildingSeqField = all_rec.First().ContainsKey(sndFieldKey);
+                        ////gb=group building
+                        //var ibuilding = 1;
+                        //foreach (var gb in all_rec.GroupBy(p => p[primaryKey]))
+                        //{
+
+                        //    var seq3 = 1;
+                        //    foreach (var _group in gb.GroupBy(p => 
+                        //    p["BGP_BUILDING_PERMIT_NBR"].ToString()
+                        //+ p["BGP_BUILDING_PERMIT_REASON"].ToString()))
+                        //    {
+                        //        if (hasBuildingSeqField)
+                        //        {
+                        //            foreach (var record in _group)
+                        //            {
+                        //                record["APN_SEQUENCE_NUMBER"] = 1;
+                        //                record[sndFieldKey] = ibuilding;
+                        //                record[thrFieldKey] = seq3;
+                        //            }
+                        //        }
+                        //        else
+                        //        {
+                        //            foreach (var record in _group)
+                        //            {
+                        //                record["APN_SEQUENCE_NUMBER"] = 1;
+                        //                record.Add(sndFieldKey, ibuilding);
+                        //                record.Add(thrFieldKey, seq3);
+                        //            }
+                        //        }
+                        //    }
+                        //    ibuilding++;
+                        //}
 
                     }
                     #endregion Building Area
 
                 }
                 #endregion SEQ3
-                
+
 
                 #endregion
 
@@ -795,139 +1028,6 @@ namespace AppRunTransform
                 Console.WriteLine("-----------------------------");
                 return name;
             }
-        }
-        private static void TranferColumnsToRecord()
-        {
-
-        }
-        private static List<Dictionary<string, object>> addSeq2(string outputPrimaryKey,
-            List<Dictionary<string, object>> all_rec,
-            string[] mustHaveFieldFiltered,
-            string sndFieldKey,
-            bool hasSndMapped,
-            bool hasSndField
-            )
-        {
-            var tmp_all_rec = new List<Dictionary<string, object>>();
-            if (hasSndField)
-                foreach (var gb in all_rec.GroupBy(p => p[outputPrimaryKey].ToString()))
-                {
-                    var seq2 = 1;
-                    
-                    var dic = new Dictionary<string, string>();
-                    foreach (var record in gb)
-                    {
-                        record["APN_SEQUENCE_NUMBER"] = 1;
-                        var str = "";
-                        var builder = new StringBuilder();
-                        builder.Append(str);
-                        foreach (var item in mustHaveFieldFiltered)
-                        {
-                            builder.Append(record[item]);
-                        }
-                        str = builder.ToString();
-
-                        if (!dic.ContainsKey(str))
-                        {
-                            dic.Add(str, null);
-                            record[sndFieldKey] = seq2;
-                            tmp_all_rec.Add(record);
-
-
-                            
-                            seq2++;
-                        }
-                    }
-
-
-                }
-            return tmp_all_rec;
-        }
-        private static List<Dictionary<string, object>> addSeq3(string outputPrimaryKey,
-            List<Dictionary<string, object>> all_rec,
-            string[] mustHaveFieldFiltered,
-            string sndFieldKey,
-            string thrFieldKey,
-            bool hasSndMapped,
-            bool hasThrMapped,
-            bool hasSndField,
-            bool hasThrField
-            )
-        {
-            var tmp_all_rec = new List<Dictionary<string, object>>();
-            if(hasSndField)
-            foreach (var gb in all_rec.GroupBy(p => p[outputPrimaryKey].ToString()))
-            {
-                var seq2 = 1;
-                var seq3 = 1;
-                var dic = new Dictionary<string, string>();
-                foreach (var record in gb)
-                {
-                    record["APN_SEQUENCE_NUMBER"] = 1;
-                        if (!hasSndMapped)
-                        {
-                            var str = "";
-                            var builder = new StringBuilder();
-                            builder.Append(str);
-                            foreach (var item in mustHaveFieldFiltered)
-                            {
-                                builder.Append(record[item]);
-                            }
-                            str = builder.ToString();
-
-                            if (!dic.ContainsKey(str))
-                            {
-                                dic.Add(str, null);
-                                record[sndFieldKey] = seq2;
-                                tmp_all_rec.Add(record);
-
-
-                                if (hasThrField)
-                                {
-                                    if (!hasThrMapped)
-                                    {
-                                        if (!hasSndMapped && !hasThrMapped)
-                                        {
-                                            record[thrFieldKey] = seq2;
-                                        }
-                                        else
-                                        {
-                                            record[thrFieldKey] = seq3;
-                                        }
-                                    }
-
-                                }
-                                seq2++;
-                                seq3++;
-                            }
-                        }else
-                        {
-                            //record[thrFieldKey] = seq2;
-                            if (hasThrField)
-                            {
-                                if (!hasThrMapped)
-                                {
-                                    if (!hasSndMapped && !hasThrMapped)
-                                    {
-                                        record[thrFieldKey] = seq2;
-                                    }
-                                    else
-                                    {
-                                        record[thrFieldKey] = seq3;
-                                    }
-                                }
-
-                            }
-                            seq2++;
-                            seq3++;
-                            tmp_all_rec.Add(record);
-                        }
-                            
-                }
-
-
-            }
-            return tmp_all_rec;
         }
         private static IEnumerable<Dictionary<string, object>> Process_final(int fileid, decimal limit = 100, bool writeFile = false, int showLimit = 1000, bool addSequence = true, bool applyRules = true)
         {
@@ -1241,17 +1341,13 @@ namespace AppRunTransform
             var str = "";
             for (int i = 0; i < shouldHaveField.Length; i++)
             {
-                if (dic.ContainsKey(shouldHaveField[i]))
+                str += dic[shouldHaveField[i]];
+                if (!string.IsNullOrEmpty(str))
                 {
-                    str += dic[shouldHaveField[i]];
+                    return str;
                 }
-                //str += dic[shouldHaveField[i]];
-                //if (!string.IsNullOrEmpty(str))
-                //{
-                //    return str;
-                //}
             }
-            return str;
+            return "";
         }
         public enum DuplicateAction
         {

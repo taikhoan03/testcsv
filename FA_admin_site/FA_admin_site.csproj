@@ -332,6 +332,7 @@
     <Content Include="scripts\angular-animate.min.js" />
     <Content Include="scripts\angular-aria.js" />
     <Content Include="scripts\angular-aria.min.js" />
+    <Content Include="scripts\angular-checklist-model.js" />
     <Content Include="scripts\angular-cookies.js" />
     <Content Include="scripts\angular-cookies.min.js" />
     <Content Include="scripts\angular-csp.css" />
@@ -1232,6 +1233,7 @@
     <Content Include="Views\OutputRuleMapper\TransformLog.cshtml" />
     <Content Include="Views\OutputRuleMapper\test.cshtml" />
     <Content Include="Views\TestRule\Index.cshtml" />
+    <Content Include="Views\WorkingSet\TransferColumnsToRecord.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

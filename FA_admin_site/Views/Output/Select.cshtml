@@ -78,7 +78,7 @@
                             rightField=null;
                         }
                     })
-                        
+
                     ;
                 }
 
@@ -149,8 +149,9 @@
                 loadData();
             })
         ;
-        
+
     }
+    
     function clearAll(){
         if(!confirm('Remove all data?'))
             return;
@@ -162,6 +163,32 @@
             })
         .fail()
         .always();
+    }
+    var mode="insert";//update/insert
+    function toUpdateMode(){
+        mode="update";
+    }
+    function toInsertMode(){
+        mode="insert";
+    }
+    function del(id){
+        if(!confirm('Delete this record')) return;
+
+    }
+    function clearData(id){
+        if(!confirm('Delete this field')) return;
+        if(!confirm('Also remove all rules for this field')) return;
+
+        //clearDataForField
+        $.post('@Url.Action("clearDataForField", "Output")',{id:id})
+            .done(function(){
+
+            })
+            .fail()
+            .always(function(){
+                loadData();
+            })
+        ;
     }
     function loadData(){
         $.post('@Url.Action("getUserData","Output")',{id:@ViewBag.Id})
@@ -187,7 +214,11 @@
                     });
                     tr_rec.append(td);
                     //cmd
-                    td=$('<td>').html('...');
+                    //var btnUpdate=$('<input type="button" value="Update" onclick="toUpdateMode()"/>');
+                    //var btnUpdateConfirm=$('<input type="button" style="display:none" value="Confirm" onclick="confirmUpdate()"/>');
+                    //var btnDelete=$('<input type="button" style="display:none" value="Del" onclick="del('+item[0].Id+')"/>');
+                    var btnClearData=$('<input type="button" value="Clear" onclick="clearData('+item[0].Id+')"/>');
+                    td=$('<td>').append(btnClearData);//.html('...');
                     tr_rec.append(td);
                     t.append(tr_rec);
                 })
@@ -195,7 +226,7 @@
             .fail()
             .always()
         ;
-        
+
 
     }
 </script>
@@ -239,6 +270,7 @@
 <div>
     <input type="button" value="Add" onclick="add()" />
     <input type="button" value="Clear" onclick="clearAll()" />
+    <input type="button" value="Add_Update" onclick="addForUpdate()" />
 </div>
 <table id="data" class="table">
     <tr>

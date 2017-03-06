@@ -35,6 +35,71 @@ namespace FA_admin_site.Controllers
             //ViewBag.jsfiles = Json(allFiles);
             return View();
         }
+        //[HttpPost]
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="id">workingSetId</param>
+        /// <returns></returns>
+        public ActionResult TransferColumnsToRecord(int id)
+        {
+            var db = new BL.DA_Model();
+            var files = db.workingSetItems.Where(p => p.WorkingSetId == id);
+            ViewBag.ID = id;
+            return View(files);
+        }
+        [HttpPost]
+        public ActionResult postTransferColumnsToRecord(int wsiId, string[] columns,string newField, string newFile)
+        {
+            using (var client = new System.Net.WebClient())
+            {
+                client.QueryString.Add("wsiId", wsiId.ToString());
+                client.QueryString.Add("strcolumns", string.Join(";];", columns));// "col1;];col2;];col3;];");//params: ngan cach boi dau ;];
+                client.QueryString.Add("toNewName", newField.ReplaceUnusedCharacters());
+                client.QueryString.Add("newFileName", newFile.ReplaceUnusedCharacters());
+                var db_ = new BL.DA_Model();
+                var json = client.DownloadString(Config.Get_local_control_site() + "/JSON/TransferColumnsToRecord");
+                using (var dbContextTransaction = db_.Database.BeginTransaction())
+                {
+                    var newFileId = 0;
+                    try
+                    {
+                        var wsi = db_.workingSetItems.Find(wsiId);
+                        if(!db.workingSetItems.Any(p=>p.WorkingSetId==wsi.WorkingSetId && p.Filename == newFile))
+                        {
+                            var db_newWsItem = new BL.WorkingSetItem();
+                            db_newWsItem.Filename = newFile;
+                            db_newWsItem.IsLayouted = false;
+                            db_newWsItem.IsMerged = false;
+                            db_newWsItem.PrimaryKey = wsi.PrimaryKey;
+                            db_newWsItem.WorkingSetId = wsi.WorkingSetId;
+                            db_.workingSetItems.Add(db_newWsItem);
+                            db_.SaveChanges();
+                            newFileId = db_newWsItem.Id;
+
+                            //db_.SaveChanges();
+                            dbContextTransaction.Commit();
+                        }
+                        
+                        
+
+                    }
+                    catch (Exception exT)
+                    {
+                        dbContextTransaction.Rollback();
+                        ModelState.AddModelError("", exT.InnerException.Message);
+                        GC.Collect();
+                        throw exT;
+                    }
+                    if(newFileId>0)
+                        GetLayout(newFileId);
+
+                }
+                //var json = client.DownloadString(Url.Action("Index", "JobLayout", null, this.Request.Url.Scheme) + "/?id=" + fileid);
+
+            }
+            return null;
+        }
         public ActionResult Manage(int? id)
         {
 
@@ -189,6 +254,7 @@ namespace FA_admin_site.Controllers
                 {
                     dbContextTransaction.Rollback();
                     ModelState.AddModelError("", exT.InnerException.Message);
+                    GC.Collect();
                     throw exT;
                 }
 
