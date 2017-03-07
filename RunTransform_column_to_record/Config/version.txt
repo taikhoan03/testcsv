@@ -1,0 +1,10 @@
+﻿version=1.0.0.34
+root_folder_process=D:\FA_in_out
+input_folder_process=InputFile
+output_folder_process=OutputFile
+tmp_folder_process=Tmp_data
+flag_clear_queue_path=D:\clear.txt
+FA_FTP_IN=192.168.101.198
+FA_FTP_IN_PORT=2121
+FA_FTP_OUT=192.168.101.198
+FA_FTP_OUT_PORT=2122

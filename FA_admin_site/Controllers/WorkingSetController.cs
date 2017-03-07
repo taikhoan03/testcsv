@@ -51,53 +51,87 @@ namespace FA_admin_site.Controllers
         [HttpPost]
         public ActionResult postTransferColumnsToRecord(int wsiId, string[] columns,string newField, string newFile)
         {
-            using (var client = new System.Net.WebClient())
+            newFile = newFile.ReplaceUnusedCharacters();
+            var strColumns = string.Join(";];", columns);
+            newField = newField.ReplaceUnusedCharacters();
+
+            var db_ = new BL.DA_Model();
+
+            var wsi = db_.workingSetItems.Find(wsiId);
+            if (wsi == null)
             {
-                client.QueryString.Add("wsiId", wsiId.ToString());
-                client.QueryString.Add("strcolumns", string.Join(";];", columns));// "col1;];col2;];col3;];");//params: ngan cach boi dau ;];
-                client.QueryString.Add("toNewName", newField.ReplaceUnusedCharacters());
-                client.QueryString.Add("newFileName", newFile.ReplaceUnusedCharacters());
-                var db_ = new BL.DA_Model();
-                var json = client.DownloadString(Config.Get_local_control_site() + "/JSON/TransferColumnsToRecord");
-                using (var dbContextTransaction = db_.Database.BeginTransaction())
-                {
-                    var newFileId = 0;
-                    try
-                    {
-                        var wsi = db_.workingSetItems.Find(wsiId);
-                        if(!db.workingSetItems.Any(p=>p.WorkingSetId==wsi.WorkingSetId && p.Filename == newFile))
-                        {
-                            var db_newWsItem = new BL.WorkingSetItem();
-                            db_newWsItem.Filename = newFile;
-                            db_newWsItem.IsLayouted = false;
-                            db_newWsItem.IsMerged = false;
-                            db_newWsItem.PrimaryKey = wsi.PrimaryKey;
-                            db_newWsItem.WorkingSetId = wsi.WorkingSetId;
-                            db_.workingSetItems.Add(db_newWsItem);
-                            db_.SaveChanges();
-                            newFileId = db_newWsItem.Id;
-
-                            //db_.SaveChanges();
-                            dbContextTransaction.Commit();
-                        }
-                        
-                        
-
-                    }
-                    catch (Exception exT)
-                    {
-                        dbContextTransaction.Rollback();
-                        ModelState.AddModelError("", exT.InnerException.Message);
-                        GC.Collect();
-                        throw exT;
-                    }
-                    if(newFileId>0)
-                        GetLayout(newFileId);
-
-                }
-                //var json = client.DownloadString(Url.Action("Index", "JobLayout", null, this.Request.Url.Scheme) + "/?id=" + fileid);
-
+                throw new Exception("WorkingSetItem not found!!");
             }
+
+            var findReq = db.req_Transfer_Columns_to_Records.FirstOrDefault(p => p.WorkingSetId == wsi.WorkingSetId && p.OutputName == newFile);
+            if (findReq == null)
+            {
+                var r = new BL.Req_Transfer_Columns_to_Records
+                {
+                    CreatedBy = System.Web.HttpContext.Current.User.Identity.Name,
+                    CreatedDate = DateTime.Now,
+                    IsDeleted = false,
+                    IsReady = true,
+                    New_Field_Name = newField,
+                    OutputName = newFile,
+                    Status = 0,
+                    StrColumns = strColumns,
+                    WorkingSetId = wsi.WorkingSetId
+                };
+                db.req_Transfer_Columns_to_Records.Add(r);
+                db.SaveChanges();
+            }else
+            {
+                throw new Exception("This request is already existed");
+            }
+            //using (var client = new System.Net.WebClient())
+            //{
+            //    newFile = newFile.ReplaceUnusedCharacters();
+            //    client.QueryString.Add("wsiId", wsiId.ToString());
+            //    client.QueryString.Add("strcolumns", string.Join(";];", columns));// "col1;];col2;];col3;];");//params: ngan cach boi dau ;];
+            //    client.QueryString.Add("toNewName", newField.ReplaceUnusedCharacters());
+            //    client.QueryString.Add("newFileName", newFile);
+
+            //    //var json = client.DownloadString(Config.Get_local_control_site() + "/JSON/TransferColumnsToRecord");
+            //    //using (var dbContextTransaction = db_.Database.BeginTransaction())
+            //    //{
+            //    //    var newFileId = 0;
+            //    //    try
+            //    //    {
+            //    //        var wsi = db_.workingSetItems.Find(wsiId);
+            //    //        if(!db.workingSetItems.Any(p=>p.WorkingSetId==wsi.WorkingSetId && p.Filename == newFile))
+            //    //        {
+            //    //            var db_newWsItem = new BL.WorkingSetItem();
+            //    //            db_newWsItem.Filename = newFile;
+            //    //            db_newWsItem.IsLayouted = false;
+            //    //            db_newWsItem.IsMerged = false;
+            //    //            db_newWsItem.PrimaryKey = wsi.PrimaryKey;
+            //    //            db_newWsItem.WorkingSetId = wsi.WorkingSetId;
+            //    //            db_.workingSetItems.Add(db_newWsItem);
+            //    //            db_.SaveChanges();
+            //    //            newFileId = db_newWsItem.Id;
+
+            //        //            //db_.SaveChanges();
+            //        //            dbContextTransaction.Commit();
+            //        //        }
+
+
+
+            //        //    }
+            //        //    catch (Exception exT)
+            //        //    {
+            //        //        dbContextTransaction.Rollback();
+            //        //        ModelState.AddModelError("", exT.InnerException.Message);
+            //        //        GC.Collect();
+            //        //        throw exT;
+            //        //    }
+            //        //    if(newFileId>0)
+            //        //        GetLayout(newFileId);
+
+            //        //}
+            //        //var json = client.DownloadString(Url.Action("Index", "JobLayout", null, this.Request.Url.Scheme) + "/?id=" + fileid);
+
+            //}
             return null;
         }
         public ActionResult Manage(int? id)

@@ -19,8 +19,8 @@ namespace AppRunTransform
             Console.WriteLine("App is running...");
             //Console.WriteLine("PRess Enter");
             //Console.ReadLine();
-            //using (Process p = Process.GetCurrentProcess())
-            //    p.PriorityClass = ProcessPriorityClass.BelowNormal;
+            using (Process p = Process.GetCurrentProcess())
+                p.PriorityClass = ProcessPriorityClass.BelowNormal;
             var db = new BL.DA_Model();
             //var a = db.runTransformRequests.Where(p => p.WorkingSetId == 4002);
             while (true)

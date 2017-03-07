@@ -32,8 +32,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Priority Queue, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\OptimizedPriorityQueue.3.0.0\lib\net20\Priority Queue.dll</HintPath>
+    <Reference Include="Priority Queue, Version=4.0.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\OptimizedPriorityQueue.4.0.3\lib\net20\Priority Queue.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppRunTransform", "AppRunTr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApplicationTest", "ConsoleApplicationTest\ConsoleApplicationTest.csproj", "{96DE8D0C-FFA7-459E-AD61-5C25576318CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunTransform_column_to_record", "RunTransform_column_to_record\RunTransform_column_to_record.csproj", "{A61A62F3-0FE4-440E-87A2-9772E6E87E45}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -77,6 +79,10 @@ Global
 		{96DE8D0C-FFA7-459E-AD61-5C25576318CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96DE8D0C-FFA7-459E-AD61-5C25576318CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96DE8D0C-FFA7-459E-AD61-5C25576318CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A61A62F3-0FE4-440E-87A2-9772E6E87E45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A61A62F3-0FE4-440E-87A2-9772E6E87E45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A61A62F3-0FE4-440E-87A2-9772E6E87E45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A61A62F3-0FE4-440E-87A2-9772E6E87E45}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
