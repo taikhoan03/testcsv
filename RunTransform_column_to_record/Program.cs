@@ -36,28 +36,28 @@ namespace RunTransform_column_to_record
                         var watch = Stopwatch.StartNew();
 
 
-                        var outputname = runProcess(req.WorkingSetId, true);
-                        //remove old file
-                        if (outputname != oldOutputName)
-                        {
-                            var ws = db.workingSets.Find(req.WorkingSetId);
-                            var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
-                                            Config.Data.GetKey("output_folder_process"),
-                                            ws.State,
-                                            ws.County
-                                            );
+                        //var outputname = runProcess(req.WorkingSetId, true);
+                        ////remove old file
+                        //if (outputname != oldOutputName)
+                        //{
+                        //    var ws = db.workingSets.Find(req.WorkingSetId);
+                        //    var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
+                        //                    Config.Data.GetKey("output_folder_process"),
+                        //                    ws.State,
+                        //                    ws.County
+                        //                    );
 
-                            path = path + @"\" + oldOutputName;
-                            if (File.Exists(path) && !string.IsNullOrEmpty(oldOutputName))
-                                System.IO.File.Delete(path);
-                        }
+                        //    path = path + @"\" + oldOutputName;
+                        //    if (File.Exists(path) && !string.IsNullOrEmpty(oldOutputName))
+                        //        System.IO.File.Delete(path);
+                        //}
 
 
-                        watch.Stop();
-                        req.TimeCost = Convert.ToInt32(watch.Elapsed.TotalSeconds);
-                        req.Status = 2;
-                        req.Detail = "";
-                        req.OutputName = outputname;
+                        //watch.Stop();
+                        //req.TimeCost = Convert.ToInt32(watch.Elapsed.TotalSeconds);
+                        //req.Status = 2;
+                        //req.Detail = "";
+                        //req.OutputName = outputname;
 
 
                         //
