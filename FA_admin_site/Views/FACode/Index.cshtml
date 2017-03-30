@@ -1,0 +1,318 @@
+﻿@model IEnumerable<BL.FACode>
+<style type="text/css">
+    .editable-error-block {
+        color: red;
+    }
+
+    .table > tbody > tr:hover {
+        background: #6ad7c3;
+    }
+
+
+    table.sorting-table {
+        cursor: move;
+    }
+
+    table tr.sorting-row td {
+        background-color: #8b8;
+    }
+
+    #div-create-new-field table tr td {
+        padding: 6px;
+    }
+
+    #div-create-new-field table input, #div-create-new-field table select {
+        padding: 6px;
+        width: 220px;
+    }
+
+    .myDragClass {
+        color: #b6ff00 !important;
+    }
+</style>
+<script src="~/Content/js/plugins/jquery-ui.min.js"></script>
+<script src="~/Content/js/plugins/tempo/tempo.min.js"></script>
+<script src="~/scripts/custom/app.js"></script>
+<script src="~/Content/js/jquery.tablednd.js"></script>
+@*<script src="~/Content/js/RowSorter.js"></script>*@
+<link href="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/jqueryui-editable/css/jqueryui-editable.css" rel="stylesheet" />
+<script src="//cdnjs.cloudflare.com/ajax/libs/x-editable/1.5.0/jqueryui-editable/js/jqueryui-editable.min.js"></script>
+<script type="text/javascript">
+    $.fn.editable.defaults.mode = 'inline';
+    $.fn.editable.defaults.ajaxOptions = {type: "PUT"};
+    var reg = /^\d+$/;
+    var fields=@Html.Raw(ViewBag.OutputFields);
+    var fields_in_file=[];
+    var mode='insert';
+    var outputFileId=-1;
+    $(document).ready(function(){
+        load();
+    });
+    function load(){
+        
+        //fields_in_file=[];
+        //for (var i = 0; i < fields.length; i++) {
+        //    if(fields[i].OutputMapperId==id){
+        //        fields_in_file.push(fields[i]);
+        //    }
+        //}
+        _createTableWithJsonObj_withTemplate(fields,'tSample',false);
+        //
+        //$('.username').editable({
+        //    type: 'text',
+        //    title: 'Enter username',
+        //    success: function(response, newValue) {
+        //        //userModel.set('username', newValue); //update backbone model
+        //    }
+        //});
+        //$('.fieldtype').editable({
+        //    //prepend: "not selected",
+        //    source: [
+        //        {value: 'TEXT', text: 'TEXT'},
+        //        {value: 'NUM', text: 'NUM'}
+        //    ],
+        //    //display: function(value, sourceData) {
+        //    //    console.log(sourceData);
+        //    //    console.log(value);
+        //    //    //var colors = {"": "gray", 1: "green", 2: "blue"},
+        //    //    //    elem = $.grep(sourceData, function(o){return o.value == value;});
+        //    //    //console.log(sourceData);
+        //    //    //console.log(elem);
+        //    //    //if(elem.length) {
+        //    //    //    $(this).text(elem[0].text).css("color", colors[value]);
+        //    //    //} else {
+        //    //    //    $(this).empty();
+        //    //    //}
+        //    //}
+        //});
+        //$('.fieldLength').editable({
+        //    type: 'text',
+        //    title: 'Enter Length',
+        //    success: function(response, newValue) {
+        //        //userModel.set('username', newValue); //update backbone model
+        //    },
+        //    validate: function(value) {
+        //        if(!reg.test(value)) {
+        //            return 'Only Number allowed';
+        //        }
+        //    }
+        //});
+        //$('.fieldDecimal').editable({
+        //    type: 'text',
+        //    title: 'Enter Decimal',
+        //    success: function(response, newValue) {
+        //        //userModel.set('username', newValue); //update backbone model
+        //    },
+        //    validate: function(value) {
+        //        if(!reg.test(value)) {
+        //            return 'Only Number allowed';
+        //        }
+        //    }
+        //});
+
+        //$("#tbl-field").tableDnD({
+        //    onDragClass: "myDragClass",
+        //    onDrop: function(table, row) {
+        //        //console.log(row);
+        //        //var rows = table.tBodies[0].rows;
+        //        //var debugStr = "Row dropped was "+row.id+". New order: ";
+        //        //for (var i=0; i<rows.length; i++) {
+        //        //    debugStr += rows[i].id+" ";
+        //        //}
+        //        //console.log(debugStr);
+        //    },
+        //    onDragStart: function(table, row) {
+        //        //console.log(row);
+        //    }
+        //});
+
+    }
+    function show_insert_form(){
+        mode='insert';
+        $('#div-create-new-field').show();
+        clear();
+    }
+    function addNewOutput(){
+        if($('#txtNameoutput').val()==''){
+            alert('File output name could not EMPTY');
+            return;
+        }
+        if(!confirm('Do you want to create this new OUTPUT?')) return;
+        var file={};
+        file.Name=$('#txtNameoutput').val();
+        $.post('@Url.Action("CreateNewOutput", "Output")',{file:file})
+        .done(function(data){
+            window.location.href=window.location.href;
+        })
+        .fail(function(){
+            alert("err");
+        })
+        .always(function(){
+        });
+    }
+    function addNewField(){
+        //if(outputFileId<0) {
+        //    alert("Please select an OUTPUT_FILE first");
+        //    return;
+        //}
+        if(!confirm('Do you want to create this new field?')) return;
+        var field={};
+        field.Code=$('#txtCode').val();
+        field.LookupValue=$('#txtTxtLookup').val();
+        field.Comment=$('#txtComment').val();
+        field.TableId='@ViewBag.Id';
+        console.log(field);
+        $.post('@Url.Action("CreateNewCode", "FACode")',{code:field})
+        .done(function(data){
+            window.location.href=window.location.href;
+        })
+        .fail(function(){
+            alert("err");
+        })
+        .always(function(){
+            clear();
+        });
+    }
+    function re_order(){
+        @*if(outputFileId<0) return;
+        if(!confirm('Do you want to save change item orders')) return;
+        var tr_field=$('#tSample #tbody tr:gt(0)');
+        var _fields=[];
+        $(tr_field).each(function(ind,item){
+            var field={};
+            var username=$(item).find('.username');
+            field.Name=username.text();
+            field.id=username.attr('data-pk');
+            field.Type=$(item).find('.fieldtype').text();
+            field.Length=$(item).find('.fieldLength').text();
+            field.Decimal=$(item).find('.fieldDecimal').text();
+            field.Section=$(item).find('.fieldSection').text();
+            field.OutputMapperId=outputFileId;
+            _fields.push(field);
+        });
+        $.post('@Url.Action("re_order","Output")',{fields:_fields})
+        .done(function(data){
+            //window.location.href=window.location.href;
+        })
+        .fail(function(){
+            alert("err");
+        })
+        .always(function(){
+            clear();
+        });
+        console.log(_fields);*@
+    }
+    function del(id){
+        if(!confirm('Do you want to DELETE this item')) return;
+        @*$.post('@Url.Action("del","Output")',{id:id})
+        .done(function(data){
+            window.location.href=window.location.href;
+        })
+        .fail(function(){
+            alert("err");
+        })
+        .always(function(){
+            clear();
+        });*@
+    }
+    function clear(){
+        $('#div-create-new-field input:text').val('');
+        $('txtDecimal').val(0);
+    }
+    function hideNewForm(){
+        $('#div-create-new-field').hide();
+    }
+    function show_insert_form_output(){
+        $('#div-create-new-output').show();
+    }
+</script>
+
+@*<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.Name)
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                <a href="javascript:;" onclick="load(@item.Id)">Select</a>
+            </td>
+        </tr>
+    }
+
+</table>*@
+@*<a href="javascript:;" onclick="show_insert_form_output()">Create New OUTPUT File</a>*@
+<div id="div-create-new-output" style="padding:11px;border:dotted 2px;margin:20px;display:none">
+    <table>
+        <tr>
+            <td>Output File Name</td>
+            <td><input id="txtNameoutput" /></td>
+        </tr>
+
+        <tr>
+            <td colspan="2">
+                <input type="button" value="Save" onclick="addNewOutput()" />
+                <input type="button" value="Hide" onclick="$('#div-create-new-output').hide();" />
+            </td>
+        </tr>
+    </table>
+</div>
+<div></div>
+<a href="javascript:;" onclick="show_insert_form()">Create New Field</a>
+<div id="div-create-new-field" style="padding:11px;border:dotted 2px;margin:20px;display:none">
+    <table>
+        <tr>
+            <td>Code</td>
+            <td><input id="txtCode" /></td>
+        </tr>
+        <tr>
+            <td>Lookup data</td>
+            <td><input id="txtTxtLookup" /></td>
+        </tr>
+        <tr>
+            <td>Comment</td>
+            <td><input id="txtComment" /></td>
+        </tr>
+        
+        <tr>
+            <td colspan="2">
+                <input type="button" value="Save" onclick="addNewField()" />
+                <input type="button" value="Hide" onclick="hideNewForm()" />
+            </td>
+        </tr>
+    </table>
+</div>
+<div></div>
+
+<div class="table" id="tSample" style="display:none;width: 100%;background-color: #fff;">
+    @*<a href="javascript:;" onclick="re_order()">Save Order</a>*@
+    <table class="table" id="tbl-field">
+        <thead>
+            <tr id="header">
+                <th>Code</th>
+                <th>Lookup Data</th>
+                <th>Comment</th>
+                @*<th>Decimal</th>
+                <th>Section</th>
+                <th>Command</th>*@
+            </tr>
+        </thead>
+        <tbody id="tbody">
+            <tr>
+                <td><a href="#" class="code editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldName","Output")" data-title="Enter username">{{Code}}</a></td>
+                <td><a href="#" class="fieldtype editable-empty" data-type="select" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldType","Output")" data-title="Select Type" data-value="{{LookupValue}}">{{LookupValue}}</a></td>
+                <td><a href="#" class="fieldLength editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldLength","Output")" data-title="Enter username">{{Comment}}</a></td>
+                @*<td><a href="#" class="fieldDecimal editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldDecimal","Output")" data-title="Enter username">{{Decimal}}</a></td>
+                <td><a href="#" class="fieldSection editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldSection","Output")" data-title="Enter username">{{Section}}</a></td>
+                <td><a href="javascript:;" onclick="del({{Id}})">Del</a></td>*@
+            </tr>
+        </tbody>
+    </table>
+</div>

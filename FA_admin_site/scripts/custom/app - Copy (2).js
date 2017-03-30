@@ -295,7 +295,7 @@ var IRule_IF = function () {
 }
 
 var r_IF = new IRule_IF();
-r_IF.setAllAcceptType(at.any);
+r_IF.setAllAcceptType(at.bool);
 r_IF.showResult = function () {
     
     var lblContent = '';
@@ -438,7 +438,7 @@ var IRule = function (name, str_func, limit, delimiter) {
 
 };
 var r_AND = new IRule("AND", "AND", default_limit, ',');
-r_AND.setAcceptTypes([at.any, at.any, at.any, at.any, at.any, at.any, at.any, at.any, at.any, at.any]);
+r_AND.setAcceptTypes([at.bool, at.bool, at.bool, at.bool, at.bool, at.bool, at.bool, at.bool, at.bool, at.bool]);
 r_AND.showResult = function () {
     var str = "";
     for (var i = 0; i < this.params.length; i++) {
@@ -453,7 +453,7 @@ r_AND.showResult = function () {
 //r_AND.addParam({ value: 3, type: at.integer });
 
 var r_CONTAINS = new IRule("CONTAINS", "CONTAINS", default_limit, '[[]]');
-r_CONTAINS.setAllAcceptType(at.any);
+r_CONTAINS.setAllAcceptType(at.string);
 r_CONTAINS.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Target : </th>';
@@ -495,7 +495,7 @@ r_EQUAL.showResult = function () {
 }
 
 var r_GREATER_THAN = new IRule("GREATER_THAN", "GREATER_THAN", default_limit, ',');
-r_GREATER_THAN.setAcceptTypes([at.any, at.any]);
+r_GREATER_THAN.setAcceptTypes([at.number, at.number]);
 r_GREATER_THAN.showResult = function () {
     var str = "";
     var r1 = "";
@@ -516,7 +516,7 @@ r_GREATER_THAN.showResult = function () {
 }
 
 var r_GREATER_THAN_OR_EQUAL = new IRule("GREATER_THAN_OR_EQUAL", "GREATER_THAN_OR_EQUAL", default_limit, ',');
-r_GREATER_THAN_OR_EQUAL.setAcceptTypes([at.any, at.any]);
+r_GREATER_THAN_OR_EQUAL.setAcceptTypes([at.number, at.number]);
 r_GREATER_THAN_OR_EQUAL.showResult = function () {
     var str = "";
     var r1 = "";
@@ -537,7 +537,7 @@ r_GREATER_THAN_OR_EQUAL.showResult = function () {
 }
 
 var r_IS_ALPHA = new IRule("IS_ALPHA", "IS_ALPHA", default_limit, ',');
-r_IS_ALPHA.setAcceptTypes([at.any]);
+r_IS_ALPHA.setAcceptTypes([at.string]);
 r_IS_ALPHA.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Value : </th>';
@@ -550,7 +550,7 @@ r_IS_ALPHA.showResult = function () {
 }
 
 var r_IS_NULL = new IRule("IS_NULL", "IS_NULL", default_limit, ',');
-r_IS_NULL.setAcceptTypes([at.any]);
+r_IS_NULL.setAcceptTypes([at.string]);
 r_IS_NULL.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Value : </th>';
@@ -563,7 +563,7 @@ r_IS_NULL.showResult = function () {
 }
 
 var r_IS_NUMERIC = new IRule("IS_NUMERIC", "IS_NUMERIC", default_limit, ',');
-r_IS_NUMERIC.setAcceptTypes([at.any, at.any]);
+r_IS_NUMERIC.setAcceptTypes([at.string, at.number]);
 r_IS_NUMERIC.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Value : </th>';
@@ -576,7 +576,7 @@ r_IS_NUMERIC.showResult = function () {
 }
 
 var r_LESS_THAN = new IRule("LESS_THAN", "LESS_THAN", default_limit, ',');
-r_LESS_THAN.setAcceptTypes([at.any, at.any]);
+r_LESS_THAN.setAcceptTypes([at.number, at.number]);
 r_LESS_THAN.showResult = function () {
     var str = "";
     var r1 = "";
@@ -597,7 +597,7 @@ r_LESS_THAN.showResult = function () {
 }
 
 var r_LESS_THAN_OR_EQUAL = new IRule("LESS_THAN_OR_EQUAL", "LESS_THAN_OR_EQUAL", default_limit, ',');
-r_LESS_THAN_OR_EQUAL.setAcceptTypes([at.any, at.any]);
+r_LESS_THAN_OR_EQUAL.setAcceptTypes([at.number, at.number]);
 r_LESS_THAN_OR_EQUAL.showResult = function () {
     var str = "";
     var r1 = "";
@@ -618,7 +618,7 @@ r_LESS_THAN_OR_EQUAL.showResult = function () {
 }
 
 var r_NOT = new IRule("NOT", "NOT", default_limit, ',');
-r_NOT.setAcceptTypes([at.any]);
+r_NOT.setAcceptTypes([at.bool]);
 r_NOT.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Value : </th>';
@@ -631,7 +631,7 @@ r_NOT.showResult = function () {
 }
 
 var r_NOT_CONTAINS = new IRule("NOT_CONTAINS", "NOT_CONTAINS", default_limit, '[[]]');
-r_NOT_CONTAINS.setAllAcceptType([at.any]);
+r_NOT_CONTAINS.setAllAcceptType([at.string]);
 r_NOT_CONTAINS.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Target : </th>';
@@ -649,7 +649,7 @@ r_NOT_CONTAINS.showResult = function () {
 }
 
 var r_NOT_EQUAL = new IRule("NOT_EQUAL", "NOT_EQUAL", default_limit, ',');
-r_NOT_EQUAL.setAcceptTypes([at.any, at.any]);
+r_NOT_EQUAL.setAcceptTypes([[at.string, at.number], [at.string, at.number]]);
 r_NOT_EQUAL.showResult = function () {
     var str = "";
     var r1 = "";
@@ -670,7 +670,7 @@ r_NOT_EQUAL.showResult = function () {
 }
 
 var r_OR = new IRule("OR", "OR", default_limit, ',');
-r_OR.setAllAcceptType(at.any);
+r_OR.setAllAcceptType(at.bool);
 r_OR.showResult = function () {
     var str = "";
     for (var i = 0; i < this.params.length; i++) {
@@ -682,7 +682,7 @@ r_OR.showResult = function () {
 }
 
 var r_RANGE = new IRule("RANGE", "RANGE", default_limit, ',');
-r_RANGE.setAcceptTypes([at.any, at.any, at.any]);
+r_RANGE.setAcceptTypes([at.number, at.number, at.number]);
 r_RANGE.showResult = function () {
     var str = "";
     var r1 = "";
@@ -745,7 +745,7 @@ r_CONCATENATE.showResult = function () {
 }
 
 var r_JOIN = new IRule("JOIN", "JOIN", default_limit, '[[]]');
-r_JOIN.setAllAcceptType(at.any);
+r_JOIN.setAllAcceptType(at.string);
 r_JOIN.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Seperator : </th>';
@@ -763,7 +763,7 @@ r_JOIN.showResult = function () {
 }
 
 var r_LEFT_PAD = new IRule("LEFT_PAD", "LEFT_PAD", default_limit, '[[]]');
-r_LEFT_PAD.setAcceptTypes([at.any, at.any, at.any]);
+r_LEFT_PAD.setAcceptTypes([at.string, at.string, at.number]);
 r_LEFT_PAD.showResult = function () {
     var str = "";
     var lp1 = "";
@@ -791,7 +791,7 @@ r_LEFT_PAD.showResult = function () {
 }
 
 var r_LEFT_TRIM = new IRule("LEFT_TRIM", "LEFT_TRIM", default_limit, '[[]]');
-r_LEFT_TRIM.setAcceptTypes([at.any, at.any]);
+r_LEFT_TRIM.setAcceptTypes([at.string, at.string]);
 r_LEFT_TRIM.showResult = function () {
     var str = "";
     var l1 = "";
@@ -813,7 +813,7 @@ r_LEFT_TRIM.showResult = function () {
 }
 
 var r_REMOVE_CHARACTERS = new IRule("REMOVE_CHARACTERS", "REMOVE_CHARACTERS", default_limit, '[[]]');
-r_REMOVE_CHARACTERS.setAllAcceptType(at.any);
+r_REMOVE_CHARACTERS.setAllAcceptType(at.string);
 r_REMOVE_CHARACTERS.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Target : </th>';
@@ -831,7 +831,7 @@ r_REMOVE_CHARACTERS.showResult = function () {
 }
 
 var r_REPLACE_STRING = new IRule("REPLACE_STRING", "REPLACE_STRING", default_limit, '[[]]');
-r_REPLACE_STRING.setAcceptTypes([at.any, at.any, at.any]);
+r_REPLACE_STRING.setAcceptTypes([at.string, at.string, at.string]);
 r_REPLACE_STRING.showResult = function () {
     var str = "";
     var r1 = "";
@@ -859,7 +859,7 @@ r_REPLACE_STRING.showResult = function () {
 }
 
 var r_REPLACE_CONTAINS = new IRule("REPLACE_CONTAINS", "REPLACE_CONTAINS", default_limit, '[[]]');
-r_REPLACE_CONTAINS.setAllAcceptType(at.any);
+r_REPLACE_CONTAINS.setAllAcceptType(at.string);
 r_REPLACE_CONTAINS.showResult = function () {
     var str = "";
     var r1 = "";
@@ -888,7 +888,7 @@ r_REPLACE_CONTAINS.showResult = function () {
 }
 
 var r_RIGHT_PAD = new IRule("RIGHT_PAD", "RIGHT_PAD", default_limit, '[[]]');
-r_RIGHT_PAD.setAcceptTypes([at.any, at.any, at.any]);
+r_RIGHT_PAD.setAcceptTypes([at.string, at.string, at.number]);
 r_RIGHT_PAD.showResult = function () {
     var str = "";
     var rp1 = "";
@@ -916,7 +916,7 @@ r_RIGHT_PAD.showResult = function () {
 }
 
 var r_RIGHT_TRIM = new IRule("RIGHT_TRIM", "RIGHT_TRIM", default_limit, '[[]]');
-r_RIGHT_TRIM.setAcceptTypes([at.any, at.any]);
+r_RIGHT_TRIM.setAcceptTypes([at.string, at.string]);
 r_RIGHT_TRIM.showResult = function () {
     var str = "";
     var r1 = "";
@@ -937,7 +937,7 @@ r_RIGHT_TRIM.showResult = function () {
 }
 
 var r_SPLIT = new IRule("SPLIT", "SPLIT", default_limit, '[[]]');
-r_SPLIT.setAcceptTypes([at.any, at.any, at.any]);
+r_SPLIT.setAcceptTypes([at.string, at.string, at.number]);
 r_SPLIT.showResult = function () {
     var str = "";
     var s1 = "";
@@ -965,7 +965,7 @@ r_SPLIT.showResult = function () {
 }
 
 var r_SUB_STRING = new IRule("SUB_STRING", "SUB_STRING", default_limit, '[[]]');
-r_SUB_STRING.setAcceptTypes([at.any, at.any, at.any]);
+r_SUB_STRING.setAcceptTypes([at.string, at.number, at.number]);
 r_SUB_STRING.showResult = function () {
     var str = "";
     var s1 = "";
@@ -993,7 +993,7 @@ r_SUB_STRING.showResult = function () {
 }
 
 var r_UPPER = new IRule("UPPER", "UPPER", default_limit, '[[]]');
-r_UPPER.setAcceptTypes([at.any]);
+r_UPPER.setAcceptTypes([at.string]);
 r_UPPER.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Target : </th>';
@@ -1021,7 +1021,7 @@ r_AS_IS.showResult = function () {
 }
 
 var r_LAST_POSITION_OF = new IRule("LAST_POSITION_OF", "LAST_POSITION_OF", default_limit, '[[]]');
-r_LAST_POSITION_OF.setAcceptTypes([at.any, at.any]);
+r_LAST_POSITION_OF.setAcceptTypes([at.string, at.string]);
 r_LAST_POSITION_OF.showResult = function () {
     var str = "";
     var s1 = "";
@@ -1042,7 +1042,7 @@ r_LAST_POSITION_OF.showResult = function () {
 }
 
 var r_POSITION_OF = new IRule("POSITION_OF", "POSITION_OF", default_limit, '[[]]');
-r_POSITION_OF.setAcceptTypes([at.any, at.any]);
+r_POSITION_OF.setAcceptTypes([at.string, at.string]);
 r_POSITION_OF.showResult = function () {
     var str = "";
     var s1 = "";
@@ -1063,7 +1063,7 @@ r_POSITION_OF.showResult = function () {
 }
 
 var r_LENGTH = new IRule("LENGTH", "LENGTH", default_limit, '');
-r_LENGTH.setAcceptTypes([at.any]);
+r_LENGTH.setAcceptTypes([at.string]);
 r_LENGTH.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Target : </th>';
@@ -1076,7 +1076,7 @@ r_LENGTH.showResult = function () {
 }
 
 var r_MAX = new IRule("MAX", "MAX", default_limit, ',');
-r_MAX.setAllAcceptType(at.any);
+r_MAX.setAllAcceptType(at.number);
 r_MAX.showResult = function () {
     var str = "";
     for (var i = 0; i < this.params.length; i++) {
@@ -1088,7 +1088,7 @@ r_MAX.showResult = function () {
 }
 
 var r_MIN = new IRule("MIN", "MIN", default_limit, ',');
-r_MIN.setAllAcceptType(at.any);
+r_MIN.setAllAcceptType(at.number);
 r_MIN.showResult = function () {
     var str = "";
     for (var i = 0; i < this.params.length; i++) {
@@ -1100,7 +1100,7 @@ r_MIN.showResult = function () {
 }
 
 var r_ROUND = new IRule("ROUND", "ROUND", default_limit, ',');
-r_ROUND.setAcceptTypes([at.any, at.any]);
+r_ROUND.setAcceptTypes([at.number, at.number]);
 r_ROUND.showResult = function () {
     var str = "";
     var s1 = "";
@@ -1121,7 +1121,7 @@ r_ROUND.showResult = function () {
 }
 
 var r_STRING_COUNT = new IRule("STRING_COUNT", "STRING_COUNT", default_limit, ',');
-r_STRING_COUNT.setAcceptTypes([at.any, at.any]);
+r_STRING_COUNT.setAcceptTypes([at.string, at.string]);
 r_STRING_COUNT.showResult = function () {
     var str = "";
     var s1 = "";
@@ -1142,7 +1142,7 @@ r_STRING_COUNT.showResult = function () {
 }
 
 var r_SUM_ALL = new IRule("SUM_ALL", "SUM_ALL", default_limit, ',');
-r_SUM_ALL.setAllAcceptType(at.any);
+r_SUM_ALL.setAllAcceptType(at.number);
 r_SUM_ALL.showResult = function () {
     var str = "";
     for (var i = 0; i < this.params.length; i++) {

@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Web;
 
-namespace Mvc_5_site.Helpers
+namespace BL
 {
     public static class ReadCSV
     {

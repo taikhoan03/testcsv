@@ -46,7 +46,58 @@ namespace FA_admin_site.Controllers
             var db = new BL.DA_Model();
             var files = db.workingSetItems.Where(p => p.WorkingSetId == id);
             ViewBag.ID = id;
+            ViewBag.reqs = db.req_Transfer_Columns_to_Records.ToList();
             return View(files);
+        }
+        public ActionResult TaxInstallment(int id)
+        {
+            var db = new BL.DA_Model();
+            var files = db.workingSetItems.Where(p => p.WorkingSetId == id);
+            ViewBag.ID = id;
+            ViewBag.reqs = db.req_Transfer_NumOfTaxInstallments.ToList();
+            return View(files);
+        }
+        [HttpPost]
+        public ActionResult postTaxInstallment(int wsiId, string[] columns, string newField, string newFile, int numOfTaxInstallment)
+        {
+            newFile = newFile.ReplaceUnusedCharacters();
+            var strColumns = string.Join(";];", columns);
+            newField = newField.ReplaceUnusedCharacters();
+
+            var db_ = new BL.DA_Model();
+
+            var wsi = db_.workingSetItems.Find(wsiId);
+            if (wsi == null)
+            {
+                throw new Exception("WorkingSetItem not found!!");
+            }
+
+            var findReq = db.req_Transfer_NumOfTaxInstallments.FirstOrDefault(p => p.WorkingSetId == wsi.WorkingSetId && p.OutputName == newFile);
+            if (findReq == null)
+            {
+                var r = new BL.Req_Transfer_NumOfTaxInstallment
+                {
+                    CreatedBy = System.Web.HttpContext.Current.User.Identity.Name,
+                    CreatedDate = DateTime.Now,
+                    IsDeleted = false,
+                    IsReady = true,
+                    New_Field_Name = newField,
+                    OutputName = newFile,
+                    Status = 0,
+                    StrColumns = strColumns,
+                    WorkingSetId = wsi.WorkingSetId,
+                    WorkingSetItemId = wsiId,
+                    NumOfTaxInstallment=numOfTaxInstallment
+                };
+                db.req_Transfer_NumOfTaxInstallments.Add(r);
+                db.SaveChanges();
+            }
+            else
+            {
+                throw new Exception("This request is already existed");
+            }
+            
+            return null;
         }
         [HttpPost]
         public ActionResult postTransferColumnsToRecord(int wsiId, string[] columns,string newField, string newFile)
@@ -76,7 +127,8 @@ namespace FA_admin_site.Controllers
                     OutputName = newFile,
                     Status = 0,
                     StrColumns = strColumns,
-                    WorkingSetId = wsi.WorkingSetId
+                    WorkingSetId = wsi.WorkingSetId,
+                    WorkingSetItemId = wsiId,
                 };
                 db.req_Transfer_Columns_to_Records.Add(r);
                 db.SaveChanges();
@@ -134,6 +186,7 @@ namespace FA_admin_site.Controllers
             //}
             return null;
         }
+        
         public ActionResult Manage(int? id)
         {
 

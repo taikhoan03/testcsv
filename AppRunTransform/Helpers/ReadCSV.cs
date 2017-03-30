@@ -14,6 +14,11 @@ namespace AppRunTransform.Helpers
     public static class ReadCSV
     {
         private static decimal C_Default_limit = 90000000000;
+        public static BL._CSV ReadAsArray(string name, string path, decimal limit)
+        {
+            name = name.Replace(".", EV.DOT);
+            return BL.Ulti.ReadAsArray(name, path, limit);
+        }
         public static List<Dictionary<string, object>> ReadAsDictionary(string name,string path, decimal limit)
         {
             name = name.Replace(".", EV.DOT);

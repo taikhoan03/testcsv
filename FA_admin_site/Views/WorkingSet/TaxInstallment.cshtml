@@ -52,7 +52,7 @@
         font-style: italic;
     }
 </style>
-@{ 
+@{
     var reqs = (List<BL.Req_Transfer_Columns_to_Records>)ViewBag.reqs;
     var num_err_display_char_limit = 100;
 }
@@ -142,6 +142,10 @@
 
                             <input type="text" name="newFileName" ng-model="newFileName" required />
                         </div>
+                        <div>
+                            Num of Tax installment
+                            <input type="text" name="numOfTaxInstallment" ng-model="numOfTaxInstallment" required />
+                        </div>
                         
                         @*<div style="font-weight:bold">{{newFieldName}}</div>*@
                     </div>
@@ -160,8 +164,9 @@
 <script type="text/javascript">
     var app = angular.module('myApp', ["checklist-model"]);
     app.controller('myCtrl', function($scope,$http) {
-        $scope.newFieldName = "new_field_name";
+        $scope.newFieldName = "TXI_TAX_INSTALL_AMT";
         $scope.newFileName = "FILE_NAME";
+        $scope.numOfTaxInstallment = 1;
         $scope.fileid = 0;
         $scope.selected_fields = [];
         $scope.clear = function () {
@@ -172,7 +177,7 @@
                 $scope.fields = root;
                 $scope.fileid=id;
                 var _time=$.datepicker.formatDate('yymmdd', new Date());
-                $scope.newFileName=name.replace(/.txt/gi,'').replace(/.csv/gi,'')+'_'+_time+'.csv';
+                $scope.newFileName='TAX_'+name.replace(/.txt/gi,'').replace(/.csv/gi,'')+'_'+_time+'.csv';
                 $('#showtbl').show();
                 $scope.clear();
             });
@@ -189,7 +194,7 @@
                 return;
             }
             //$.colorbox({ html: "<h5>This proccess could run a little longer, please wait</h5>" });
-            $.post('@Url.Action("postTransferColumnsToRecord", "WorkingSet")', { wsiId :$scope.fileid,columns:$scope.selected_fields,newField:$scope.newFieldName,newFile:$scope.newFileName})
+            $.post('@Url.Action("postTaxInstallment", "WorkingSet")', { wsiId: $scope.fileid, columns: $scope.selected_fields, newField: $scope.newFieldName, newFile: $scope.newFileName, numOfTaxInstallment: $scope.numOfTaxInstallment })
             .done(function () {
                 //$.colorbox.close();
                 setTimeout(function () {
@@ -203,6 +208,8 @@
         }
     });
 </script>
+
+
 
 <br />
 <h3>Request Logs:</h3>

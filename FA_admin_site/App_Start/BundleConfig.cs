@@ -15,9 +15,12 @@ namespace FA_admin_site.App_Start
                 .Include("~/Content/css/colorbox.css")
                 );
             bundles.Add(new ScriptBundle("~/Bundles/js")
+                .Include("~/Content/js/plugins/bootstrap/bootstrap.js")
                 .Include("~/Content/js/plugins/jquery.colorbox-min.js")
                 .Include("~/Content/js/plugins/fastclick/fastclick.js")
                 .Include("~/Content/js/plugins/slimscroll/jquery.slimscroll.js")
+                .Include("~/Content/js/plugins/select2/select2.full.js")
+                .Include("~/Content/js/plugins/moment/moment.js")
                 );
             //bundles.Add(new ScriptBundle("~/Bundles/js")
             //    .Include("~/Content/js/plugins/jquery/jquery-2.2.4.js")

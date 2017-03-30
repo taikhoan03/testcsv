@@ -7,8 +7,8 @@ namespace Mvc_5_site.Controllers
         public ActionResult Index()
         {
             
-            var b = (new BL.Class1()).getFiles();
-            var a = Config.Data;
+            //var b = (new BL.Class1()).getFiles();
+            //var a = Config.Data;
             return View();
         }
         public string Ind()

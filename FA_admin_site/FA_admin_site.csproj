@@ -143,6 +143,10 @@
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.Xml.Linq" />
+    <Reference Include="WebActivatorEx, Version=2.0.0.0, Culture=neutral, PublicKeyToken=7b26dc2a43f6a0d4, processorArchitecture=MSIL">
+      <HintPath>..\packages\WebActivatorEx.2.2.0\lib\net40\WebActivatorEx.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="WebGrease, Version=1.6.5135.21930, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\WebGrease.1.6.0\lib\WebGrease.dll</HintPath>
       <Private>True</Private>
@@ -348,6 +352,7 @@
     <Content Include="scripts\angular-touch.min.js" />
     <Content Include="scripts\angular.js" />
     <Content Include="scripts\angular.min.js" />
+    <Content Include="scripts\custom\app - Copy %282%29.js" />
     <Content Include="scripts\custom\app - Copy.js" />
     <Content Include="scripts\custom\app.js" />
     <Content Include="scripts\custom\filesUpload.js" />
@@ -1115,20 +1120,23 @@
     <Compile Include="App_Start\Startup.cs" />
     <Compile Include="code\exception\_DbEntityValidationException.cs" />
     <Compile Include="Controllers\DCController.cs" />
+    <Compile Include="Controllers\FACodeController.cs" />
+    <Compile Include="Controllers\FACodeTablesController.cs" />
     <Compile Include="Controllers\FileController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\JobLayoutController.cs" />
     <Compile Include="Controllers\LinkageController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
+    <Compile Include="Controllers\NotiController.cs" />
     <Compile Include="Controllers\OutputController.cs" />
     <Compile Include="Controllers\OutputRuleMapperController.cs" />
     <Compile Include="Controllers\SortAndActionController.cs" />
     <Compile Include="Controllers\TestRuleController.cs" />
+    <Compile Include="Controllers\UsersController.cs" />
     <Compile Include="Controllers\WorkingSetController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
-    <Compile Include="Helpers\Config.cs" />
     <Compile Include="Helpers\helpers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -1226,6 +1234,17 @@
     <Content Include="Views\OutputRuleMapper\test.cshtml" />
     <Content Include="Views\TestRule\Index.cshtml" />
     <Content Include="Views\WorkingSet\TransferColumnsToRecord.cshtml" />
+    <Content Include="Views\WorkingSet\TaxInstallment.cshtml" />
+    <Content Include="Views\Users\Create.cshtml" />
+    <Content Include="Views\Users\Delete.cshtml" />
+    <Content Include="Views\Users\Details.cshtml" />
+    <Content Include="Views\Users\Edit.cshtml" />
+    <Content Include="Views\Users\Index.cshtml" />
+    <Content Include="Views\FACodeTables\Create.cshtml" />
+    <Content Include="Views\FACodeTables\Details.cshtml" />
+    <Content Include="Views\FACodeTables\Edit.cshtml" />
+    <Content Include="Views\FACodeTables\Index.cshtml" />
+    <Content Include="Views\FACode\Index.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
@@ -1237,6 +1256,7 @@
     <Folder Include="App_Data\" />
     <Folder Include="Content\css\images\" />
     <Folder Include="Models\" />
+    <Folder Include="Views\Noti\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Projects\FA\BL\BL.csproj">

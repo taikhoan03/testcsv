@@ -8,3 +8,6 @@ FA_FTP_IN=192.168.101.198
 FA_FTP_IN_PORT=2121
 FA_FTP_OUT=192.168.101.198
 FA_FTP_OUT_PORT=2122
+FA_Site=http://192.168.101.198:8181
+Url_noti_transfer_cols_to_recs=Transfer_cols_to_records
+Url_noti_Transfer_Tax_Installment=Transfer_Tax_Installment

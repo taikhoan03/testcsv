@@ -52,7 +52,8 @@ namespace FA_admin_site.Controllers
                 fileinfo.name = file.Filename;
                 fileinfo.id = file.Id;
                 var columns = db.jobFileLayouts.Where(p => p.WorkingSetItemId == file.Id);
-                fileinfo.field = columns.Select(p => p.Fieldname).ToArray();
+                var ruleFields = db.fieldRules.Where(p => p.WorkingSetItemId == file.Id).Select(p=>p.Name);
+                fileinfo.field = columns.Select(p => p.Fieldname).Union(ruleFields).ToArray();
                 rs_file.Add(fileinfo);
             }
             //String serializedResult = /*JsonConvert.SerializeObject(jsonContactsGroups);*/

@@ -9,6 +9,10 @@
     @* END Logo *@
     @* BEGIN Header *@
     <nav class="navbar navbar-static-top" role="navigation">
+        <a href="#" onclick="showChangeLog()" style="color: white; display: inline-block; padding: 15px 0px;">
+            <i>Change Log</i>
+            
+        </a>
         <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
             <span class="sr-only">Toggle navigation</span>
         </a>
@@ -146,3 +150,32 @@
         </div>
     </nav>
 </header>
+<div style="display:none">
+    <div id="changelog" style="height:100%;overflow:scroll">
+        <h3 style="color:#00ff21">Change Log:</h3>
+        <p style="border-bottom:dotted 2px #808080">
+            <h4>2017-03-29</h4>
+            <div>
+                <ul>
+                    <li>Fixed side bar layout</li>
+                    <li>Make Rule Field visible on Transform Mapping, Transform Rules</li>
+                    <li>Added: Preview Function on Transform Rules</li>
+                    <li>Run Transform function is disabled until next update</li>
+                    <li>All Rules will accept any type of data (not filtered by Number/String/Boolean)</li>
+                </ul>
+            </div>
+        </p>
+        
+    </div>
+</div>
+
+<script>
+    function showChangeLog() {
+        $.colorbox({
+            width: "50%", inline: true, href: function () {
+                //var elementID = $(this).attr('id');
+                return "#changelog";
+            }
+        });
+    }
+</script>

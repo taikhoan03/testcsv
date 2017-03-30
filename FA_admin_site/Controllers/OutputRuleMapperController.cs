@@ -58,8 +58,17 @@ namespace FA_admin_site.Controllers
                                name = p.Filename + ":" + pp.Fieldname,
                                type = pp.Type
                            };
+            var extraFields= from p in wsFiles
+                             join pp in db.fieldRules
+                             on p.Id equals pp.WorkingSetItemId
+                             select new
+                             {
+                                 id = pp.Id,
+                                 name = p.Filename + ":" + pp.Name,
+                                 type = pp.Type
+                             };
             //ViewBag.FieldTypes = Newtonsoft.Json.JsonConvert.SerializeObject(db.jobFileLayouts.Where(p => p.WorkingSetItemId == wsid).Select(p => new { name = .+p.Fieldname, type = p.Type }));
-            ViewBag.FieldTypes = Newtonsoft.Json.JsonConvert.SerializeObject(fieldsDB);
+            ViewBag.FieldTypes = Newtonsoft.Json.JsonConvert.SerializeObject(fieldsDB.Union(extraFields));
             ViewBag.Fileid = wsid;
             //return View(fields);
             return View("OutputRuleMapperIndex",fields);

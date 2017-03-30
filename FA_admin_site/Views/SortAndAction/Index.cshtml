@@ -68,7 +68,7 @@
     <ul>
         <li><a href="#div_action">SORT</a></li>
         <li><a href="#rules">RULES</a></li>
-        <li><a href="#preview">PREVIEW</a></li>
+        <li><a href="#preview">PREVIEW & DOWNLOAD</a></li>
     </ul>
     <div id="div_action" style="height:500px;overflow:scroll">
         <table id="tbl_sort" class="table">
@@ -141,7 +141,7 @@
                             <option value="8" @(item.DuplicatedAction == 8 ? "selected=selected" : "")>ConcatenateWithDelimiter</option>
                             
                         </select>
-                        <div class="concatenate" @(item.DuplicatedAction == 7 ? "style=display:block" : "style=display:none")>
+                        <div class="concatenate" @(item.DuplicatedAction == 8 ? "style=display:block" : "style=display:none")>
                             Concatenate With Delimiter
                             <input type="text" value="@item.ConcatenateWithDelimiter" class="txtDelimeter" maxlength="5" />
                             <input type="button" value="Save" onclick="updateConcatenate(@item.Id,$(this))" />
@@ -326,11 +326,14 @@
 
     }
     function updateAction(id, ac){
-        if (ac.val() == "7") {
+        if (ac.val() == "8") {
             $(ac).parent().find(".concatenate").show();
-            return;
+            //return;
+        }else{
+            $(ac).parent().find(".concatenate").hide();
+            //return;
         }
-        $(ac).parent().find(".concatenate").hide();
+        //$(ac).parent().find(".concatenate").hide();
         $.post('@Url.Action("UpdateAction", "SortAndAction")', { id :id,type:1,action:ac.val()})
             .done(function(data){
 
@@ -340,7 +343,7 @@
     function updateConcatenate(id,c){
         var delimeter = $(c).parent().find('.txtDelimeter').val();
         //$(c).parent().hide();
-        $.post('@Url.Action("UpdateAction_concat", "SortAndAction")', { id: id, type: 2, action: 7, delimeter: delimeter })
+        $.post('@Url.Action("UpdateAction_concat", "SortAndAction")', { id: id, type: 2, action: 8, delimeter: delimeter })
             .done(function(data){
 
             })

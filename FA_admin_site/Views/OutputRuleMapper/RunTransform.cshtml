@@ -33,11 +33,10 @@
                         console.log(jsData);
                         objData = jsData;
                         var downloadurl = '@ViewBag.DownloadParam';
-                        if (objData != "Processing") {
+                        if (objData.Status_name == "Processing") {
                             objData.downloadurl = '';
                         } else {
-                            if (downloadurl != '')
-                                objData.downloadurl = "<a href='@ViewBag.DownloadParam'>Download</a>";
+                            objData.downloadurl = "<a href='@ViewBag.DownloadParam'>Download</a>";
                         }
 
                         

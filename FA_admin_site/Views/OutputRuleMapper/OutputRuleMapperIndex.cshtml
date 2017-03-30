@@ -87,6 +87,7 @@
     <ul>
         <li><a href="#div_action">SELECT FIELD</a></li>
         <li><a href="#rules">RULES</a></li>
+        <li><a href="#preview">PREVIEW</a></li>
     </ul>
     <div id="div_action" style="height:500px;overflow:scroll">
         <h1 id="cautain" style="color:red">Please select a field</h1>
@@ -168,15 +169,19 @@
         </div>
     </div>
     <div id="preview" style="height:400px;overflow:scroll;">
-        @*<input type="button" value="Preview" onclick="preview(@ViewBag.ID)" />
-        <input type="button" value="Download" onclick="download(@ViewBag.ID)" />
-        <label style="font-weight:bold; color:bisque;display:none" id="lblLoading">Loading...</label>
+        <input type="button" value="Preview" onclick="preview(@ViewBag.ID)" />
+        <div id="lblLoading" style="display:none">
+            <h3>Loading...</h3>
+        </div>
         <div id="tSample" style="display:none;width: 100%;background-color: #fff;">
             <table class="table">
                 <tr id="header"></tr>
                 <tbody id="tbody"></tbody>
             </table>
-        </div>*@
+        </div>
+        @*<input type="button" value="Download" onclick="download(@ViewBag.ID)" />
+    <label style="font-weight:bold; color:bisque;display:none" id="lblLoading">Loading...</label>
+    *@
     </div>
 </div>
 <div id="tRules" style="display:block;width: 100%;overflow: scroll;background-color: #fff;">
@@ -483,10 +488,10 @@
     }
     function preview(id) {
         $('#lblLoading').show();
-        var jqxhr = $.get('@Config.Get_local_control_site()/JSON/GetSampleWithSortAndDuplicateAction?fileid='+id+'&limit=1000')
+        var jqxhr = $.get('@Config.Get_local_control_site()/JSON/runProcess?id='+id+'&limit=100')
                 .done(function (data) {
-
-                    _createTableWithArrObj(data,'tSample',false,1000);
+                    console.log(data);
+                    _createTableWithJsonObj(JSON.parse(data),'tSample',false,null,null);
 
                 })
                 .fail(function (request, status, error) {
