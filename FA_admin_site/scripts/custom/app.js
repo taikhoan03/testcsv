@@ -1211,11 +1211,58 @@ function convertToClientType(idType) {
     }
 }
 //begin rule math
+function genUI(value, type) {
+
+    var r_panel = $('#rule_right');
+    var str_rs = r_panel.text();
+    if (currentRule.name == 'IF') {
+        addValue('{' + value + '}');
+        return;
+    }
+    //if(str_rs.indexOf('-')>0 ||
+    //    str_rs.indexOf('*')>0 ||
+    //    str_rs.indexOf('/')>0){
+    //    var fieldType=_.findWhere(fieldTypes,{name:value});//{ name="ACCOUNT_NUMBER",  type=1}
+    //    if(fieldType.type!=0)
+    //    {
+    //        alert("Data type should be numeric value");
+    //        return;
+    //    }
+    //}
+
+    if ($("#rules").tabs("option", "active") == 0) {
+        if ($('#rule_right').find('div:last-child').hasClass('op')
+            ||
+            $('#rule_right').find('div').length == 0)
+            r_panel.append($('<div class="pi ' + type + '">').html('{' + value + '}'));
+        return;
+    }
+    if (currentRule == null) {
+        alert("Please select A FUNCTION");
+        return;
+    }
+    var display = getDisplay_forRule();
+    currentRule.addParam({ value: '{' + value + '}', type: type });
+    display.html('').append($('<div>').html(currentRule.showResult()));
+    //if($( "#rules" ).tabs( "option", "active" )==1){
+
+    //    currentRule.addParam({value:'{'+value+'}',type:type});
+    //    $('#CONDITIONAL_r').html('').append($('<div>').html(currentRule.showResult()));
+    //}else if($( "#rules" ).tabs( "option", "active" )==2){
+
+    //    currentRule.addParam({value:'{'+value+'}',type:type});
+    //    $('#FORMATTING_r').html('').append($('<div>').html(currentRule.showResult()));
+    //}else if($( "#rules" ).tabs( "option", "active" )==3){
+
+    //    currentRule.addParam({value:'{'+value+'}',type:type});
+    //    $('#MISCELLANEOUS_r').html('').append($('<div>').html(currentRule.showResult()));
+    //}
+}
 function genUI_afterSaveRule(data) {
     console.log(data);
     var $rules = $('#r_rules');
     if (data.Type == 0) {//number
-        $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
+        $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'number\')">').html(data.Name));
     } else if (data.Type == 1) {//string
         $rules.append($('<div class="r_item string" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
     } else if (data.Type == 2) {//bool
@@ -1224,6 +1271,8 @@ function genUI_afterSaveRule(data) {
         $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
     } else if (data.Type == 4) {//object
         $rules.append($('<div class="r_item object" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'bool\')">').html(data.Name));
+    } else if (data.Type == 5) {//lookup
+        $rules.append($('<div class="r_item object" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'string\')">').html(data.Name));
     }
 
     //if ($("#rules").tabs("option", "active") == 0) {
@@ -1242,6 +1291,73 @@ function genUI_afterSaveRule(data) {
     //else if ($("#rules").tabs("option", "active") == 3) {
     //    $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'number\')">').html(data.Name));
     //}
+}
+function initTabs() {
+    $('#tab-2').tabs();
+    $('#div-tab').tabs({
+        beforeActivate: function (event, ui) {
+            if (typeof selectedFieldId !== 'undefined' && $(event.currentTarget).attr('href') != '#preview' && $(event.currentTarget).attr('href') != '#div_action')
+            if (selectedFieldId === -1) {
+                alert("Please select a field");
+                event.preventDefault();
+                $("a[href='#div_action']").trigger('click');
+                return;
+            }
+        }
+    });
+
+    $('#rules').tabs({
+
+        beforeActivate: function (event, ui) {
+            $('#ARITHMETICAL_operator').hide();
+            $('#cboxCondition').hide();
+            $('#cboxFormatting').hide();
+            $('#cboxMISCELLANEOUS').hide();
+            $('#cboxLookup').hide();
+            $('#txt_input').show();
+            $('#btn_input').show();
+            clean_cbox_selection();
+            $('#div_if_cmd').hide();
+            if ($(event.currentTarget).attr('href') == '#ARITHMETICAL_r') {
+                $('#ARITHMETICAL_operator').show();
+                showItemForMATH();
+
+                //return;
+            } else if ($(event.currentTarget).attr('href') == '#CONDITIONAL_r') {
+                $('#cboxCondition').show();
+                //if($('#cboxCondition').val()=='')
+
+                $('#cboxCondition').trigger('change');
+
+                //return;
+            } else if ($(event.currentTarget).attr('href') == '#FORMATTING_r') {
+                $('#cboxFormatting').show();
+                //if($('#cboxFormatting').val()=='')
+                $('#cboxFormatting').trigger('change');
+                //return;
+            }
+            else if ($(event.currentTarget).attr('href') == '#MISCELLANEOUS_r') {
+                $('#cboxMISCELLANEOUS').show();
+                //if($('#cboxMISCELLANEOUS').val()=='')
+                $('#cboxMISCELLANEOUS').trigger('change');
+                //return;
+            } else if ($(event.currentTarget).attr('href') == '#LOOPUP_r') {
+                $('#cboxLookup').show();
+                //if($('#cboxMISCELLANEOUS').val()=='')
+                $('#cboxLookup').trigger('change');
+                //return;
+                $('#txt_input').hide();
+                $('#btn_input').hide();
+            }
+
+
+        }
+    });
+    showItemForMATH();
+    generateConditionCombobox();
+    generateFormattingCombobox();
+    generateMISCELLANEOUSCombobox();
+    generateLookupCombobox();
 }
 function initField_ready(r_rules, fields, fieldTypes) {
     $.each(fields, function (idx, item) {
@@ -1263,6 +1379,10 @@ function initField_ready(r_rules, fields, fieldTypes) {
             r_rules.append($('<div class="f_item bool" onclick="genUI(\'' + item + '\',\'object\')">').html(item).append($('<span>'))
                 );
         }
+        else if (fieldType.type == 6) {
+            r_rules.append($('<div class="f_item bool" onclick="genUI(\'' + item + '\',\'string\')">').html(item).append($('<span>'))
+                );
+        }
         });
 }
 function initRule_ready(r_rules,rules) {
@@ -1282,6 +1402,10 @@ function initRule_ready(r_rules,rules) {
         }
         else if (item.Type == 4) {
             r_rules.append($('<div class="f_item object" onclick="genUI(\'' + item.Name + '\',\'object\')">').html(item.Name).append($('<span>'))
+                );
+        }
+        else if (item.Type == 6) {
+            r_rules.append($('<div class="f_item object" onclick="genUI(\'' + item.Name + '\',\'string\')">').html(item.Name).append($('<span>'))
                 );
         }
         //r_fields.append($('<div class="f_item number" onclick="genUI(\'ARITHMETICAL\',\''+item+'\')">').html(item)
@@ -1308,15 +1432,7 @@ function showItemForMATH() {
     }
 }
 function selectedRuleFilter(selected_rule, isClear) {
-    var $display = $('#CONDITIONAL_r');
-    if ($("#rules").tabs("option", "active") == 1) {
-        $display = $('#CONDITIONAL_r');
-    } else if ($("#rules").tabs("option", "active") == 2) {
-        $display = $('#FORMATTING_r');
-    }
-    else if ($("#rules").tabs("option", "active") == 3) {
-        $display = $('#MISCELLANEOUS_r');
-    }
+    var $display = getDisplay_forRule();
     if (selected_rule == '') {
         $('.f_item').show();
         currentRule = null;
@@ -1346,7 +1462,7 @@ function selectedRuleFilter(selected_rule, isClear) {
             break;
         }
     }
-
+    if (currentRule)
     $display.html(currentRule.showResult());
 }
 function setElseIFNode(str) {//else if//else
@@ -1369,6 +1485,9 @@ function getDisplay_forRule() {
     }
     else if ($("#rules").tabs("option", "active") == 3) {
         $display = $('#MISCELLANEOUS_r');
+    }
+    else if ($("#rules").tabs("option", "active") == 4) {
+        $display = $('#LOOPUP_r');
     }
     return $display;
 }
@@ -1399,6 +1518,10 @@ function genRuleData() {
             d.Type = 4;
         }
     }
+    else if ($("#rules").tabs("option", "active") == 4) {
+        d.Type = 6;
+        
+    }
     return d;
 }
 //add text value by click Add button
@@ -1408,15 +1531,7 @@ function addValue(value) {
         return;
     }
     var r_panel = $('#rule_right');
-    var $display = $('#CONDITIONAL_r');
-    if ($("#rules").tabs("option", "active") == 1) {
-        $display = $('#CONDITIONAL_r');
-    } else if ($("#rules").tabs("option", "active") == 2) {
-        $display = $('#FORMATTING_r');
-    }
-    else if ($("#rules").tabs("option", "active") == 3) {
-        $display = $('#MISCELLANEOUS_r');
-    }
+    var $display = getDisplay_forRule();
 
     if ($("#rules").tabs("option", "active") == 0) {
         if ($('#rule_right').find('div:last-child').hasClass('op')
@@ -1473,6 +1588,7 @@ function clean_cbox_selection() {
     $('#cboxCondition').val('').trigger('change');
     $('#cboxFormatting').val('').trigger('change');
     $('#cboxMISCELLANEOUS').val('').trigger('change');
+    $('#cboxLookup').val('').trigger('change');
 }
 function format_transform_status(jsArr,arrRemove) {
     for (var i = 0; i < jsArr.length; i++) {

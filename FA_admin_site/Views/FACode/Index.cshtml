@@ -58,13 +58,45 @@
         //}
         _createTableWithJsonObj_withTemplate(fields,'tSample',false);
         //
-        //$('.username').editable({
-        //    type: 'text',
-        //    title: 'Enter username',
-        //    success: function(response, newValue) {
-        //        //userModel.set('username', newValue); //update backbone model
-        //    }
-        //});
+        $('.code').editable({
+            type: 'text',
+            title: 'Enter code',
+            ajaxOptions:{
+                type:'post'
+            },
+            success: function(response, newValue) {
+                //userModel.set('username', newValue); //update backbone model
+            },
+            params: {
+                fieldname: 'code'
+            }
+        });
+        $('.lookupData').editable({
+            type: 'text',
+            title: 'Enter data',
+            ajaxOptions:{
+                type:'post'
+            },
+            success: function(response, newValue) {
+                //userModel.set('username', newValue); //update backbone model
+            },
+            params: {
+                fieldname: 'lkData'
+            }
+        });
+        $('.comment').editable({
+            type: 'text',
+            title: 'Enter comment',
+            ajaxOptions:{
+                type:'post'
+            },
+            success: function(response, newValue) {
+                //userModel.set('username', newValue); //update backbone model
+            },
+            params: {
+                fieldname: 'cmt'
+            }
+        });
         //$('.fieldtype').editable({
         //    //prepend: "not selected",
         //    source: [
@@ -144,7 +176,8 @@
         .done(function(data){
             window.location.href=window.location.href;
         })
-        .fail(function(){
+        .fail(function(xhr, status, error){
+            
             alert("err");
         })
         .always(function(){
@@ -166,8 +199,11 @@
         .done(function(data){
             window.location.href=window.location.href;
         })
-        .fail(function(){
-            alert("err");
+        .fail(function(xhr, status, error){
+            console.log(xhr);
+            console.log(status);
+            console.log(error);
+            alert(xhr.responseText);
         })
         .always(function(){
             clear();
@@ -249,6 +285,7 @@
 
 </table>*@
 @*<a href="javascript:;" onclick="show_insert_form_output()">Create New OUTPUT File</a>*@
+<h3>@ViewBag.TableName</h3>
 <div id="div-create-new-output" style="padding:11px;border:dotted 2px;margin:20px;display:none">
     <table>
         <tr>
@@ -273,7 +310,7 @@
             <td><input id="txtCode" /></td>
         </tr>
         <tr>
-            <td>Lookup data</td>
+            <td>Description (Giá trị cần tìm)</td>
             <td><input id="txtTxtLookup" /></td>
         </tr>
         <tr>
@@ -306,9 +343,9 @@
         </thead>
         <tbody id="tbody">
             <tr>
-                <td><a href="#" class="code editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldName","Output")" data-title="Enter username">{{Code}}</a></td>
-                <td><a href="#" class="fieldtype editable-empty" data-type="select" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldType","Output")" data-title="Select Type" data-value="{{LookupValue}}">{{LookupValue}}</a></td>
-                <td><a href="#" class="fieldLength editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldLength","Output")" data-title="Enter username">{{Comment}}</a></td>
+                <td><a href="#" class="code editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("Update","FACode")" data-title="Enter code">{{Code}}</a></td>
+                <td><a href="#" class="lookupData editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("Update","FACode")" data-title="Enter data" data-value="{{LookupValue}}">{{LookupValue}}</a></td>
+                <td><a href="#" class="comment editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("Update","FACode")" data-title="Enter comment">{{Comment}}</a></td>
                 @*<td><a href="#" class="fieldDecimal editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldDecimal","Output")" data-title="Enter username">{{Decimal}}</a></td>
                 <td><a href="#" class="fieldSection editable-empty" data-type="text" data-pk="{{Id}}" data-url="@Url.Action("UpdateFieldSection","Output")" data-title="Enter username">{{Section}}</a></td>
                 <td><a href="javascript:;" onclick="del({{Id}})">Del</a></td>*@

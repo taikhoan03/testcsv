@@ -136,7 +136,9 @@ namespace FA_admin_site.Controllers
 
                         var date_create = DateTime.Now;
                         //tạo package
-                        var existedPackage = db.packages.FirstOrDefault(p => p.State == json.State && p.County == json.County && p.Edition == json.Edition && p.Version == json.Version);
+                        var existedPackage = db.packages.FirstOrDefault(p => p.State == json.State && p.County == json.County 
+                        && p.Edition == json.Edition && p.Version == json.Version
+                        && p.Createdby== System.Web.HttpContext.Current.User.Identity.Name);
                         var package = new BL.package();
                         if (existedPackage != null)
                         {

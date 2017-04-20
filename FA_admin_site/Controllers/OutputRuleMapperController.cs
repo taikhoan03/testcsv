@@ -71,6 +71,10 @@ namespace FA_admin_site.Controllers
             ViewBag.FieldTypes = Newtonsoft.Json.JsonConvert.SerializeObject(fieldsDB.Union(extraFields));
             ViewBag.Fileid = wsid;
             //return View(fields);
+            var FAcodeTables = db.FACodeTables.Where(p=>!string.IsNullOrEmpty(p.TableNameID)).ToList();
+            //var facodes = db.FACodes.ToList();
+            //var facodes_ = new BL.LookupRule(FAcodeTables, facodes);
+            ViewBag.FARules = FAcodeTables;// Newtonsoft.Json.JsonConvert.SerializeObject();
             return View("OutputRuleMapperIndex",fields);
         }
         public ActionResult RunTransform(int id)
@@ -110,6 +114,7 @@ namespace FA_admin_site.Controllers
             req.CreatedDate = DateTime.Now;
             req.IsDeleted = false;
             req.Status = 0;
+            req.IsReady = true;
             req.WorkingSetId = wsid;
             //check co du lieu de san sang chay
             //check has primarykey
@@ -244,13 +249,21 @@ namespace FA_admin_site.Controllers
                     var new_match = rule.OutputFieldId + EV.DOLLAR + item;
                     rule.ExpValue = rule.ExpValue.Replace("{" + item + "}", "{" + new_match + "}");
                 }
+                if (rule.Type == 6)
+                {
+                    var new_match = rule.OutputFieldId + EV.DOLLAR + item;
+                    var firstPart = rule.ExpValue.Substring(0, rule.ExpValue.IndexOf(":"));
+                    var sndPart= rule.ExpValue.Substring(rule.ExpValue.IndexOf(":")+1);
+
+                    rule.ExpValue = firstPart + "]]" + sndPart;//.Replace("{","").Replace("}","");
+                }
                 
             }
             //rule. = fileid;
             rule.Name = name;
             rule.NameID = nameid + 1;
             rule.Order = order + 1;
-
+            
             db.outputDataDetails.Add(rule);
             db.SaveChanges();
             return Json(rule, JsonRequestBehavior.AllowGet);

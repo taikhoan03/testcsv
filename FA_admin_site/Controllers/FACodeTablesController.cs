@@ -47,15 +47,27 @@ namespace FA_admin_site.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create([Bind(Include = "Id,County,TableName")] FACodeTable fACodeTable)
+        public async Task<ActionResult> Create([Bind(Include = "Id,County,TableName,TableNameID")] FACodeTable fACodeTable)
         {
-            if (ModelState.IsValid)
+            //if (ModelState.IsValid)
+            //{
+            //    if (string.IsNullOrEmpty(fACodeTable.TableName))
+            //    {
+            //        fACodeTable.TableName = fACodeTable.TableNameID;
+            //    }
+            //    fACodeTable.County = "N";
+            //    db.FACodeTables.Add(fACodeTable);
+            //    await db.SaveChangesAsync();
+            //    return RedirectToAction("Index");
+            //}
+            if (string.IsNullOrEmpty(fACodeTable.TableName))
             {
-                db.FACodeTables.Add(fACodeTable);
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+                fACodeTable.TableName = fACodeTable.TableNameID;
             }
-
+            fACodeTable.County = "N";
+            db.FACodeTables.Add(fACodeTable);
+            await db.SaveChangesAsync();
+            return RedirectToAction("Index");
             return View(fACodeTable);
         }
 
@@ -79,7 +91,7 @@ namespace FA_admin_site.Controllers
         // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit([Bind(Include = "Id,County,TableName")] FACodeTable fACodeTable)
+        public async Task<ActionResult> Edit([Bind(Include = "Id,County,TableName,TableNameID")] FACodeTable fACodeTable)
         {
             if (ModelState.IsValid)
             {

@@ -947,7 +947,10 @@ namespace Mvc_5_site.Controllers
                 fieldTypes.Add(rule.Name, rule.Type);
             }
             //var target = new DynamicExpresso.Interpreter();
-            CallFunction(rules, sorted_file1);
+            var lookupTable = db.FACodeTables.ToList();
+            var lookupItems = db.FACodes.ToList();
+            var lookupRule = new BL.LookupRule(lookupTable, lookupItems);
+            CallFunction(rules, sorted_file1,"",lookupRule);
             //var dyna = new DynaExp();
             //var dt = new System.Data.DataTable();
             //foreach (var rule in rules)
@@ -1682,6 +1685,7 @@ namespace Mvc_5_site.Controllers
                     {
                         fieldTypes.Add(rule.Name, rule.Type);
                     }
+                    
                     CallFunction(rules, sorted_file1);
                     rules = null;
 
@@ -2054,7 +2058,7 @@ namespace Mvc_5_site.Controllers
                 }
             }
         }
-        private void CallFunction(List<FieldRule> rules, IOrderedEnumerable<Dictionary<string, object>> sorted_file1,string namePrefix)
+        private void CallFunction(IEnumerable<FieldRule> rules, IOrderedEnumerable<Dictionary<string, object>> sorted_file1,string namePrefix, LookupRule lookupRule)
         {
 
             using (var dt = new System.Data.DataTable())
@@ -2084,14 +2088,33 @@ namespace Mvc_5_site.Controllers
                         {
                             rec.Add(rule.Name, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
                         }
+                        else if (rule.Type == 6)//obj LOOKUP
+                        {
+                            //format exp should be: Tablename:LookupKey(Rule_8)
+                            var parts = rule.ExpValue.FormatWith(rec).Split(new string[] { "]]" }, StringSplitOptions.None);
+                            var tableName = parts[0];
+                            var val = parts[1];//parts[1]:Rule_8
+                            var rep = "NULL";
+                            if (!lookupRule.rules.ContainsKey(tableName)
+                                || !lookupRule.rules[tableName].ContainsKey(val))
+                                rep = "NULL";
+                            else
+                                rep = lookupRule.rules[tableName][val];
+                            rec.Add(rule.Name, rep);
+                        }
                     }
-                    var newrec = new Dictionary<string, object>(rec);
-                    rec.Clear();
-                    foreach (var item in newrec)
+
+                    if (!string.IsNullOrEmpty(namePrefix))
                     {
-                        //item = new KeyValuePair<string, object>();
-                        rec.Add(namePrefix+item.Key, item.Value);
+                        var newrec = new Dictionary<string, object>(rec);
+                        rec.Clear();
+                        foreach (var item in newrec)
+                        {
+                            //item = new KeyValuePair<string, object>();
+                            rec.Add(namePrefix + item.Key, item.Value);
+                        }
                     }
+                        
                 }
                 //foreach (var rule in rules)
                 //{
@@ -3074,6 +3097,9 @@ namespace Mvc_5_site.Controllers
 
 
             var db = new BL.DA_Model();
+            var lookupTable = db.FACodeTables.ToList();
+            var lookupItems = db.FACodes.ToList();
+            var lookupRule = new BL.LookupRule(lookupTable, lookupItems);
             var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
             var firstFileId = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == id);
             //if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
@@ -3316,12 +3342,16 @@ namespace Mvc_5_site.Controllers
             var hsTmp_rule_to_remove = new List<string>();// ls_outputDataDetail.Select(p => p.Value.Select(c => c.));
             var hsTmp_rule_to_remove_length = 0;
             var hsTmp_rule_to_remove_need_to_add = true;
+
+            //lookup
             using (var dt = new System.Data.DataTable())
             {
 
                 Console.WriteLine("Applying Rules...");
                 //TODO: nếu ko viết Rule, và chỉ có 1 field dc chọn để map
                 var irec = 0;
+                var linkRuleLookup = new Dictionary<object, object>();
+                
 
                 foreach (var rec in all_rec)
                 {
@@ -3385,6 +3415,20 @@ namespace Mvc_5_site.Controllers
                                     else if (rule.Type == 4)//string
                                     {
                                         rec.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
+                                    }
+                                    else if (rule.Type == 6)//string
+                                    {
+                                        //rec.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
+                                        var parts = rule.ExpValue.FormatWith(rec).Split(new string[] { "]]" }, StringSplitOptions.None);
+                                        var tableName = parts[0];
+                                        var val = parts[1];//parts[1]:Rule_8
+                                        var rep = "NULL";
+                                        if (!lookupRule.rules.ContainsKey(tableName)
+                                            || !lookupRule.rules[tableName].ContainsKey(val))
+                                            rep = "NULL";
+                                        else
+                                            rep = lookupRule.rules[tableName][val];
+                                        rec.Add(rule_fullname, rep);
                                     }
                                     if (j == numOfRules - 1)
                                     {
@@ -4266,7 +4310,10 @@ namespace Mvc_5_site.Controllers
                     {
                         fieldTypes.Add(rule.Name, rule.Type);
                     }
-                    CallFunction(rules, sorted_file1, wsFile.Filename.Replace(".", EV.DOT) + EV.DOLLAR);
+                    var lookupTable = db.FACodeTables.ToList();
+                    var lookupItems = db.FACodes.ToList();
+                    var lookupRule = new BL.LookupRule(lookupTable, lookupItems);
+                    CallFunction(rules, sorted_file1, wsFile.Filename.Replace(".", EV.DOT) + EV.DOLLAR,lookupRule);
                     rules = null;
 
                 }

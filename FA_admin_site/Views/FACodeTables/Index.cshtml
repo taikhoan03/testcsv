@@ -32,7 +32,7 @@
         <td>
             @Html.ActionLink("Edit", "Edit", new { id=item.Id }) |
             @Html.ActionLink("Details", "Details", new { id=item.Id }) |
-            
+            <a href="@Url.Action("Index","FACode")?id=@item.Id">Manage Codes</a>
         </td>
     </tr>
 }

@@ -32,7 +32,13 @@
                 @Html.ValidationMessageFor(model => model.TableName, "", new { @class = "text-danger" })
             </div>
         </div>
-
+        <div class="form-group">
+            @Html.LabelFor(model => model.TableNameID, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.TableNameID, new { htmlAttributes = new { @class = "form-control",@style="font-weight:bold" } })
+                @Html.ValidationMessageFor(model => model.TableNameID, "", new { @class = "text-danger" })
+            </div>
+        </div>
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
                 <input type="submit" value="Save" class="btn btn-default" />

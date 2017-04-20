@@ -83,6 +83,10 @@ namespace FA_admin_site.Controllers
             ViewBag.Fields = Newtonsoft.Json.JsonConvert.SerializeObject(fields.OrderBy(p=>p.Order).Select(p=>p.FieldName));
             ViewBag.FieldTypes = Newtonsoft.Json.JsonConvert.SerializeObject(db.jobFileLayouts.Where(p=>p.WorkingSetItemId==id).Select(p=>new { name=p.Fieldname,type=p.Type}));
             ViewBag.Fileid = id;
+            var FAcodeTables = db.FACodeTables.Where(p => !string.IsNullOrEmpty(p.TableNameID)).ToList();
+            //var facodes = db.FACodes.ToList();
+            //var facodes_ = new BL.LookupRule(FAcodeTables, facodes);
+            ViewBag.FARules = FAcodeTables;
             return View(fields);
         }
         [HttpPost]
@@ -117,6 +121,25 @@ namespace FA_admin_site.Controllers
             rule.Name = name;
             rule.NameID = nameid + 1;
             rule.Order = order + 1;
+            var placeholders = rule.ExpValue.FindPlaceHolder();
+            foreach (var item in placeholders)
+            {
+                //var a = 1;
+                //if (item.StartsWith("RULE_"))
+                //{
+                //    var new_match = rule.OutputFieldId + EV.DOLLAR + item;
+                //    rule.ExpValue = rule.ExpValue.Replace("{" + item + "}", "{" + new_match + "}");
+                //}
+                if (rule.Type == 6)
+                {
+                    //var new_match = rule.OutputFieldId + EV.DOLLAR + item;
+                    var firstPart = rule.ExpValue.Substring(0, rule.ExpValue.IndexOf(":"));
+                    var sndPart = rule.ExpValue.Substring(rule.ExpValue.IndexOf(":") + 1);
+
+                    rule.ExpValue = firstPart + "]]" + sndPart;//.Replace("{","").Replace("}","");
+                }
+
+            }
             db.fieldRules.Add(rule);
             db.SaveChanges();
             return Json(rule, JsonRequestBehavior.AllowGet);

@@ -118,21 +118,18 @@ namespace AppRunTransform
             public int WorkingSetId { get; set; }
             public string FieldName { get; set; }
         }
-        public static string runProcess(int id, bool cleanUpResult = true)
+        public static string runProcess(int id, bool cleanUpResult = false)
         {
-
-
+            
+            
             var db = new BL.DA_Model();
-            var lookupTable = db.FACodeTables.ToList();
-            var lookupItems = db.FACodes.ToList();
-            var lookupRule = new BL.LookupRule(lookupTable, lookupItems);
             var ws = db.workingSets.FirstOrDefault(p => p.Id == id);
             var firstFileId = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == id);
             //if (string.IsNullOrEmpty(ws.Linkage)) throw new Exception("Empty linkage data");
 
 
             var linkageData = ws.Linkage.XMLStringToListObject<LinkageItem>();
-            var limit = 2 * 1000 * 1000 * 1000;
+            var limit =  2 * 1000 * 1000 * 1000;
 
 
             //all recs
@@ -179,16 +176,16 @@ namespace AppRunTransform
                 foreach (var item in groupLinkageData)
                 {
                     //var FF_result = new List<IDictionary<string, object>>();
-                    //Process_final(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
+                     //Process_final(item.First().firstId, limit: limit, addSequence: false, applyRules: false);
 
-                    //Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
+                     //Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: false);
                     if (numOfRun == 0)
                     {
                         Console.WriteLine("Get data from file " + item.First().firstFilename);
-                        loadF1 = Process_final3(item.First().firstId, limit: limit, addSequence: false, applyRules: true);
+                        loadF1 = Process_final(item.First().firstId, limit: limit, addSequence: false, applyRules: true);
                         Console.WriteLine("--- Time: " + Watch.watch_Elapsed().TotalSeconds);
                         Console.WriteLine("Get data from file " + item.First().sndFilename);
-                        loadF2 = Process_final3(item.First().sndId, limit: limit, addSequence: false, applyRules: true);
+                        loadF2 = Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: true);
                         Console.WriteLine("--- Time: " + Watch.watch_Elapsed().TotalSeconds);
                         cached1 = loadF1;
                         cached2 = loadF2;
@@ -198,7 +195,7 @@ namespace AppRunTransform
                     {
                         loadF1 = cached2;
                         Console.WriteLine("Get data from file " + item.First().sndFilename);
-                        loadF2 = Process_final3(item.First().sndId, limit: limit, addSequence: false, applyRules: true);
+                        loadF2 = Process_final(item.First().sndId, limit: limit, addSequence: false, applyRules: true);
                         Console.WriteLine("--- Time: " + Watch.watch_Elapsed().TotalSeconds);
                     }
                     numOfRun++;
@@ -217,29 +214,19 @@ namespace AppRunTransform
                     var right2 = item.Last().sndFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.Last().sndField;
                     var ff = from p in all_rec
                              join pp in loadF2
-                             on p[left1].ToString() + p[right1].ToString()
-                             equals pp[left2].ToString() + pp[right2].ToString()
+                             on new
+                             {
+                                 a = p[left1].ToString(),
+                                 b = p[right1].ToString()
+                             }
+                             equals new
+                             {
+                                 a = pp[left2].ToString(),
+                                 b = pp[right2].ToString()
+                             }
                              into ps
                              from g in ps//.DefaultIfEmpty()
-                             //select p.Concat(g).ToDictionary(x => x.Key, x => x.Value);
-                            select p.Concat(g == null ? new Dictionary<string, object>() : g).ToDictionary(x => x.Key, x => x.Value);
-                    
-                    
-                    //var ff = from p in all_rec
-                    //         join pp in loadF2.Data
-                    //         on new
-                    //         {
-                    //             a = p[left1Index],
-                    //             b = p[right1Index]
-                    //         }
-                    //         equals new
-                    //         {
-                    //             a = pp[left2Index],
-                    //             b = pp[right2Index]
-                    //         }
-                    //         into ps
-                    //         from g in ps//.DefaultIfEmpty()
-                    //         select p.Concat(g).ToList();//.Concat(g).ToList();
+                             select p.Concat(g == null ? new Dictionary<string, object>() : g).ToDictionary(x => x.Key, x => x.Value);
                     //select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g).ToDictionary(x => x.Key, x => x.Value);
                     //TODO: slow here
                     all_rec = ff.ToList();// new List<IDictionary<string, object>>(ff);// ff.ToDictionary(x=>x.Keys).ToList();
@@ -247,8 +234,8 @@ namespace AppRunTransform
                     {
                         all_rec.Add(new Dictionary<string, object>(_item));
                     }
-                    //loadF1.Clear_Disposed();// = null;
-                    //loadF2.Clear_Disposed();// = null;
+                    loadF1.Clear_Disposed();// = null;
+                    loadF2.Clear_Disposed();// = null;
                 }
                 groupLinkageData = null;
             }
@@ -264,7 +251,7 @@ namespace AppRunTransform
                     if (onlyRuleForOneFile != null)
                     {
                         Console.WriteLine("Get data from file " + onlyRuleForOneFile.Filename);
-                        loadF1 = Process_final3(onlyRuleForOneFile.Id, limit: limit, addSequence: false, applyRules: true);
+                        loadF1 = Process_final(onlyRuleForOneFile.Id, limit: limit, addSequence: false, applyRules: false);
                         Console.WriteLine("--- Time: " + Watch.watch_Elapsed().TotalSeconds);
                         //all_rec = loadF1.ToList();
                         foreach (var item in loadF1)
@@ -272,7 +259,7 @@ namespace AppRunTransform
                             all_rec.Add(new Dictionary<string, object>(item));
                         }
                     }
-
+                    
                 }
 
                 // new List<IDictionary<string, object>>(loadF1);
@@ -312,7 +299,7 @@ namespace AppRunTransform
             {
                 rule.ExpValue = rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
             }
-
+            
 
             var primaryKey = string.Empty;
             if (linkageData != null)
@@ -329,7 +316,7 @@ namespace AppRunTransform
                 else
                     primaryKey = firstFileId.Filename.Replace(".", EV.DOT) + EV.DOLLAR + firstFileId.PrimaryKey;
             }
-            var firstRec_original_without_key = all_rec.First().Select(p => p.Key).Where(p => p != primaryKey).ToArray();
+            var firstRec_original_without_key = all_rec.First().Select(p => p.Key).Where(p=>p!=primaryKey).ToArray();
 
             var numOfGroupItems = outputData_.Count;
             var ls_outputFieldName = new string[numOfGroupItems];// List<string>();
@@ -345,13 +332,13 @@ namespace AppRunTransform
                     .Where(p => p.OutputFieldId == group_field.Key).ToList();
                 var fieldname = group_field.Key + EV.DOLLAR;
                 var mapper = group_field.First();
-                ls_outputFieldName[index] = fieldname;//.Add(fieldname);
+                ls_outputFieldName[index]=fieldname;//.Add(fieldname);
                 ls_outputDataDetail.Add(fieldname, rulesForThisField);
-                ls_mappers[index] = mapper;//.Add(mapper);
+                ls_mappers[index] =mapper;//.Add(mapper);
                 ls_numOfFields[index] = group_field.Count();//.Add(group_field.Count());
 
                 var iIsSimpleInputType = 0;
-
+                
                 if (mapper.FieldMapperName != seq1Name && mapper.FieldMapperName != seq2Name)
                     if (rulesForThisField.Count == 0)
                     {
@@ -378,16 +365,12 @@ namespace AppRunTransform
             var hsTmp_rule_to_remove = new List<string>();// ls_outputDataDetail.Select(p => p.Value.Select(c => c.));
             var hsTmp_rule_to_remove_length = 0;
             var hsTmp_rule_to_remove_need_to_add = true;
-
-            //lookup
             using (var dt = new System.Data.DataTable())
             {
-
+                
                 Console.WriteLine("Applying Rules...");
                 //TODO: nếu ko viết Rule, và chỉ có 1 field dc chọn để map
                 var irec = 0;
-                var linkRuleLookup = new Dictionary<object, object>();
-
 
                 foreach (var rec in all_rec)
                 {
@@ -399,14 +382,13 @@ namespace AppRunTransform
                         var numOfRules = rulesForThisField.Count;
                         var numOfFields = ls_numOfFields[i];
                         var inputType = ls_isSimpleInputType[i];
-
+                        
                         if (inputType == 2)
                         {
                             var _name = mapper.FileMapperName + ":" + mapper.FieldMapperName;
                             _name = _name.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
                             rec.Add(mapper.FieldName, rec[_name]);
-                        }
-                        else if (inputType == 1)
+                        }else if (inputType == 1)
                         {
                             rec.Add(mapper.FieldName, string.Empty);
                         }
@@ -425,7 +407,7 @@ namespace AppRunTransform
                             {
                                 var rule = rulesForThisField[j];
                                 var rule_fullname = fieldname + rule.Name;
-                                if (hsTmp_rule_to_remove_need_to_add)
+                                if(hsTmp_rule_to_remove_need_to_add)
                                     hsTmp_rule_to_remove.Add(rule_fullname);
                                 try
                                 {
@@ -452,21 +434,7 @@ namespace AppRunTransform
                                     {
                                         rec.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
                                     }
-                                    else if (rule.Type == 6)//string
-                                    {
-                                        //rec.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
-                                        var parts = rule.ExpValue.FormatWith(rec).Split(new string[] { "]]" }, StringSplitOptions.None);
-                                        var tableName = parts[0];
-                                        var val = parts[1];//parts[1]:Rule_8
-                                        var rep = "NULL";
-                                        if (!lookupRule.rules.ContainsKey(tableName)
-                                            || !lookupRule.rules[tableName].ContainsKey(val))
-                                            rep = "NULL";
-                                        else
-                                            rep = lookupRule.rules[tableName][val];
-                                        rec.Add(rule_fullname, rep);
-                                    }
-                                    if (j == numOfRules - 1)
+                                    if (j == numOfRules-1)
                                     {
                                         rec.Add(mapper.FieldName, rec[rule_fullname]);
                                     }
@@ -480,11 +448,11 @@ namespace AppRunTransform
                                         );
                                 }
                             }
-
+                            
 
                         }
-
-
+                        
+                        
                     }
                     //flag
                     irec++;
@@ -493,7 +461,7 @@ namespace AppRunTransform
                         hsTmp_rule_to_remove_length = hsTmp_rule_to_remove.Count;
                         hsTmp_rule_to_remove_need_to_add = false;
                     }
-
+                    
                     //remove no need fields/old fields
                     for (int i = 0; i < hsTmp_rule_to_remove_length; i++)
                     {
@@ -509,20 +477,20 @@ namespace AppRunTransform
                     //    GC.WaitForPendingFinalizers();
                     //}
                 }
-
-
+                
+                
                 Console.WriteLine("--- Time: " + Watch.watch_Elapsed().TotalSeconds);
-
+                
                 //add sequence
                 Console.WriteLine("Grouping and adding sequence");
                 #region Sequence
                 var firstRec = all_rec.First();
                 var seqType = 0;
-                var fileHasSeq1_only = new string[] { "Land", "Land Use", "Assessor Ownership", "Sales", "Situs Address", "Parcel to Parcel Cross Reference", "Assessor Land Values" };
-                var fileHasSeq2 = new string[] { "Assessor Building Values", "Assessor Exemption Type", "Building" };
-                var fileHasSeq3 = new string[] { "Building Permit", "Building Green Code", "Extra Feature", "Building Area" };
+                var fileHasSeq1_only = new string[] { "Land","Land Use", "Assessor Ownership","Sales","Situs Address", "Parcel to Parcel Cross Reference", "Assessor Land Values" };
+                var fileHasSeq2 = new string[] { "Assessor Building Values","Assessor Exemption Type", "Building" };
+                var fileHasSeq3 = new string[] {  "Building Permit","Building Green Code","Extra Feature","Building Area" };
                 var outputPrimaryKey = "UNFORMATTED_APN";
-
+                
                 if (!firstRec.ContainsKey(outputPrimaryKey))
                 {
                     throw new Exception("<strong>Transform Mapping</strong> field <strong>" + outputPrimaryKey + "</strong> must be selected");
@@ -627,7 +595,7 @@ namespace AppRunTransform
                         var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
 
 
-                        all_rec = CSVTransform.addSeq2(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, hasSndMapped, true);
+                        all_rec = addSeq2(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, hasSndMapped, true);
 
 
 
@@ -646,7 +614,7 @@ namespace AppRunTransform
                             "AVB_APPR_IMPROVEMENT_VALUE",
                             "AVB_TAXABLE_IMPROVEMENT_VALUE" };
                         var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-                        all_rec = CSVTransform.addSeq2(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, hasSndMapped, true);
+                        all_rec = addSeq2(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, hasSndMapped, true);
                     }
                     #endregion Assessor Building Values
                     #region Assessor Exemption Type
@@ -661,8 +629,8 @@ namespace AppRunTransform
                             "AVE_EXEMPTION_AMOUNT",
                             "AVE_EXEMPTION_PERCENTAGE" };
                         var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-                        all_rec = CSVTransform.addSeq2(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, hasSndMapped, true);
-
+                        all_rec = addSeq2(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, hasSndMapped, true);
+                        
                     }
                     #endregion Assessor Exemption Type
 
@@ -692,10 +660,10 @@ namespace AppRunTransform
                         };
                         var hasSndMapped = ls_mappers.Any(p => p.FieldName == sndFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
                         var hasThrMapped = ls_mappers.Any(p => p.FieldName == thrFieldKey && !string.IsNullOrEmpty(p.FieldMapperName));
-                        var hasThrField = firstRec.ContainsKey(thrFieldKey);
+                        var hasThrField=firstRec.ContainsKey(thrFieldKey);
                         var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-
-                        all_rec = CSVTransform.addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
+                        
+                        all_rec = addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
                     }
                     #endregion Building Permit
                     #region Building Green Code
@@ -714,7 +682,7 @@ namespace AppRunTransform
                         var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
                         var hasThrField = firstRec.ContainsKey(thrFieldKey);
 
-                        all_rec = CSVTransform.addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
+                        all_rec = addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
                     }
                     #endregion Building Green Code
                     #region Extra Feature
@@ -738,12 +706,12 @@ namespace AppRunTransform
                             "EX_FEATURE_YEAR_BUILT",
                         };
 
-
+                        
                         var hasThrField = firstRec.ContainsKey(thrFieldKey);
                         var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
-
-
-                        all_rec = CSVTransform.addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
+                        
+                        
+                        all_rec = addSeq3(outputPrimaryKey,all_rec, mustHaveFieldFiltered.ToArray(),sndFieldKey,thrFieldKey, hasSndMapped,hasThrMapped,true, hasThrField);
                         //foreach (var gb in all_rec.GroupBy(p => p[outputPrimaryKey].ToString()))
                         //{
                         //    var seq2 = 1;
@@ -810,7 +778,7 @@ namespace AppRunTransform
                         var mustHaveFieldFiltered = mustHaveField.Where(p => firstRec.ContainsKey(p));
                         var hasThrField = firstRec.ContainsKey(thrFieldKey);
 
-                        all_rec = CSVTransform.addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
+                        all_rec = addSeq3(outputPrimaryKey, all_rec, mustHaveFieldFiltered.ToArray(), sndFieldKey, thrFieldKey, hasSndMapped, hasThrMapped, true, hasThrField);
 
 
                     }
@@ -825,7 +793,7 @@ namespace AppRunTransform
                 Console.WriteLine("Cleaning fields");
                 //dtAll = Ulti.ToDataTable(all_rec);
                 //remove columns
-
+                
                 if (cleanUpResult)
                 {
                     var list_col_to_remove = new List<string>();
@@ -842,27 +810,25 @@ namespace AppRunTransform
                         {
                             record.Remove(col);
                         }
-                        record.Remove(primaryKey);
                     }
                     list_col_to_remove.Clear();
-
+                    
 
 
                 }
-
+                
                 //format, and length
                 Console.WriteLine("Cleaning result");
 
 
 
-                var colFields = firstRec.Select(p => p.Key).ToArray();// new List<string>();
+                var colFields = firstRec.Select(p=>p.Key).ToArray();// new List<string>();
                 //foreach (DataColumn item in dtAll.Columns)
                 //{
                 //    if (item.ColumnName != seq1Name && item.ColumnName != seq2Name)
                 //        colFields.Add(item.ColumnName);
                 //}
                 var outputDic = outputFields.Where(c => colFields.Any(d => d == c.Name)).ToDictionary(x => x.Name, x => x);
-                colFields = outputDic.Select(p => p.Key).ToArray();
                 var numOfField_ = colFields.Count();
                 foreach (var record in all_rec)
                 {
@@ -902,7 +868,7 @@ namespace AppRunTransform
                             }
                         }
                     }
-
+                    
                 }
 
                 //foreach (DataRow row in dtAll.Rows)
@@ -924,7 +890,7 @@ namespace AppRunTransform
 
                 //                throw new Exception("Binding driver field FAIL:column=" + colName + ", value=" + content + Environment.NewLine
                 //                    + "Decimal=" + fieldInfo.Decimal + Environment.NewLine
-
+                                    
                 //                    //+ Newtonsoft.Json.JsonConvert.SerializeObject(row) + Environment.NewLine
                 //                    + ex.Message + Environment.NewLine
                 //                    + ex.StackTrace
@@ -934,8 +900,8 @@ namespace AppRunTransform
                 //        }
                 //        else
                 //        {
-
-
+                            
+                            
                 //            if (!string.IsNullOrEmpty(content) && content.Length >= fieldInfo.Length)
                 //            {
                 //                cell = content.Substring(0, fieldInfo.Length);
@@ -944,6 +910,7 @@ namespace AppRunTransform
                 //    }
                 //}
                 Console.WriteLine("Writing file");
+                
                 var name = DateTime.Now.ToString("yyyyMMdd") + "_" + fileOutput.Name + "_" + ws.User + ".csv";
                 ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("output_folder_process") + "\\" +
                     ws.State + "\\" + ws.County + "\\" + name, all_rec);
@@ -952,7 +919,7 @@ namespace AppRunTransform
                 dtAll.Clear();
                 dtAll.Dispose();
                 GC.Collect();
-
+                
                 Console.WriteLine("Time: " + Watch.watch_Elapsed().TotalSeconds);
                 Watch.watchStop();
                 Console.WriteLine("Done at: " + DateTime.Now.ToShortTimeString());
@@ -1853,424 +1820,6 @@ namespace AppRunTransform
             //    //Console.WriteLine("");
             //    //return name;
             //}
-        }
-        private static IEnumerable<Dictionary<string, object>> Process_final3(int fileid, decimal limit = 2*1000*1000*1000, bool writeFile = false, int showLimit = 1000, bool addSequence = true, bool applyRules = true)
-        {
-            //var data = Process_final2(fileid, limit);
-            //var tmpRs = new List<Dictionary<string, object>>();
-            //foreach (var line in data.Data)
-            //{
-            //    var dic = new Dictionary<string, object>();
-            //    var i = 0;
-            //    foreach (var col in data.Name_index)
-            //    {
-            //        dic.Add(col.Key, line[i]);
-            //        i++;
-            //    }
-            //    tmpRs.Add(dic);
-            //}
-            //GC.Collect();
-            //return tmpRs;
-            //int limit = 100;
-            //const string tab = "\t";
-            var sorted_file1 = Enumerable.Empty<Dictionary<string, object>>().OrderBy(x => 1);
-            using (var db = new DA_Model())
-            {
-                var wsFile = db.workingSetItems.FirstOrDefault(p => p.Id == fileid);
-                var ws = db.workingSets.FirstOrDefault(p => p.Id == wsFile.WorkingSetId);
-
-                var sortAndActions = db.fieldOrderAndActions.Where(p => p.WorkingSetItemId == fileid).Select(p => new
-                {
-                    ConcatenateWithDelimiter = p.ConcatenateWithDelimiter,
-                    DuplicatedAction = p.DuplicatedAction,
-                    DuplicatedActionType = p.DuplicatedActionType,
-                    FieldName = p.FieldName,
-                    Id = p.Id,
-                    Order = p.Order,
-                    OrderType = p.OrderType,
-                    WorkingSetItemId = p.WorkingSetItemId,
-                    FileName = wsFile.Filename,
-                    Delimiter = p.ConcatenateWithDelimiter
-                }).ToList();
-
-                var fields_sort = sortAndActions.OrderBy(x => x.Order)
-                    .ToDictionary(x => x.FieldName, x => new SortField//.Replace(".", EV.DOT) + EV.DOLLAR + x.FieldName
-                    {
-                        name = x.FieldName,
-                        duplicateAction = (DuplicateAction)x.DuplicatedAction,
-                        sortType = (SortType)x.OrderType,
-                        duplicateActionType = x.DuplicatedActionType,
-                        delimiter = x.Delimiter
-                    }
-
-                    );
-                var fieldTypes = db.jobFileLayouts.Where(p => p.WorkingSetItemId == fileid).ToDictionary(p => p.Fieldname, p => p.Type);
-                var path = Path.Combine(Config.Data.GetKey("root_folder_process"),
-                                        Config.Data.GetKey("input_folder_process"),
-                                        ws.State,
-                                        ws.County
-                                        );
-                path = path + @"\" + wsFile.Filename;
-                //var test= Helpers.ReadCSV.ReadAsArray(wsFile.Filename, path, limit);
-                //for (int i = 0; i < 20000000; i++)
-                //{
-                //    //test.get("EXEMPTION@csv$EXEMPTION_DSCR", test.Data[3000000]);
-                //    test.get("EXEMPTION@csv$EXEMPTION_DSCR", 3000000);
-                //    //var l = new List<int> { 1, 2, 3, 4, 5 };
-                //    //var ix = l.IndexOf(4);
-                //}
-                var tab = KnownDelimeter(path);
-                var file1 = ReadCSV.ReadAsDictionary("", path, limit, tab);
-                //for (int i = 0; i < 20000000; i++)
-                //{
-                //    var oo=file1[3000000]["EXEMPTION@csv$EXEMPTION_DSCR"];
-                //    //var l = new List<int> { 1, 2, 3, 4, 5 };
-                //    //var ix = l.IndexOf(4);
-                //}
-                var primaryKey = wsFile.PrimaryKey;// wsFile.Filename.Replace(".", EV.DOT) + EV.DOLLAR + wsFile.PrimaryKey.ReplaceUnusedCharacters();
-                if (string.IsNullOrEmpty(primaryKey))
-                {
-                    throw new Exception("No Primary Key, Please select 1 first");
-                }
-
-
-                var allrecs = new List<Dictionary<string, object>>();
-
-                var sortActions = fields_sort.OrderBy(p => p.Value.duplicateAction);
-                var hasKeepAllRows = sortActions.Count(p => p.Value.duplicateAction == DuplicateAction.KeepAllRows) > 0;
-
-                foreach (var _group in file1.GroupBy(p => p[primaryKey]))
-                {
-                    //declare
-                    var breakOtherRecords = false;
-                    var ignoreAll = false;
-                    //var record = _group.FirstOrDefault();
-                    var isResponseWithError = false;
-                    var r_last = _group.Last();
-                    var r_first = _group.First();
-                    foreach (var sortField in sortActions)
-                    {
-                        var action = sortField.Value.duplicateAction;
-
-                        try
-                        {
-                            var delimiter = sortField.Value.delimiter;
-                            var v = new object();
-                            switch (action)
-                            {
-                                case DuplicateAction.ResponseWithError:
-                                    isResponseWithError = true;
-                                    break;
-                                case DuplicateAction.PickupFirstValue:
-                                    if (!hasKeepAllRows) breakOtherRecords = true;
-                                    v = r_first[sortField.Key];
-                                    foreach (var rec in _group)
-                                    {
-                                        rec[sortField.Key] = v;
-                                    }
-                                    break;
-                                case DuplicateAction.PickupLastValue:
-                                    if (!hasKeepAllRows) { breakOtherRecords = true; }
-                                    v = r_last[sortField.Key];
-                                    foreach (var rec in _group)
-                                    {
-                                        rec[sortField.Key] = v;
-
-                                    }
-                                    break;
-                                case DuplicateAction.PickupFirstUn_NULL_value:
-                                    if (!hasKeepAllRows) breakOtherRecords = true;
-                                    //p.ContainsKey(sortField.Key) && 
-                                    v = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
-                                    foreach (var rec in _group)
-                                    {
-                                        rec[sortField.Key] = v;
-
-                                    }
-                                    //if(v!=null)
-                                    //    if (!string.IsNullOrEmpty(v.ToString()))
-                                    //    {
-
-                                    //    } 
-                                    break;
-                                case DuplicateAction.PickupMaximumValue:
-                                    if (!hasKeepAllRows) breakOtherRecords = true;
-                                    v = _group.Max(p => Convert.ToDecimal(p[sortField.Key]));
-                                    foreach (var rec in _group)
-                                    {
-                                        rec[sortField.Key] = v;
-
-                                    }
-                                    break;
-                                case DuplicateAction.PickupMinimumValue:
-                                    if (!hasKeepAllRows) breakOtherRecords = true;
-                                    v = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
-                                    foreach (var rec in _group)
-                                    {
-                                        rec[sortField.Key] = v;
-
-                                    }
-                                    break;
-                                case DuplicateAction.SumAllRow:
-                                    if (!hasKeepAllRows) breakOtherRecords = true;
-                                    v = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
-                                    foreach (var rec in _group)
-                                    {
-                                        rec[sortField.Key] = v;
-
-                                    }
-                                    break;
-                                case DuplicateAction.ConcatenateWithDelimiter:
-                                    if (!hasKeepAllRows) breakOtherRecords = true;
-                                    var deli = "";
-                                    if (!string.IsNullOrEmpty(delimiter))
-                                        deli = delimiter;
-                                    v = string.Join(deli, _group.Select(i => i[sortField.Key]));
-                                    foreach (var rec in _group)
-                                    {
-                                        rec[sortField.Key] = v;
-                                    }
-                                    break;
-                                case DuplicateAction.KeepAllRows:
-                                    breakOtherRecords = false;
-                                    break;
-                                default:
-                                    break;
-                            }
-
-
-                            #region use-if
-                            //if (action == DuplicateAction.ResponseWithError)
-                            //{
-                            //    //throw new Exception("ResponseWithError");
-                            //    isResponseWithError = true;
-                            //}
-                            //else if (action == DuplicateAction.PickupFirstValue)
-                            //{
-                            //    if (!hasKeepAllRows) breakOtherRecords = true;
-                            //    var v = r_first[sortField.Key];
-                            //    foreach (var rec in _group)
-                            //    {
-                            //        //rec[sortField.Key] = _group.FirstOrDefault()[sortField.Key];
-                            //        rec[sortField.Key] = v;
-                            //    }
-
-                            //}
-                            //else if (action == DuplicateAction.PickupLastValue)
-                            //{
-                            //    if (!hasKeepAllRows) { breakOtherRecords = true; }
-                            //    var v = r_last[sortField.Key];
-                            //    foreach (var rec in _group)
-                            //    {
-                            //        //rec[sortField.Key] = _group.LastOrDefault()[sortField.Key];
-                            //        rec[sortField.Key] = v;
-
-                            //    }
-
-                            //}
-                            //else if (action == DuplicateAction.PickupFirstUn_NULL_value)
-                            //{
-                            //    if (!hasKeepAllRows) breakOtherRecords = true;
-                            //    var v = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
-                            //    foreach (var rec in _group)
-                            //    {
-                            //        //rec[sortField.Key] = _group.FirstOrDefault(p => !string.IsNullOrEmpty(p[sortField.Key].ToString()))[sortField.Key];
-                            //        rec[sortField.Key] = v;
-
-                            //    }
-                            //}
-                            //else if (action == DuplicateAction.PickupMaximumValue)
-                            //{
-                            //    if (!hasKeepAllRows) breakOtherRecords = true;
-                            //    var v = _group.Max(p => Convert.ToDecimal(p[sortField.Key]));
-                            //    foreach (var rec in _group)
-                            //    {
-                            //        rec[sortField.Key] = v;
-
-                            //    }
-                            //}
-                            //else if (action == DuplicateAction.PickupMinimumValue)
-                            //{
-                            //    if (!hasKeepAllRows) breakOtherRecords = true;
-                            //    //var v = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
-                            //    var _val = _group.Min(p => Convert.ToDecimal(p[sortField.Key]));
-                            //    foreach (var rec in _group)
-                            //    {
-                            //        rec[sortField.Key] = _val;
-
-                            //    }
-                            //}
-                            //else if (action == DuplicateAction.SumAllRow)
-                            //{
-                            //    if (!hasKeepAllRows) breakOtherRecords = true;
-                            //    //var v = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
-                            //    var _val = _group.Sum(p => Convert.ToDecimal(p[sortField.Key]));
-                            //    foreach (var rec in _group)
-                            //    {
-                            //        rec[sortField.Key] = _val;
-
-                            //    }
-                            //}
-                            ////TODO: ConcatenateWithDelimiter phải xác định delimeter
-                            //else if (action == DuplicateAction.ConcatenateWithDelimiter)
-                            //{
-                            //    if (!hasKeepAllRows) breakOtherRecords = true;
-
-                            //    var v = string.Join(",", _group.Select(i => i[sortField.Key]));
-                            //    foreach (var rec in _group)
-                            //    {
-                            //        rec[sortField.Key] = v;
-
-                            //    }
-                            //}
-                            //else if (action == DuplicateAction.KeepAllRows)
-                            //{
-                            //    breakOtherRecords = false;
-
-                            //}
-                            #endregion
-
-                        }
-                        catch (Exception ex)
-                        {
-
-                            throw new Exception("ProcessFinal_Sorting_FAIL at: " + sortField.Key
-                                + ", sortType: " + action + Environment.NewLine + "Record: " + Environment.NewLine +
-                                Newtonsoft.Json.JsonConvert.SerializeObject(_group, Newtonsoft.Json.Formatting.Indented) + Environment.NewLine +
-                                ex.Message + " " + ex.StackTrace
-                                );
-                        }
-                    }
-                    foreach (var rec in _group)
-                    {
-
-                        if (ignoreAll)
-                            break;
-
-                        //rec.Add(wsFile.Filename + EV.DOLLAR + "isDuplicated", 0);// = 0;
-                        //var numOfPrimaryKeyFound = _group.Count();
-                        //rec.Add(wsFile.Filename + EV.DOLLAR + "numOfPrimaryKeyFound", numOfPrimaryKeyFound);
-                        //if (numOfPrimaryKeyFound > 1)
-                        //{
-                        //    if (isResponseWithError)
-                        //        throw new Exception("ResponseWithError");
-                        //    rec[wsFile.Filename + EV.DOLLAR + "isDuplicated"] = 1;
-
-                        //}
-
-                        allrecs.Add(new Dictionary<string, object>(rec));
-
-                        if (breakOtherRecords)
-                        {
-
-                            break;
-                        }
-
-                    }
-
-                }
-                file1.Clear_Disposed();
-                file1.Clear();
-                file1 = null;
-                //Sorting
-
-
-                var sortFieldsNotNONE = fields_sort.Where(p => p.Value.sortType != SortType.None);
-                var firstOrderItem = sortFieldsNotNONE.FirstOrDefault().Value;
-                if (firstOrderItem != null)
-                {
-                    if (firstOrderItem.sortType == SortType.Asccending)
-                    {
-                        if (fieldTypes.ContainsKey(firstOrderItem.name))
-                        {
-                            if (fieldTypes[firstOrderItem.name] == 0)//int
-                            {
-                                sorted_file1 = allrecs.OrderBy(x => Convert.ToDecimal(x[firstOrderItem.name]));
-                            }
-                            else
-                            {
-                                sorted_file1 = allrecs.OrderBy(x => x[firstOrderItem.name].ToString());
-                            }
-                        }
-                    }
-                    else if (firstOrderItem.sortType == SortType.Deccending)
-                    {
-                        if (fieldTypes.ContainsKey(firstOrderItem.name))
-                        {
-                            if (fieldTypes[firstOrderItem.name] == 0)//int
-                            {
-                                sorted_file1 = allrecs.OrderByDescending(x => Convert.ToDecimal(x[firstOrderItem.name]));
-                            }
-                            else
-                            {
-                                sorted_file1 = allrecs.OrderByDescending(x => x[firstOrderItem.name].ToString());
-                            }
-                        }
-                    }
-
-
-                    foreach (var item in sortFieldsNotNONE.Skip(1))
-                    {
-                        if (item.Value.sortType == SortType.Asccending)
-                        {
-                            if (fieldTypes.ContainsKey(item.Key))
-                            {
-                                if (fieldTypes[item.Key] == 0)//int
-                                {
-                                    sorted_file1 = sorted_file1.ThenBy(x => Convert.ToDecimal((decimal)x[item.Key]));
-                                }
-                                else
-                                {
-                                    sorted_file1 = sorted_file1.ThenBy(x => x[item.Key].ToString());
-                                }
-                            }
-
-                        }
-                        else if (item.Value.sortType == SortType.Deccending)
-                        {
-                            if (fieldTypes.ContainsKey(item.Key))
-                            {
-                                if (fieldTypes[item.Key] == 0)//int
-                                {
-                                    sorted_file1 = sorted_file1.ThenByDescending(x => Convert.ToDecimal((decimal)x[item.Key]));
-                                }
-                                else
-                                {
-                                    sorted_file1 = sorted_file1.ThenByDescending(x => x[item.Key].ToString());
-                                }
-                            }
-
-                        }
-                    }
-                }
-                else
-                {
-                    sorted_file1 = allrecs.OrderBy(x => 1);
-                }
-
-
-                //apply rules
-                if (applyRules)
-                {
-                    var rules = db.fieldRules.Where(p => p.WorkingSetItemId == fileid).OrderBy(p => p.Order).ToList();
-                    //update rules as part of fieldType
-                    foreach (var rule in rules)
-                    {
-                        fieldTypes.Add(rule.Name, rule.Type);
-                    }
-                    var lookupTable = db.FACodeTables.ToList();
-                    var lookupItems = db.FACodes.ToList();
-                    var lookupRule = new BL.LookupRule(lookupTable, lookupItems);
-                    CallFunction(rules, sorted_file1, wsFile.Filename.Replace(".", EV.DOT) + EV.DOLLAR, lookupRule);
-                    rules = null;
-
-                }
-                //allrecs.Clear();
-                //allrecs = null;
-
-            }
-            //GC.Collect();
-            return sorted_file1;
         }
         private static void TranferColumnsToRecord()
         {
@@ -3540,66 +3089,6 @@ namespace AppRunTransform
                             rec.Add(rule.Name, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
 
 
-                        }
-                    }
-
-                }
-            }
-        }
-        private static void CallFunction(IEnumerable<FieldRule> rules, IOrderedEnumerable<Dictionary<string, object>> sorted_file1, string namePrefix, LookupRule lookupRule)
-        {
-
-            using (var dt = new System.Data.DataTable())
-            {
-                foreach (var rec in sorted_file1)
-                {
-                    //rec.Add(rule.Name, dt.Compute(rule.ExpValue.FormatWith(rec), ""));// target.Eval(rule_result));
-                    foreach (var rule in rules)
-                    {
-                        if (rule.Type == 0)//math
-                        {
-                            rec.Add(rule.Name, dt.Compute(rule.ExpValue.FormatWith(rec), ""));// target.Eval(rule_result));
-                        }
-                        else if (rule.Type == 2)//bool
-                        {
-                            rec.Add(rule.Name, dyna.IS(rule.ExpValue.FormatWith(rec)));
-                        }
-                        else if (rule.Type == 1)//string
-                        {
-                            rec.Add(rule.Name, dyna.FORMAT(rule.ExpValue.FormatWith(rec)));
-                        }
-                        else if (rule.Type == 3)//FUNC_Num
-                        {
-                            rec.Add(rule.Name, dyna.FUNC_Num(rule.ExpValue.FormatWith(rec)));
-                        }
-                        else if (rule.Type == 4)//obj AS_IS/IF
-                        {
-                            rec.Add(rule.Name, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
-                        }
-                        else if (rule.Type == 6)//obj LOOKUP
-                        {
-                            //format exp should be: Tablename:LookupKey(Rule_8)
-                            var parts = rule.ExpValue.FormatWith(rec).Split(new string[] { "]]" }, StringSplitOptions.None);
-                            var tableName = parts[0];
-                            var val = parts[1];//parts[1]:Rule_8
-                            var rep = "NULL";
-                            if (!lookupRule.rules.ContainsKey(tableName)
-                                || !lookupRule.rules[tableName].ContainsKey(val))
-                                rep = "NULL";
-                            else
-                                rep = lookupRule.rules[tableName][val];
-                            rec.Add(rule.Name, rep);
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(namePrefix))
-                    {
-                        var newrec = new Dictionary<string, object>(rec);
-                        rec.Clear();
-                        foreach (var item in newrec)
-                        {
-                            //item = new KeyValuePair<string, object>();
-                            rec.Add(namePrefix + item.Key, item.Value);
                         }
                     }
 

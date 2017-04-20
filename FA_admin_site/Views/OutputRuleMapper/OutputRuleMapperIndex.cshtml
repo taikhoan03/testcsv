@@ -58,7 +58,7 @@
     
 </style>
 <style>
-    #cboxCondition, #cboxFormatting, #cboxMISCELLANEOUS {
+    #cboxCondition, #cboxFormatting, #cboxMISCELLANEOUS,#cboxLookup {
         background-color: rgba(50, 150, 50, 0.61);
         border: 1px solid #ffddff;
         border-radius: 5px;
@@ -67,7 +67,7 @@
         padding: 6px;
     }
 
-    #CONDITIONAL_r, #FORMATTING_r, #MISCELLANEOUS_r {
+    #CONDITIONAL_r, #FORMATTING_r, #MISCELLANEOUS_r,#LOOPUP_r {
         min-height: 300px;
     }
 </style>
@@ -125,6 +125,7 @@
                 <li><a href="#CONDITIONAL_r">CONDITIONAL</a></li>
                 <li><a href="#FORMATTING_r">FORMATTING</a></li>
                 <li><a href="#MISCELLANEOUS_r">MISCELLANEOUS</a></li>
+                <li><a href="#LOOPUP_r">LOOPUP</a></li>
             </ul>
             
         </div>
@@ -161,6 +162,7 @@
             <div id="CONDITIONAL_r"></div>
             <div id="FORMATTING_r"></div>
             <div id="MISCELLANEOUS_r"></div>
+            <div id="LOOPUP_r"></div>
             <div style="text-align:right;margin:20px">
                 <input type="button" value="Save" onclick="Save()" />
                 <input type="button" value="Clear" onclick="Clear_F()" />
@@ -379,54 +381,7 @@
         //init_field();
         //init_rules();
         
-        $('#tab-2').tabs();
-        $('#div-tab').tabs({
-            beforeActivate: function( event, ui ) {
-                if(selectedFieldId===-1){
-                    alert("Please select a field");
-                    event.preventDefault();
-                    return;
-                }
-            }
-        });
-        
-        $('#rules').tabs({
-            
-            beforeActivate: function( event, ui ) {
-                $('#ARITHMETICAL_operator').hide();
-                $('#cboxCondition').hide();
-                $('#cboxFormatting').hide();
-                $('#cboxMISCELLANEOUS').hide();
-                clean_cbox_selection();
-                $('#div_if_cmd').hide();
-                if($(event.currentTarget).attr('href')=='#ARITHMETICAL_r'){
-                    $('#ARITHMETICAL_operator').show();
-                    showItemForMATH();
-                    
-                    //return;
-                }else if($(event.currentTarget).attr('href')=='#CONDITIONAL_r'){
-                    $('#cboxCondition').show();
-                    //if($('#cboxCondition').val()=='')
-                    
-                    $('#cboxCondition').trigger('change');
-                    
-                    //return;
-                }else if($(event.currentTarget).attr('href')=='#FORMATTING_r'){
-                    $('#cboxFormatting').show();
-                    //if($('#cboxFormatting').val()=='')
-                    $('#cboxFormatting').trigger('change');
-                    //return;
-                }
-                else if($(event.currentTarget).attr('href')=='#MISCELLANEOUS_r'){
-                    $('#cboxMISCELLANEOUS').show();
-                    //if($('#cboxMISCELLANEOUS').val()=='')
-                    $('#cboxMISCELLANEOUS').trigger('change');
-                    //return;
-                }
-
-
-            }
-        });
+        initTabs();
 
 
         //
@@ -436,9 +391,7 @@
         //    itemSelector: 'tr',
         //    placeholder: '<tr class="placeholder"/>'
         //});
-        generateConditionCombobox();
-        generateFormattingCombobox();
-        generateMISCELLANEOUSCombobox();
+        
         
     });
     function updateOrderType(id,sort){
@@ -556,50 +509,53 @@
 
 
     
-    function genUI(value,type){
+    //function genUI(value,type){
 
-        var r_panel=$('#rule_right');
-        var str_rs=r_panel.text();
-        if(currentRule.name=='IF'){
-            addValue('{'+value+'}');
-            return;
-        }
-        //if(str_rs.indexOf('-')>0 ||
-        //    str_rs.indexOf('*')>0 ||
-        //    str_rs.indexOf('/')>0){
-        //    var fieldType=_.findWhere(fieldTypes,{name:value});//{ name="ACCOUNT_NUMBER",  type=1}
-        //    if(fieldType.type!=0)
-        //    {
-        //        alert("Data type should be numeric value");
-        //        return;
-        //    }
-        //}
+    //    var r_panel=$('#rule_right');
+    //    var str_rs=r_panel.text();
+    //    if(currentRule.name=='IF'){
+    //        addValue('{'+value+'}');
+    //        return;
+    //    }
+    //    //if(str_rs.indexOf('-')>0 ||
+    //    //    str_rs.indexOf('*')>0 ||
+    //    //    str_rs.indexOf('/')>0){
+    //    //    var fieldType=_.findWhere(fieldTypes,{name:value});//{ name="ACCOUNT_NUMBER",  type=1}
+    //    //    if(fieldType.type!=0)
+    //    //    {
+    //    //        alert("Data type should be numeric value");
+    //    //        return;
+    //    //    }
+    //    //}
 
-        if($( "#rules" ).tabs( "option", "active" )==0){
-            if($('#rule_right').find('div:last-child').hasClass('op')
-                ||
-                $('#rule_right').find('div').length==0)
-                r_panel.append($('<div class="pi '+type+'">').html('{'+value+'}'));
-            return;
-        }
-        if(currentRule==null){
-            alert("Please select A FUNCTION");
-            return;
-        }
-        if($( "#rules" ).tabs( "option", "active" )==1){
+    //    if($( "#rules" ).tabs( "option", "active" )==0){
+    //        if($('#rule_right').find('div:last-child').hasClass('op')
+    //            ||
+    //            $('#rule_right').find('div').length==0)
+    //            r_panel.append($('<div class="pi '+type+'">').html('{'+value+'}'));
+    //        return;
+    //    }
+    //    if(currentRule==null){
+    //        alert("Please select A FUNCTION");
+    //        return;
+    //    }
+    //    var display=getDisplay_forRule();
+    //    currentRule.addParam({value:'{'+value+'}',type:type});
+    //    display.html('').append($('<div>').html(currentRule.showResult()));
+    //    //if($( "#rules" ).tabs( "option", "active" )==1){
 
-            currentRule.addParam({value:'{'+value+'}',type:type});
-            $('#CONDITIONAL_r').html('').append($('<div>').html(currentRule.showResult()));
-        }else if($( "#rules" ).tabs( "option", "active" )==2){
+    //    //    currentRule.addParam({value:'{'+value+'}',type:type});
+    //    //    $('#CONDITIONAL_r').html('').append($('<div>').html(currentRule.showResult()));
+    //    //}else if($( "#rules" ).tabs( "option", "active" )==2){
 
-            currentRule.addParam({value:'{'+value+'}',type:type});
-            $('#FORMATTING_r').html('').append($('<div>').html(currentRule.showResult()));
-        }else if($( "#rules" ).tabs( "option", "active" )==3){
+    //    //    currentRule.addParam({value:'{'+value+'}',type:type});
+    //    //    $('#FORMATTING_r').html('').append($('<div>').html(currentRule.showResult()));
+    //    //}else if($( "#rules" ).tabs( "option", "active" )==3){
 
-            currentRule.addParam({value:'{'+value+'}',type:type});
-            $('#MISCELLANEOUS_r').html('').append($('<div>').html(currentRule.showResult()));
-        }
-    }
+    //    //    currentRule.addParam({value:'{'+value+'}',type:type});
+    //    //    $('#MISCELLANEOUS_r').html('').append($('<div>').html(currentRule.showResult()));
+    //    //}
+    //}
     function addOperator(value){
         var r_panel=$('#rule_right');
 
@@ -674,15 +630,7 @@
     function Clear_F(){
         currentRule.params=[];
         $('#rule_right').html();
-        var $display=$('#CONDITIONAL_r');
-        if($( "#rules" ).tabs( "option", "active" )==1){
-            $display=$('#CONDITIONAL_r');
-        }else if($( "#rules" ).tabs( "option", "active" )==2){
-            $display=$('#FORMATTING_r');
-        }
-        else if($( "#rules" ).tabs( "option", "active" )==3){
-            $display=$('#MISCELLANEOUS_r');
-        }
+        var $display=getDisplay_forRule();
         $display.html(currentRule.showResult());
     }
     function Save(){
@@ -728,6 +676,7 @@
             $('#CONDITIONAL_r').html('');
             $('#FORMATTING_r').html('');
             $('#MISCELLANEOUS_r').html('');
+            $('#LOOPUP_r').html('');
             clean_cbox_selection();
         })
                 .fail(function (request, status, error) {
@@ -828,6 +777,9 @@
         else if($( "#rules" ).tabs( "option", "active" )==3){
             $display=$('#MISCELLANEOUS_r');
         }
+        else if($( "#rules" ).tabs( "option", "active" )==4){
+            $display=$('#LOOPUP_r');
+        }
         if(selected_rule==''){
             $('.f_item').show();
             currentRule=null;
@@ -865,5 +817,50 @@
             return arr.join();
         }
         return prefix+'.'+type;
+    }
+    var dynamicRules=[];
+</script>
+@{
+    var farules = (List<BL.FACodeTable>)ViewBag.FARules;
+    foreach (var farule in farules)
+    {
+        <script>
+            var r_@(farule.TableNameID)= new IRule("@farule.TableNameID", "@farule.TableNameID", default_limit, ':');
+            r_@(farule.TableNameID).setAcceptTypes([at.any]);
+            r_@(farule.TableNameID).result = function () {
+                return this.F + ':' + this.params.join(this.delimiter);
+            }
+            r_@(farule.TableNameID).showResult = function () {
+                var str = "";
+                var r1 = "";
+                if (this.params.length >= 1) {
+                    r1 = this.params[0].replace(/{|}/g, "");
+                }
+                var $lbl = '<tr><th class="lbl-arg">Lookup Data : </th>';
+                var $arg = '<td class="arg"> ' + this.F + '</td></tr>';
+                str += $lbl + $arg;
+                $lbl = '<tr><th class="lbl-arg">Field : </th>';
+                $arg = '<td class="arg"> ' + r1 + '</td></tr>';
+                str += $lbl + $arg;
+                return '' + '<table>' + str + '</table>';
+            }
+            app_rules.push(r_@(farule.TableNameID));
+            dynamicRules.push(r_@(farule.TableNameID));
+        </script>
+    }
+}
+<script>
+    //dynamic Rules
+    function generateLookupCombobox(){
+
+        var $select=$('<select id="cboxLookup" style="display:none" onchange="filter($(this).val(),true)" >');
+        var options=[];
+        for (var i = 0; i < dynamicRules.length; i++) {
+            options.push(dynamicRules[i].F);
+        }
+        for (var i = 0; i < options.length; i++) {
+            $select.append($('<option value="'+options[i]+'">').html(options[i]));
+        }
+        $('#rule_left').prepend($select);
     }
 </script>
