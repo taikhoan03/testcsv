@@ -1,11 +1,30 @@
 ﻿@model IEnumerable<string>
+@using BL;
     <style>
         .table *{
             white-space: nowrap;
         }
+        #tSample .table *{
+            white-space: pre;
+        }
+        #outputInfo{
+            border-top:solid 1px #14cbe2;
+            border-bottom:solid 1px #14cbe2;
+        }
     </style>
+@{ 
+    var outputFields=(List<FA_admin_site.Controllers.outputDataWithName>)ViewBag.OutputFields;
+}
 <h3 style="color:#00ff21">Input your data to check that rules can run perfect</h3>
 <input type="button" value="Check" onclick="check()"/>
+<select id="selOutputField" onchange="getOutputInfo()">
+    <option value="-1">ALL</option>
+    @foreach (var item in outputFields)
+    {
+        <option value="@item.OutputFieldId">@item.FieldName</option>
+    }
+</select>
+<input type="checkbox" id="chkSubAll" /><label for="chkSubAll">Include all sub-rules</label>
 <table class="table" id="tbl-fields-check">
     <tr>
         <th>Name</th>
@@ -14,7 +33,7 @@
     <tbody id="tbody">
         @foreach (var item in Model)
         {
-            <tr>
+            <tr id="t_@item.Replace(".", "_").Replace(":", "_")">
                 <td>
                     <span>@item</span>
                 </td>
@@ -27,12 +46,21 @@
         
 
 </table>
+<div id="outputInfo">
+
+</div>
 <input type="button" value="Check" onclick="check()" />
 <hr />
 <div id="tSample" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
     <table class="table">
-        <tr id="header"></tr>
-        <tbody id="tbody"></tbody>
+        <tr id="header">
+            <th>Name</th>
+            <th>Rule</th>
+            <th>Value</th>
+        </tr>
+        <tbody id="tbody">
+            
+        </tbody>
     </table>
 </div>
 <div id="fail" style="color:red"></div>
@@ -40,6 +68,50 @@
 <script src="~/scripts/custom/app.js"></script>
 <script type="text/javascript">
     var a;
+    $(document).ready(function () {
+        $('#selOutputField').trigger('change');
+        
+    });
+    function getOutputInfo() {
+        var outputFieldId = $('#selOutputField').val();
+        var p = $('#outputInfo');
+        p.html('');
+        var table = $('#tSample #tbody');
+        table.find('tr').remove();
+        if(outputFieldId==-1){
+            $('#tbl-fields-check #tbody tr').show();
+            return;
+        }
+        $.post('@Url.Action("getOutputInfo", "TestRule")?wsid=@ViewBag.ID', { id: outputFieldId,wsid:@ViewBag.ID })
+        .done(function (data) {
+            //console.log(data);
+            try {
+                var js = JSON.parse(data);
+                console.log(js);
+                var div = $('<div>').html('Output Field Name: ' + js.Name);
+                p.append(div);
+                var div = $('<div>').html('Type: ' + js.Type);
+                p.append(div);
+                var div = $('<div>').html('Length: ' + js.Length);
+                p.append(div);
+                var div = $('<div>').html('Decimal: ' + js.Decimal);
+                p.append(div);
+                //$('#tbl-fields-check #tbody tr').hide();
+                //for (var i = 0; i < js.Fields.length; i++) {
+                //console.log('#t-'+js.Fields[i]);
+                //    $('#tbl-fields-check #tbody').find('#t_'+js.Fields[i]).show();    
+                //}   
+            } catch (e) {
+                //alert(data);
+            }
+        })
+        .fail(function (err) {
+            console.log(err);
+            //alert(err);
+            $('#fail').html(err.responseText);
+        })
+        .always();
+    }
     function check() {
         var rs = [];
         var tbl = $('#tbl-fields-check');
@@ -53,18 +125,51 @@
             rs.push(item);
         }
         //console.log(rs);
-        $.post('@Url.Action("runTestRules", "TestRule")?wsid=@ViewBag.ID', { fields :rs})
+        var outputFieldId = $('#selOutputField').val();
+        var chkSubAll = $('#chkSubAll').is(':checked');
+        $.post('@Url.Action("runTestRules", "TestRule")?wsid=@ViewBag.ID', { fields: rs, outputFieldId: outputFieldId, includeAllSubRule: chkSubAll })
         .done(function (data) {
             //console.log(data);
+            var js = JSON.parse(data)[0];
+            console.log(js);
+            var table = $('#tSample #tbody');
+            table.find('tr').remove();
+            for (var property in js) {
+                if (property.indexOf('RuleExp_') <0) {
+                    // do stuff
+                    var tr = $('<tr>');
+                    var td = $('<td>').html(property);
+                    tr.append(td);
+                    td = $('<td>').html(js[property + 'RuleExp_']);
+                        
+                    tr.append(td);
+                    //td = $('<td>').html("<span style='color:red'>"+js[property]+"</span>"+"");
+                    console.log(property);
+                    if((js[property]+"").indexOf("FAIL")!==-1)
+                        td = $('<td>').html("<span style='color:red'>"+js[property]+"</span>"+"");
+                    else
+                        td = $('<td>').html(js[property]+"");
+                    //if(js[property] && js[property].indexOf("FAIL")!==-1){
+                    //    td = $('<td>').html(js[property]+"");
+                    //}
+                    //else
+                    //{
+                    //    td = $('<td>').html("<span style='color:red'>"+js[property]+"</span>"+"");
+                    //}
+                    tr.append(td);
+                    table.append(tr);
+                }
+                    
+                    
+            }
+
+
+            $('#tSample').show();
+            $('#fail').html('');
             try {
-                var js = JSON.parse(data);
-                console.log(js);
-                a = js;
-                _createTableWithJsonObj(js, 'tSample',false);
-                $('#tSample').show();
-                $('#fail').html('');
+                
             } catch (e) {
-                alert(data);
+                //alert(data);
             }
         })
         .fail(function (err) {

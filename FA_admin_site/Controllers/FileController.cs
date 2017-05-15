@@ -7,16 +7,65 @@ using System.Web;
 using System.Web.Mvc;
 
 using Libs;
+using System.Threading.Tasks;
+
 namespace FA_admin_site.Controllers
 {
     [Authorize]
     public class FileController : Controller
     {
+        private BL.DA_Model db = new BL.DA_Model();
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                db.Dispose();
+            }
+            base.Dispose(disposing);
+        }
         public string test()
         {
-            var db = new BL.DA_Model();
+            //var db = new BL.DA_Model();
             var a = db.packages.FirstOrDefault();
             return a.State;
+        }
+        public ActionResult List(int packid)
+        {
+            //var db = new BL.DA_Model();
+            var files = db.files.Where(p => p.Packageid == packid);
+            return View(files);
+        }
+
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> DeleteConfirmed(int id)
+        {
+            //var db = new BL.DA_Model();
+            
+            var file = await db.files.FindAsync(id);
+            //var package = db.packages.FirstOrDefault(p => p.Id == file.Packageid);
+            var workingSets = db.workingSets.Where(p => p.County == file.County && p.State == file.State).ToList();
+            var found = false;
+            var wsid = 0;
+            foreach (var item in workingSets)
+            {
+                if (found) break;
+                var wsi = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == item.Id && p.Filename == file.Name);
+                if (wsi != null)
+                {
+                    found = true;
+                    wsid = wsi.WorkingSetId;
+                }
+            }
+
+            //var foundInWorkingSet = db.workingSetItems.Any(p => p.)
+            if (found)
+            {
+                throw new Exception("This file has used in a WorkingSet");
+            }
+            db.files.Remove(file);
+            await db.SaveChangesAsync();
+            return RedirectToAction("List",new { packid=file.Packageid});
         }
         // GET: File
         public ActionResult Index(string state, string county,string term)
@@ -34,8 +83,8 @@ namespace FA_admin_site.Controllers
                 {
                     var json = client.DownloadString(Config.Get_local_control_site()+ "/JSON/GetFileWithStateAndCounty?state=" + state + "&county=" + county+"&term="+ term);
                     var files = new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<BL.file[]>(json);
-                    var dA_Model = (new BL.DA_Model());
-                    var db_files = dA_Model.files.Where(p => p.State == state && p.County == county);
+                    //var db = (new BL.DA_Model());
+                    var db_files = db.files.Where(p => p.State == state && p.County == county);
                     var rs = from p in files
                              from pp in db_files.Where(x => p.Name == x.Name).DefaultIfEmpty()
                              select new BL.file
@@ -126,7 +175,7 @@ namespace FA_admin_site.Controllers
         //[ValidateAntiForgeryToken]
         public void Create(PackageModel json)
         {
-            var db = new BL.DA_Model();
+            //var db = new BL.DA_Model();
             using (var dbContextTransaction = db.Database.BeginTransaction())
             {
                 try

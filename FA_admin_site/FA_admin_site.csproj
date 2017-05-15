@@ -1130,6 +1130,7 @@
     <Compile Include="Controllers\NotiController.cs" />
     <Compile Include="Controllers\OutputController.cs" />
     <Compile Include="Controllers\OutputRuleMapperController.cs" />
+    <Compile Include="Controllers\packagesController.cs" />
     <Compile Include="Controllers\SortAndActionController.cs" />
     <Compile Include="Controllers\TestRuleController.cs" />
     <Compile Include="Controllers\UsersController.cs" />
@@ -1245,6 +1246,12 @@
     <Content Include="Views\FACodeTables\Edit.cshtml" />
     <Content Include="Views\FACodeTables\Index.cshtml" />
     <Content Include="Views\FACode\Index.cshtml" />
+    <Content Include="Views\packages\Create.cshtml" />
+    <Content Include="Views\packages\Delete.cshtml" />
+    <Content Include="Views\packages\Details.cshtml" />
+    <Content Include="Views\packages\Edit.cshtml" />
+    <Content Include="Views\packages\Index.cshtml" />
+    <Content Include="Views\File\List.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

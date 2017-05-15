@@ -138,21 +138,58 @@ namespace FA_admin_site.Controllers
                     db.SaveChanges();
                 }
             }
-            var field = db.outputDatas.FirstOrDefault(p => p.Id == data.fieldid && p.FieldMapperName==data.filemappername && p.FieldMapperName==data.fieldmappername);
-            //var a = new BL.OutputData();
-            //a.Data = " The code you provide at least looks better than my code because the validation constraint is declared in the attribute. How would the ProcessValidation see the MaxStringLength attribute and know what property it is working with? – Ben McCormack Sep 2 '10 at 14:00Reflectively.The ProcessValidation() method can know the type of your object(either this.GetType() or a similar call on a passed parameter), and from there it can get information for the member CompanyName and by extension the attributes decorating it.The attribute can be just a flag telling a central validator routine the exact rules to apply, or you can put the validation rule in the attribute and reflectively call some Evaluate() method on the attribute itself.Declarative validation can get messy, but that mess can be hidden behind the scenes unlike simple Validate() class members. – KeithS Sep 2 '10 at 15:28 ";
-
-            if (field == null)
+            // multi fields
+            if (!string.IsNullOrEmpty(data.fieldmappername) && data.fieldmappername.IndexOf(',') > 0)
             {
-                //not existed in db
-                var new_field = new BL.OutputData();
-                new_field.OutputFieldId = data.fieldid;
-                new_field.FieldMapperName = data.fieldmappername;
-                new_field.FileMapperName = data.filemappername;
-                new_field.WorkingSetId = data.wsId;
-                db.outputDatas.Add(new_field);
-                db.SaveChanges();
+                var fields = data.fieldmappername.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 0; i < fields.Length; i++)
+                {
+                    var field = db.outputDatas.FirstOrDefault(p => p.Id == data.fieldid && p.FieldMapperName == data.filemappername && p.FieldMapperName == data.fieldmappername);
+                    //var a = new BL.OutputData();
+                    //a.Data = " The code you provide at least looks better than my code because the validation constraint is declared in the attribute. How would the ProcessValidation see the MaxStringLength attribute and know what property it is working with? – Ben McCormack Sep 2 '10 at 14:00Reflectively.The ProcessValidation() method can know the type of your object(either this.GetType() or a similar call on a passed parameter), and from there it can get information for the member CompanyName and by extension the attributes decorating it.The attribute can be just a flag telling a central validator routine the exact rules to apply, or you can put the validation rule in the attribute and reflectively call some Evaluate() method on the attribute itself.Declarative validation can get messy, but that mess can be hidden behind the scenes unlike simple Validate() class members. – KeithS Sep 2 '10 at 15:28 ";
+
+                    if (field == null)
+                    {
+                        //not existed in db
+                        var new_field = new BL.OutputData();
+                        new_field.OutputFieldId = data.fieldid;
+                        new_field.FieldMapperName = fields[i];
+                        new_field.FileMapperName = data.filemappername;
+                        new_field.WorkingSetId = data.wsId;
+                        db.outputDatas.Add(new_field);
+                        db.SaveChanges();
+                    }
+                }
             }
+            else
+            {
+                var field = db.outputDatas.FirstOrDefault(p => p.WorkingSetId==data.wsId && p.OutputFieldId == data.fieldid && p.FieldMapperName == data.filemappername && p.FieldMapperName == data.fieldmappername);
+                var hasOtherRule = db.outputDatas.FirstOrDefault(p => p.WorkingSetId == data.wsId && p.OutputFieldId == data.fieldid);// && p.FieldMapperName == data.filemappername);
+                //var a = new BL.OutputData();
+                //a.Data = " The code you provide at least looks better than my code because the validation constraint is declared in the attribute. How would the ProcessValidation see the MaxStringLength attribute and know what property it is working with? – Ben McCormack Sep 2 '10 at 14:00Reflectively.The ProcessValidation() method can know the type of your object(either this.GetType() or a similar call on a passed parameter), and from there it can get information for the member CompanyName and by extension the attributes decorating it.The attribute can be just a flag telling a central validator routine the exact rules to apply, or you can put the validation rule in the attribute and reflectively call some Evaluate() method on the attribute itself.Declarative validation can get messy, but that mess can be hidden behind the scenes unlike simple Validate() class members. – KeithS Sep 2 '10 at 15:28 ";
+
+                //Only create empty field mapping if there is no Mapping data existed
+                //chỉ tạo field mapping rỗng, nếu nó chưa có dữ liệu
+                if (string.IsNullOrEmpty(data.fieldmappername))
+                {
+                    if (hasOtherRule != null)
+                        return;
+                }
+
+                if (field == null)
+                {
+                    //not existed in db
+                    var new_field = new BL.OutputData();
+                    new_field.OutputFieldId = data.fieldid;
+                    new_field.FieldMapperName = data.fieldmappername;
+                    new_field.FileMapperName = data.filemappername;
+                    new_field.WorkingSetId = data.wsId;
+                    db.outputDatas.Add(new_field);
+                    db.SaveChanges();
+                }
+
+            }
+            
             //else
             //{
 

@@ -935,6 +935,20 @@ r_RIGHT_TRIM.showResult = function () {
     str += $lbl + $arg;
     return 'Example: RIGHT_TRIM(Target,String) - this function will remove exact STRING from right of TARGET' + '<table>' + str + '</table>';
 }
+var r_TRIM_ALL = new IRule("TRIM_ALL", "TRIM_ALL", default_limit, '[[]]');
+r_TRIM_ALL.setAcceptTypes([at.any]);
+r_TRIM_ALL.showResult = function () {
+    var str = "";
+    var r1 = "";
+    if (this.params.length >= 1) {
+        r1 = this.params[0].replace(/{|}/g, "");
+    }
+    var $lbl = '<tr><th class="lbl-arg">Target : </th>';
+    var $arg = '<td class="arg"> ' + r1 + '</td></tr>';
+    str += $lbl + $arg;
+    
+    return 'Example: RIGHT_TRIM(Target,String) - this function will remove exact STRING from right of TARGET' + '<table>' + str + '</table>';
+}
 
 var r_SPLIT = new IRule("SPLIT", "SPLIT", default_limit, '[[]]');
 r_SPLIT.setAcceptTypes([at.any, at.any, at.any]);
@@ -1182,6 +1196,7 @@ r_REPLACE_CONTAINS,
 r_REPLACE_STRING,
 r_RIGHT_PAD,
 r_RIGHT_TRIM,
+r_TRIM_ALL,
 r_SPLIT,
 r_SUB_STRING,
 r_UPPER,

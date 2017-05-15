@@ -167,6 +167,31 @@ namespace FA_admin_site.Controllers
             }
 
         }
+        
+        public string detachAndStopRequest(int wsid)
+        {
+            var db = new BL.DA_Model();
+            //var req = new BL.RunTransformRequest();
+            //req.CreatedBy = System.Web.HttpContext.Current.User.Identity.Name;
+            //req.CreatedDate = DateTime.Now;
+            //req.IsDeleted = false;
+            //req.Status = 0;
+            //req.WorkingSetId = wsid;
+            var item_found = db.runTransformRequests.FirstOrDefault(p => p.WorkingSetId == wsid);
+            if (item_found.Status != 1)//not processing
+            {
+                item_found.Status = 4;
+                item_found.IsReady = false;
+                db.SaveChanges();
+                System.IO.File.Create(@"D:\FA_in_out\restart.flag");
+                return "OK";// "This RunTransform request has been created already and will be rerun again soon";
+            }
+            else
+            {
+                return "This RunTransform request has been created already and running currently";
+            }
+
+        }
         public string detachRequest(int wsid)
         {
             var db = new BL.DA_Model();
@@ -241,7 +266,7 @@ namespace FA_admin_site.Controllers
             rule.OutputFieldId = fieldid;
             rule.WorkingSetId = wsid;
             var placeholders = rule.ExpValue.FindPlaceHolder();
-            foreach (var item in placeholders)
+            foreach (var item in placeholders.Select(p=>p.Replace("{{","")))
             {
                 //var a = 1;
                 if (item.StartsWith("RULE_"))

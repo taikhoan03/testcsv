@@ -42,17 +42,17 @@ namespace RunTransform_column_to_record
                             var wsItem = db.workingSetItems.Find(req.WorkingSetItemId);
                             var ws = db.workingSets.Find(wsItem.WorkingSetId);
                             var downloadedPath = download(ws.State, ws.County, wsItem.Filename);
-
-                            var destinationPath = TransferColumnsToRecord2(ws.State, ws.County, wsItem.Filename, wsItem.PrimaryKey, req.StrColumns, req.New_Field_Name, req.OutputName);
+                            var destinationPath = TransferColumnsToRecord(req.WorkingSetItemId, req.StrColumns, req.New_Field_Name, req.OutputName, downloadedPath);
+                            //var destinationPath = TransferColumnsToRecord2(ws.State, ws.County, wsItem.Filename, wsItem.PrimaryKey, req.StrColumns, req.New_Field_Name, req.OutputName);
                             Console.WriteLine(destinationPath);
 
                             upload(ws.State, ws.County, req.OutputName, destinationPath);
-                            if (!File.Exists(downloadedPath))
+                            if (File.Exists(downloadedPath))
                             {
                                 File.Delete(downloadedPath);
 
                             }
-                            if (!File.Exists(destinationPath))
+                            if (File.Exists(destinationPath))
                             {
                                 File.Delete(destinationPath);
 
@@ -143,12 +143,12 @@ namespace RunTransform_column_to_record
                             //var destinationPath = TransferTaxInstallment(ws.State, ws.County, wsItem.Filename, wsItem.PrimaryKey, req.StrColumns, req.New_Field_Name, req.OutputName, req.NumOfTaxInstallment, wsItem.PrimaryKey, req.New_Field_Name);
                             Console.WriteLine(destinationPath);
                             upload(ws.State, ws.County, req.OutputName, destinationPath);
-                            if (!File.Exists(downloadedPath))
+                            if (File.Exists(downloadedPath))
                             {
                                 File.Delete(downloadedPath);
 
                             }
-                            if (!File.Exists(destinationPath))
+                            if (File.Exists(destinationPath))
                             {
                                 File.Delete(destinationPath);
 
@@ -246,7 +246,7 @@ namespace RunTransform_column_to_record
             var ftp = new Ftp();
             ftp.upload("/" + remotePath,destinationPath);
         }
-        public static string TransferColumnsToRecord(int wsiId, string strcolumns, string toNewName, string newFileName)
+        public static string TransferColumnsToRecord(int wsiId, string strcolumns, string toNewName, string newFileName, string downloadedPath)
         {
             var db = new BL.DA_Model();
             var wsItem = db.workingSetItems.Find(wsiId);
@@ -263,157 +263,96 @@ namespace RunTransform_column_to_record
 
             var columns = strcolumns.Split(new string[] { ";];" }, StringSplitOptions.RemoveEmptyEntries);
             var numOfColumns = columns.Length;
-
-            var file1 = ReadCSV.ReadAsDictionary(null, path, int.MaxValue);
-            var arrFields = new Dictionary<string, object>(file1.First());
-
-
             columns = columns.Select(p => p.ReplaceUnusedCharacters()).ToArray();
-            var leftCols = arrFields.Select(p => p.Key).Except(columns).ToArray();
-            var numOfLeftItem = leftCols.Count();
-            //toNewName = toNewName.ReplaceUnusedCharacters();
-
-            var numOfItems = file1.Count;
-            var cloney = new List<Dictionary<string, object>>(numOfItems);//[numOfItems];
-
-            //file1.CopyTo(cloney);
-            //cloney=file1.Select(p=>p.Select(c=>))
-
-            for (int i = 0; i < numOfItems; i++)
-            {
-                var c = new Dictionary<string, object>(numOfLeftItem);
-                for (int j = 0; j < numOfLeftItem; j++)
-                {
-                    c.Add(leftCols[j], file1[i][leftCols[j]]);
-                }
-                cloney.Add(c);
-            }
-
-            foreach (var rec in file1)
-            {
-                for (int i = 0; i < numOfLeftItem; i++)
-                {
-                    rec.Remove(leftCols[i]);
-                }
-            }
-            GC.Collect();
-            //file1.Clear();
-            var calTotalItem = numOfItems * numOfColumns;
-            var tmp = new Dictionary<string, object>[calTotalItem];// List<Dictionary<string, object>>(calTotalItem);
-
-            var index = 1;
-            for (int i = numOfItems - 1; i >= 0; i--)
-            {
-                // some code
-                // safePendingList.RemoveAt(i);
-                var newRec = cloney[i];//.Last();
-                var recContainCol = file1[i];
-                //var irow = 0;
-                for (int j = numOfColumns - 1; j >= 0; j--)
-                {
-                    var tmpRec = newRec.ToDictionary(x => x.Key, x => x.Value);
-                    tmpRec.Add(toNewName, recContainCol[columns[j]]);
-                    tmp[calTotalItem - index] = tmpRec;
-                    index++;
-                }
-                newRec.Clear();
-                newRec = null;
-                recContainCol.Clear();
-                recContainCol = null;
-
-                //file1[i].Clear();
-                //file1[i]=null;
-                file1.RemoveAt(i);
-                //cloney[i].Clear();
-                //cloney[i] = null;
-                cloney.RemoveAt(i);
-            }
-
-            cloney.Clear();
-            cloney = null;
-            file1.Clear();
-            file1 = null;
-
-
-            //var recs_after_add_seqs = tmp;// new List<Dictionary<string, object>>();
-            var sndSEQ_FieldName = "seq2".ReplaceUnusedCharacters();
-            // file1.First().ToList();
-            foreach (var col in columns)
-            {
-                arrFields.Remove(col);
-            }
-            var firstRec = arrFields;// file1.First();
-            //set primaryKey
-            var primaryKeyName = "UNFORMATTED_APN";
-            if (!string.IsNullOrEmpty(wsItem.PrimaryKey))
-            {
-                if (firstRec.ContainsKey(wsItem.PrimaryKey))
-                {
-                    primaryKeyName = wsItem.PrimaryKey;
-                }
-            }
-            var seq1FieldName = "APN_SEQUENCE_NUMBER";
-            var hasSEQ1Field = firstRec.ContainsKey(seq1FieldName.ToString());
-            var hasSndField = firstRec.ContainsKey(sndSEQ_FieldName.ToString());
-            var dicKey = new Dictionary<string, object>();
-            //var seq2 = 1;
-            //foreach (var record in tmp)
-            //{
-            //    if (dicKey.ContainsKey(record[primaryKeyName].ToString()))
-            //    {
-            //        seq2++;
-            //    }
-            //    else
-            //    {
-            //        seq2 = 1;
-            //    }
-
-            //    if (hasSEQ1Field)
-            //        record[seq1FieldName] = 1;
-            //    else
-            //        record.Add(seq1FieldName, 1);
-
-            //    if (hasSndField)
-            //        record[sndSEQ_FieldName] = seq2;
-            //    else
-            //        record.Add(sndSEQ_FieldName, seq2);
-            //}
-            foreach (var gb in tmp.GroupBy(p => p[primaryKeyName].ToString()))
-            {
-                var seq2 = 1;
-
-                foreach (var record in gb)
-                {
-                    record.Add("seq1", 1);
-                    record.Add("seq2", seq2);
-                    //if (hasSEQ1Field)
-                    //    record[seq1FieldName] = 1;
-                    //else
-                    //    record.Add(seq1FieldName, 1);
-
-                    //if (hasSndField)
-                    //    record[sndSEQ_FieldName] = seq2;
-                    //else
-                    //    record.Add(sndSEQ_FieldName, seq2);
-                    //record[sndSEQ_FieldName] = seq2;
-                    //recs_after_add_seqs.Add(record);
-
-
-
-                    seq2++;
-                }
-
-
-            }
-
-            //var outputPath = Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("input_folder_process") + "\\" +
-            //    ws.State + "\\" + ws.County + "\\" + newFileName;
+            //var file1 = ReadCSV.ReadAsDictionary(null, path, int.MaxValue);
             var outputPath = Config.Data.GetKey("root_folder_process") + "\\" + newFileName;
-            ReadCSV.Write(outputPath, tmp);
-            //dtAll.Clear();
-            //dtAll.Dispose();
-            tmp = null;
-            GC.Collect();
+            using (StreamWriter writetext = new StreamWriter(outputPath))
+            {
+                //writetext.WriteLine("writing in text file");
+                var name = "";
+                if (!string.IsNullOrEmpty(name))
+                    name = name.Replace(".", EV.DOT);
+                //return BL.Ulti.ReadAsArray(name, path, limit, delimiter);
+                var delimiter = "\t";
+                var limit = int.MaxValue;
+                var header_str = "";
+                //int numOfRow = 0;
+                var hashedLine = new HashSet<string>();
+                var seperator = new string[] { delimiter };
+                //var header_str = reader.ReadLine();
+                var slipOption = StringSplitOptions.None;
+                int bufferSize = 64 * 1024 * 1024;
+                var hasQuote = false;//all data+header surrounded by "fjsdklf"
+                using (FileStream stream = new FileStream(downloadedPath, FileMode.Open, FileAccess.Read))
+                using (BufferedStream bufferedStream = new BufferedStream(stream, bufferSize))
+                using (StreamReader sr = new StreamReader(bufferedStream))
+                {
+                    var header = sr.ReadLine();
+                    header_str = header;
+                    //var 
+                    var headerSamples = header.Split(new string[] { delimiter }, StringSplitOptions.None);
+                    if (headerSamples.All(p => p.StartsWith("\"")) || headerSamples.All(p => p.StartsWith("'")))
+                        hasQuote = true;
+                    var fields = header_str.Split(new string[] { delimiter }, slipOption)
+                    .Select(p => p.ReplaceUnusedCharacters()).ToArray();
+                    //
+                    var filteredFields = fields.ToList();
+                    foreach (var item in columns)
+                    {
+                        filteredFields.Remove(item);
+                    }
+                    filteredFields.Add(toNewName);
+                    //write header
+                    writetext.WriteLine(string.Join(delimiter, filteredFields));
+                    var numOfField = fields.Length;
+                    var arrNewFieldName = fields.ToArray();//.Select(p => rename + p).ToArray();
+                    while (!sr.EndOfStream && limit > 0)
+                    {
+                        limit--;
+
+                        var line = sr.ReadLine();
+                        var rec = new Dictionary<string, object>(numOfField);
+                        var linearr = line.Split(seperator, slipOption);
+                        for (var j = 0; j < numOfField; j++)
+                        {
+                            rec.Add(arrNewFieldName[j], linearr[j]);
+                        }
+                        //rs[iline] = (myUnderlyingObject);
+                        //iline++;
+
+                        
+                        foreach (var item in columns)
+                        {
+                            var clone = new Dictionary<string, object>(rec);
+
+                            foreach (var oldCol in columns)
+                            {
+                                //rec.Add(toNewName,)
+                                clone.Remove(oldCol);
+                            }
+                            //rec.Add(toNewName,)
+                            clone.Add(toNewName, rec[item]);
+                            //write file here
+                            var str = "";
+                            foreach (var col in filteredFields)
+                            {
+                                str += clone[col] + delimiter;
+                            }
+                            str += ";";
+                            str = str.Replace(delimiter + ";", "");
+                            writetext.WriteLine(str);
+                        }
+                    }
+
+                }
+            }
+
+
+
+            Console.WriteLine("Done");
+
+
+
             return outputPath;
             //Helpers.ReadCSV.Write(@"D:\abc.csv", dtAll);
 

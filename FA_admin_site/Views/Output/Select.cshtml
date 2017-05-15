@@ -72,10 +72,40 @@
                 }else{
                     $('#rightColSelect').selectable({
                         selected: function( event, ui ) {
-                            rightField=ui.selected.textContent;
+                            var p = $(this).parent();
+                            var rs="";
+                            $.each($(p).find(".ui-selected"), function(idx,item) {
+                                //if(obj.parent() == p) {
+                                //    // get rad
+                                //    console.log(ui.selected);
+                                //}
+                                rs+=$(item).html()+',';
+                                //console.log(item);
+                            });
+                            rs+=';';
+                            rs=rs.replace(',;','');
+                            rs=rs.replace(';','');
+                            rightField=rs;
+                            //rightField=ui.selected.textContent;
+                            console.log(rightField);
                         },
                         unselected: function( event, ui ) {
-                            rightField=null;
+                            var p = $(this).parent();
+                            var rs="";
+                            $.each($(p).find(".ui-selected"), function(idx,item) {
+                                //if(obj.parent() == p) {
+                                //    // get rad
+                                //    console.log(ui.selected);
+                                //}
+                                rs+=$(item).html()+',';
+                                //console.log(item);
+                            });
+                            rs+=';';
+                            rs=rs.replace(',;','');
+                            rs=rs.replace(';','');
+                            rightField=rs;
+                            console.log(rightField);
+                            //rightField=null;
                         }
                     })
 

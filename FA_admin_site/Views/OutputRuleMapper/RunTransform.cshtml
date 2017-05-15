@@ -12,6 +12,7 @@
 <div id="cmd" style="display:none">
     <a href="javascript:;" id="runTranformJob" class="button">Run1</a>
     <a href="javascript:;" id="detach" class="button">Detach</a>
+    <a href="javascript:;" id="detachAndStop" class="button">Detach & Stop</a>
 </div>
 <div id="tSample" class="table" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
     <table class="table">
@@ -39,7 +40,7 @@
                             objData.downloadurl = "<a href='@ViewBag.DownloadParam'>Download</a>";
                         }
 
-                        
+
                         if (jsData.Status == 1 || jsData.Status == 0) {
                             $("#runTranformJob").remove();
                         }
@@ -80,6 +81,16 @@
             $.get('@Url.Action("detachRequest", "OutputRuleMapper")?wsid=@ViewBag.ID')
                    .done(function (d) {
 
+                       window.location.href = window.location.href;
+                   })
+                   .fail()
+                   .always();
+        }); 
+        $("#detachAndStop").click(function (e) {
+            $(this).text('Running');
+            $.get('@Url.Action("detachAndStopRequest", "OutputRuleMapper")?wsid=@ViewBag.ID')
+                   .done(function (d) {
+                       alert("OK");
                        window.location.href = window.location.href;
                    })
                    .fail()

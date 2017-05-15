@@ -17,6 +17,7 @@ namespace AppRunTransform
         private const int x_record_limited_proccess_apply_rules_GC = 4 * 1000 * 1000;
         static void Main(string[] args)
         {
+            Console.Title = "RunTransform";
             //var a = "D:\\FA_in_out\\InputFile\\IX\\HARI\\EXEMPTION.csv";
             //var b = Ulti.readFromPath_AsDictionary2("EXEMPTION.csv", a, 200000000);
             //Console.WriteLine("done");
@@ -148,7 +149,23 @@ namespace AppRunTransform
             //declare RuleMapper 
             var fileOutput = db.outputMappers.Find(ws.SeletedOutputId);
             var outputFields = db.outputFields.Where(p => p.OutputMapperId == ws.SeletedOutputId);
-            var outputData = db.outputDatas.Where(p => outputFields.Any(c => c.Id == p.OutputFieldId) && p.WorkingSetId == ws.Id);
+            var outputData = db.outputDatas.Where(p => outputFields.Any(c => c.Id == p.OutputFieldId) && 
+            p.WorkingSetId == ws.Id);
+            //var outputDataWithName = from pp in outputFields
+            //                         join p in outputData
+            //                         on pp.Id equals p.OutputFieldId
+            //                         into ps
+            //                         from p_ in ps.DefaultIfEmpty()
+            //                         select new outputDataWithName
+            //                         {
+            //                             FieldMapperName = p_==null?null:p_.FieldMapperName,
+            //                             FileMapperName = p_ == null ? null : p_.FileMapperName,
+            //                             Id = p_ == null ? 0 : p_.Id,
+            //                             Order = p_ == null ? 0 : p_.Order,
+            //                             OutputFieldId =p_ == null ? 0 : p_.OutputFieldId,
+            //                             WorkingSetId = p_ == null ? 0 : p_.WorkingSetId,
+            //                             FieldName = pp.Name
+            //                         };
 
             var outputDataWithName = from p in outputData
                                      join pp in outputFields
@@ -215,16 +232,39 @@ namespace AppRunTransform
                     var right1 = item.Last().firstFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.Last().firstField;
                     var left2 = item.First().sndFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.First().sndField;
                     var right2 = item.Last().sndFilename.Replace(".", EV.DOT) + EV.DOLLAR + item.Last().sndField;
+                    //var defaultDic = new Dictionary<string, object>();
+                    //var randKey = Guid.NewGuid().ToString();
+                    //defaultDic.Add(randKey, "");
+                    //var ff = from p in all_rec
+                    //         join pp in loadF2
+                    //         on p[left1].ToString() + p[right1].ToString()
+                    //         equals pp[left2].ToString() + pp[right2].ToString()
+                    //         into ps
+                    //         from g in ps.DefaultIfEmpty()
+                    //         //select p.Concat(g).ToDictionary(x => x.Key, x => x.Value);
+                    //        select p.Concat(g == null ? new Dictionary<string, object>() : g).ToDictionary(x => x.Key, x => x.Value);
+
+                    //create empty field on l2
+                    //var firstRecF1 = loadF1.First();
+                    //var firstRecF2 = loadF2.First();
+                    //var addonField = firstRecF2.Where(p => !firstRecF1.ContainsKey(p.Key)).ToList();
+                    //foreach (var itemleft in loadF1)
+                    //{
+                    //    foreach (var key_ in addonField)
+                    //    {
+                    //        itemleft.Add(key_.Key, "");
+                    //    }
+                    //}
                     var ff = from p in all_rec
                              join pp in loadF2
                              on p[left1].ToString() + p[right1].ToString()
                              equals pp[left2].ToString() + pp[right2].ToString()
                              into ps
-                             from g in ps//.DefaultIfEmpty()
+                             from g in ps.DefaultIfEmpty()
+                                 //select p.Concat(g).ToDictionary(x => x.Key, x => x.Value);
+                                 select p.Concat(g == null ? new Dictionary<string, object>() : g).ToDictionary(x => x.Key, x => x.Value);
                              //select p.Concat(g).ToDictionary(x => x.Key, x => x.Value);
-                            select p.Concat(g == null ? new Dictionary<string, object>() : g).ToDictionary(x => x.Key, x => x.Value);
-                    
-                    
+
                     //var ff = from p in all_rec
                     //         join pp in loadF2.Data
                     //         on new
@@ -243,12 +283,12 @@ namespace AppRunTransform
                     //select p.Concat(g == null ? Enumerable.Empty<KeyValuePair<string, object>>() : g).ToDictionary(x => x.Key, x => x.Value);
                     //TODO: slow here
                     all_rec = ff.ToList();// new List<IDictionary<string, object>>(ff);// ff.ToDictionary(x=>x.Keys).ToList();
-                    foreach (var _item in ff)
-                    {
-                        all_rec.Add(new Dictionary<string, object>(_item));
-                    }
-                    //loadF1.Clear_Disposed();// = null;
-                    //loadF2.Clear_Disposed();// = null;
+                    //foreach (var _item in ff)
+                    //{
+                    //    all_rec.Add(new Dictionary<string, object>(_item));
+                    //}
+                    loadF1.Clear_Disposed();// = null;
+                    loadF2.Clear_Disposed();// = null;
                 }
                 groupLinkageData = null;
             }
@@ -283,6 +323,31 @@ namespace AppRunTransform
             loadF1.Clear_Disposed();// = null;
             loadF2.Clear_Disposed();// = null;
                                     // apply rule mapper
+
+            //format _ normalizi
+            var maxField = 0;
+            var recordMaxFieldIndex = 0;
+            for (int i = 0; i < all_rec.Count; i++)
+            {
+                if (all_rec[i].Count > maxField)
+                {
+                    maxField = all_rec[i].Count;
+                    recordMaxFieldIndex = i;
+                }
+            }
+
+            var recChuan = all_rec[recordMaxFieldIndex];
+            for (int i = 0; i < all_rec.Count; i++)
+            {
+                var rec = all_rec[i];
+                foreach (var item in recChuan)
+                {
+                    if (!rec.ContainsKey(item.Key))
+                    {
+                        rec.Add(item.Key, "");
+                    }
+                }
+            }
 
             //outputDataWithNameList.Add(new outputDataWithName
             //{
@@ -442,6 +507,7 @@ namespace AppRunTransform
                                     }
                                     else if (rule.Type == 1)//string
                                     {
+                                        
                                         rec.Add(rule_fullname, dyna.FORMAT(rule.ExpValue.FormatWith(rec)));
                                     }
                                     else if (rule.Type == 3)//string
@@ -511,7 +577,7 @@ namespace AppRunTransform
                 }
 
 
-                Console.WriteLine("--- Time: " + Watch.watch_Elapsed().TotalSeconds);
+               Console.WriteLine("--- Time: " + Watch.watch_Elapsed().TotalSeconds);
 
                 //add sequence
                 Console.WriteLine("Grouping and adding sequence");
@@ -836,11 +902,17 @@ namespace AppRunTransform
                             list_col_to_remove.Add(col.Key);
                         }
                     }
+                    var addEmptyMissingFields = outputFields.ToList().Where(p => !firstRec.Any(c => c.Key == p.Name)).ToList();
                     foreach (var record in all_rec)
                     {
                         foreach (var col in list_col_to_remove)
                         {
                             record.Remove(col);
+                        }
+                        //add missing fields
+                        foreach (var f in addEmptyMissingFields)
+                        {
+                            record.Add(f.Name, "");
                         }
                         record.Remove(primaryKey);
                     }
@@ -875,9 +947,14 @@ namespace AppRunTransform
                         {
                             try
                             {
+                                //if(record[fieldname].ToString()== "47.15576")
+                                //{
+                                //    var a = 1;
+                                //}
                                 if (!string.IsNullOrEmpty(content))
                                     record[fieldname] = Math.Round(Convert.ToDecimal(content),
-                                        fieldInfo.Decimal);
+                                        fieldInfo.Decimal);//.ToString("F"+ fieldInfo.Decimal);
+                                
                             }
                             catch (Exception ex)
                             {
@@ -944,9 +1021,12 @@ namespace AppRunTransform
                 //    }
                 //}
                 Console.WriteLine("Writing file");
-                var name = DateTime.Now.ToString("yyyyMMdd") + "_" + fileOutput.Name + "_" + ws.User + ".csv";
+                //var reOrderRs=new List<>
+                var name = DateTime.Now.ToString("yyyyMMdd") + "_" + fileOutput.Name + "_" + ws.User + ".txt";
+                //ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("output_folder_process") + "\\" +
+                //    ws.State + "\\" + ws.County + "\\" + name, all_rec);
                 ReadCSV.Write(Config.Data.GetKey("root_folder_process") + "\\" + Config.Data.GetKey("output_folder_process") + "\\" +
-                    ws.State + "\\" + ws.County + "\\" + name, all_rec);
+                    ws.State + "\\" + ws.County + "\\" + name, all_rec,outputFields.Select(p=>p.Name).ToArray());
                 all_rec.Clear();
                 all_rec = null;
                 dtAll.Clear();
@@ -961,6 +1041,24 @@ namespace AppRunTransform
                 Console.WriteLine("");
                 return name;
             }
+        }
+        public static string genDecimalFormat(int numOfDecimal)
+        {
+
+
+//            decimalVar.ToString("#.##"); // returns "" when decimalVar == 0
+
+//            or
+
+//decimalVar.ToString("0.##"); // returns "0"  when decimalVar == 0
+
+
+            var str = "";
+            for (int i = 0; i < numOfDecimal; i++)
+            {
+                str += "#";
+            }
+            return "0." + str;
         }
         public static string runProcess2(int id, bool cleanUpResult = false)
         {

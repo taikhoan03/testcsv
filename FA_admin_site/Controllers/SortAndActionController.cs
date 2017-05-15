@@ -216,4 +216,5 @@ public class SortField
     /// Nếu type=2, str_param là dilimeter
     /// </summary>
     public string str_param { get; set; }
+    public string delimiter { get; set; }
 }
