@@ -25,6 +25,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunTransform_column_to_reco
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppRestartTransform", "AppRestartTransform\AppRestartTransform.csproj", "{4A7708FA-A595-4BF3-9495-2BB13D779169}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApplication1TestFixCSV", "ConsoleApplication1TestFixCSV\ConsoleApplication1TestFixCSV.csproj", "{5EB7F35F-E85F-45A5-A09C-DA843800DD46}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -77,6 +79,10 @@ Global
 		{4A7708FA-A595-4BF3-9495-2BB13D779169}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4A7708FA-A595-4BF3-9495-2BB13D779169}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4A7708FA-A595-4BF3-9495-2BB13D779169}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5EB7F35F-E85F-45A5-A09C-DA843800DD46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5EB7F35F-E85F-45A5-A09C-DA843800DD46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5EB7F35F-E85F-45A5-A09C-DA843800DD46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5EB7F35F-E85F-45A5-A09C-DA843800DD46}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

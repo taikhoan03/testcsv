@@ -1252,6 +1252,7 @@
     <Content Include="Views\packages\Edit.cshtml" />
     <Content Include="Views\packages\Index.cshtml" />
     <Content Include="Views\File\List.cshtml" />
+    <Content Include="Views\File\FixCSV1.cshtml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

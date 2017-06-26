@@ -46,8 +46,57 @@ namespace FA_admin_site.Controllers
             var db = new BL.DA_Model();
             var files = db.workingSetItems.Where(p => p.WorkingSetId == id);
             ViewBag.ID = id;
-            ViewBag.reqs = db.req_Transfer_Columns_to_Records.ToList();
+            ViewBag.reqs = db.req_Transfer_Columns_to_Records.Where(p=>p.CreatedBy== System.Web.HttpContext.Current.User.Identity.Name && p.WorkingSetId==id).OrderByDescending(p=>p.CreatedDate).ToList();
             return View(files);
+        }
+        public void IncludeTransferColumnsToRecord(int reqid)
+        {
+            var db = new BL.DA_Model();
+            var req = db.req_Transfer_Columns_to_Records.FirstOrDefault(p => p.Id == reqid);
+            
+            if (req != null)
+            {
+                var ws = db.workingSets.FirstOrDefault(p => p.Id == req.WorkingSetId);
+                //var firstFileWsItem = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == ws.Id);
+                var firstFile = db.files.FirstOrDefault(p => p.State == ws.State &&
+                  p.County == ws.County &&
+                  p.User == System.Web.HttpContext.Current.User.Identity.Name 
+                );
+                //var path = "D:\\FA_in_out\\Tmp_data\\" + ws.State + "\\" + ws.County + "\\" + req.OutputName;
+                var pathInput = "D:\\FA_in_out\\InputFile\\" + ws.State + "\\" + ws.County + "\\" + req.OutputName;
+                if (!System.IO.File.Exists(pathInput))
+                    throw new Exception("File not found");
+                //create new file in db
+                var foundfile = db.files.FirstOrDefault(p => p.County == ws.County && p.State == ws.State && p.Packageid == firstFile.Packageid && p.Name == req.OutputName);
+                if (foundfile == null)
+                {
+                    var file = new BL.file();
+                    file.County = ws.County;
+                    file.Create_date = DateTime.Now;
+                    file.Name = req.OutputName;
+                    file.Packageid = firstFile.Packageid;
+                    file.State = ws.State;
+                    file.Status = "Processing";
+                    file.User = System.Web.HttpContext.Current.User.Identity.Name;
+                    db.files.Add(file);
+                }
+
+
+                var foundWsi = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == ws.Id && p.Filename == req.OutputName);
+                if (foundWsi == null)
+                {
+                    var wsItem = new BL.WorkingSetItem();
+                    //file.County = json.County;
+                    //file.Create_date = date_create;
+                    wsItem.Filename = req.OutputName;
+                    //wsItem.PrimaryKey = item.PrimaryKey.ReplaceUnusedCharacters();
+                    //wsItem.SecondaryKeys = item.SecondaryKeys;
+                    wsItem.WorkingSetId = ws.Id;
+                    //file. = "test";
+                    db.workingSetItems.Add(wsItem);
+                }
+                db.SaveChanges();
+            }
         }
         public ActionResult TaxInstallment(int id)
         {
@@ -100,7 +149,7 @@ namespace FA_admin_site.Controllers
             return null;
         }
         [HttpPost]
-        public ActionResult postTransferColumnsToRecord(int wsiId, string[] columns,string newField, string newFile)
+        public ActionResult postTransferColumnsToRecord(int wsiId, string[] columns,string newField, string newFile,string strIgnoreNull, string strIgnoreZero)
         {
             newFile = newFile.ReplaceUnusedCharacters();
             var strColumns = string.Join(";];", columns);
@@ -129,6 +178,8 @@ namespace FA_admin_site.Controllers
                     StrColumns = strColumns,
                     WorkingSetId = wsi.WorkingSetId,
                     WorkingSetItemId = wsiId,
+                    IgnoreOnNull=strIgnoreNull,
+                    IgnoreOnZero=strIgnoreZero
                 };
                 db.req_Transfer_Columns_to_Records.Add(r);
                 db.SaveChanges();
@@ -302,29 +353,46 @@ namespace FA_admin_site.Controllers
             {
                 try
                 {
+                    var found = db.workingSets.FirstOrDefault(p => p.County == wd.ws.County &&
+                      p.State == wd.ws.State &&
+                      p.Version == wd.ws.Version &&
+                      p.Edition == wd.ws.Edition);
                     var date_create = DateTime.Now;
-                    //tạo package
-                    var workingSet = new BL.WorkingSet();
-                    workingSet.County = wd.ws.County;
-                    workingSet.State = wd.ws.State;
-                    workingSet.User = System.Web.HttpContext.Current.User.Identity.Name;
-                    workingSet.Createdate = date_create;
-                    workingSet.Edition = wd.ws.Edition;
-                    workingSet.Version = wd.ws.Version;
-                    //package.Status = "Processing";
-                    db.workingSets.Add(workingSet);
-                    db.SaveChanges();
+                    var wsid = 0;
+                    if (found == null)
+                    {
+                        //tạo package
+                        var workingSet = new BL.WorkingSet();
+                        workingSet.County = wd.ws.County;
+                        workingSet.State = wd.ws.State;
+                        workingSet.User = System.Web.HttpContext.Current.User.Identity.Name;
+                        workingSet.Createdate = date_create;
+                        workingSet.Edition = wd.ws.Edition;
+                        workingSet.Version = wd.ws.Version;
+                        //package.Status = "Processing";
+                        db.workingSets.Add(workingSet);
+                        db.SaveChanges();
+                        wsid = workingSet.Id;
+                    }else
+                    {
+                        wsid = found.Id;
+                    }
+                    
+                    
                     //throw new Exception("fksljd");
                     //tạo các files thuộc về package
                     foreach (var item in wd.items)
                     {
+                        var foundWsi = db.workingSetItems.FirstOrDefault(p => p.WorkingSetId == wsid && p.Filename == item.Filename);
+                        if (foundWsi != null)
+                            throw new Exception("File with name " + item.Filename + " is exited in the WorkingSet");
                         var wsItem = new BL.WorkingSetItem();
                         //file.County = json.County;
                         //file.Create_date = date_create;
                         wsItem.Filename = item.Filename;
                         wsItem.PrimaryKey = item.PrimaryKey.ReplaceUnusedCharacters();
                         wsItem.SecondaryKeys = item.SecondaryKeys;
-                        wsItem.WorkingSetId = workingSet.Id;
+                        wsItem.WorkingSetId = wsid;
                         //file. = "test";
                         db.workingSetItems.Add(wsItem);
                     }
@@ -340,13 +408,29 @@ namespace FA_admin_site.Controllers
                 catch (Exception exT)
                 {
                     dbContextTransaction.Rollback();
-                    ModelState.AddModelError("", exT.InnerException.Message);
+                    ModelState.AddModelError("", exT.Message+"\n"+exT.StackTrace);
                     GC.Collect();
                     throw exT;
                 }
 
 
             }
+        }
+        class mergeJSData
+        {
+            public BL.MergeFileJob orginal { get; set; }
+            public List<BL.MergeDetail> mergeDetails { get; set; }
+        }
+        [HttpGet]
+        public JsonResult getMergeList(int wsid)
+        {
+            var db = new BL.DA_Model();
+            var ls = db.mergeFileJob.Where(p => p.WorkingJobId == wsid).ToList().Select(p => new mergeJSData()
+            {
+                orginal = p,
+                mergeDetails = p.MergeDetails.XMLStringToListObject<BL.MergeDetail>()
+            });
+            return Json(ls, JsonRequestBehavior.AllowGet);
         }
         [HttpPost]
         public void postMerge(Merge_info mergeInfo)

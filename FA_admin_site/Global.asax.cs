@@ -15,6 +15,7 @@ namespace FA_admin_site
             BundleConfig.RegisterBundles(BundleTable.Bundles);
 
             System.Web.Helpers.AntiForgeryConfig.UniqueClaimTypeIdentifier = System.Security.Claims.ClaimTypes.Name;
+            Config.Data.GetKey("..init");
         }
     }
 }

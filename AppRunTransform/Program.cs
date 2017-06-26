@@ -375,7 +375,11 @@ namespace AppRunTransform
             //rename field in rule expression
             foreach (var rule in rule_)
             {
-                rule.ExpValue = rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
+                foreach (var pl in rule.ExpValue.GetPlaceHolderName_ExpandObject())
+                {
+                    rule.ExpValue = rule.ExpValue.Replace(pl, pl.Replace(".", EV.DOT).Replace(":", EV.DOLLAR));
+                }
+                //rule.ExpValue = rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
             }
 
 
@@ -516,7 +520,7 @@ namespace AppRunTransform
                                     }
                                     else if (rule.Type == 4)//string
                                     {
-                                        rec.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
+                                        rec.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith_Quote(rec)));
                                     }
                                     else if (rule.Type == 6)//string
                                     {
@@ -3672,7 +3676,7 @@ namespace AppRunTransform
                         }
                         else if (rule.Type == 4)//obj AS_IS/IF
                         {
-                            rec.Add(rule.Name, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
+                            rec.Add(rule.Name, dyna.FUNC_Obj(rule.ExpValue.FormatWith_Quote(rec)));
                         }
                         else if (rule.Type == 6)//obj LOOKUP
                         {

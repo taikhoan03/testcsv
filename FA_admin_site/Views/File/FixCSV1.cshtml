@@ -1,0 +1,48 @@
+﻿<h2>Reformat/Fix CSV Function</h2>
+<h3 style="color:red">Note:</h3>
+<h4>Please make sure, this function used in correct way</h4>
+<ul style="margin:10px 30px">
+    <li>All data in csv should enclosed by <strong>double quote &quot;</strong></li>
+    <li>There may be <strong>DROPLINE (↩)</strong> out there inside the file</li>
+    <li>All lines must have fixed fields (num of columns)</li>
+    <li>It should look like the file below</li>
+</ul>
+<pre>
+    "fieldA"	"fieldB"
+    "123"	"fjdsk"
+    "456"	"def↩
+    kfl;"
+    "45↩
+    7896"	"def↩
+    kfl;"
+</pre>
+<h3 style="color:forestgreen">The Result will be nicer</h3>
+<pre style="color:forestgreen">
+    fieldA	fieldB
+    123	fjdsk
+    456	defkfl;
+    457896	defkfl;
+</pre>
+
+<div style="border:dotted 1px #147575; color:#147575;font-weight:bold;padding:10px">
+    <h3>INFO:</h3>
+    <ul style="margin:10px 30px">
+        <li>State: @ViewBag.state</li>
+        <li>County: @ViewBag.county</li>
+        <li>Filename: @ViewBag.name</li>
+    </ul>
+    Make sure you Download and review the file after click Run Fix
+    <br />Delimiter
+    <select id="selDeli">
+        <option value="t">TAB</option>
+        <option value=",">,</option>
+        <option value=";">;</option>
+    </select>
+    <input type="button" value="Run Fix" onclick="goFix()"/>
+</div>
+<script>
+    function goFix(){
+        var fid=@ViewBag.fileid;
+        window.location.href='@Url.Action("RunFixCSV1", "File")/?fileid='+fid+'&delimiter='+$('#selDeli').val();
+    }
+</script>

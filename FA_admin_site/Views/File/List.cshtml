@@ -68,8 +68,17 @@
                     <input type="submit" value="Delete" class="btn btn-default" />
                 </div>
             }
+            <div class="form-actions no-color">
+                <input type="button" value="Fix bad file" class="btn btn-default" onclick="goFix(@item.Id)" />
+            </div>
         </td>
     </tr>
 }
 
 </table>
+<script>
+    function goFix(id){
+        var fid=id;
+        window.location.href='@Url.Action("FixCSV1", "File")/?fileid='+fid;
+    }
+</script>

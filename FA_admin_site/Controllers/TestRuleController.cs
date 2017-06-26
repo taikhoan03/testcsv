@@ -223,7 +223,11 @@ namespace FA_admin_site.Controllers
             var rule_ = rules.ToList();
             foreach (var rule in rule_)
             {
-                rule.ExpValue = rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR); ;//rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
+                foreach (var pl in rule.ExpValue.GetPlaceHolderName_ExpandObject())
+                {
+                    rule.ExpValue= rule.ExpValue.Replace(pl,pl.Replace(".", EV.DOT).Replace(":", EV.DOLLAR));
+                }
+                //rule.ExpValue = rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR); ;//rule.ExpValue.Replace(".", EV.DOT).Replace(":", EV.DOLLAR);
             }
 
             foreach (var field in fields)
@@ -322,10 +326,10 @@ namespace FA_admin_site.Controllers
                             }
                             else if (rule.Type == 4)//string
                             {
-                                myUnderlyingObject.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
+                                myUnderlyingObject.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith_Quote(rec)));
                                 rec.Add(rule_fullname + "RuleExp_", rule.ExpValue);
 
-                                rs_under.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
+                                rs_under.Add(rule_fullname, dyna.FUNC_Obj(rule.ExpValue.FormatWith_Quote(rec)));
                                 rs_under.Add(rule_fullname + "RuleExp_", rule.ExpValue);
                             }
 
@@ -516,7 +520,7 @@ namespace FA_admin_site.Controllers
                         }
                         else if (rule.Type == 4)//obj AS_IS/IF
                         {
-                            rec.Add(rule.Name, dyna.FUNC_Obj(rule.ExpValue.FormatWith(rec)));
+                            rec.Add(rule.Name, dyna.FUNC_Obj(rule.ExpValue.FormatWith_Quote(rec)));
                             rec.Add(rule.Name + "RuleExp_", rule.ExpValue);
                         }
                         else if (rule.Type == 6)//obj LOOKUP

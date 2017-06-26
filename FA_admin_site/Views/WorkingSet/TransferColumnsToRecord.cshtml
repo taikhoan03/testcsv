@@ -51,6 +51,9 @@
         color: white;
         font-style: italic;
     }
+    .chkContent{
+        min-width:74px;
+    }
 </style>
 @{ 
     var reqs = (List<BL.Req_Transfer_Columns_to_Records>)ViewBag.reqs;
@@ -60,6 +63,7 @@
 <script src="~/scripts/angular.min.js"></script>
 <script src="~/scripts/angular-checklist-model.js"></script>
 <div ng-app="myApp" ng-controller="myCtrl">
+    
     <table class="table">
         <tr>
             <th>
@@ -99,7 +103,7 @@
                     @Html.DisplayFor(modelItem => item.IsMerged)
                 </td>
                 <td>
-                    <a href="#" ng-click="loadfields(@item.Id,'@item.Filename')">Select</a>
+                    <a id="select_@item.Id" href="#" ng-click="loadfields(@item.Id,'@item.Filename')">Select</a>
                 </td>
             </tr>
         }
@@ -107,6 +111,16 @@
     </table>
     
     <div >
+        <div style="margin:15px 0;border: dotted 1px blue;border-right: none;border-left: none;">
+            <h4>Note:</h4>
+            <div>
+                <strong>Ignore Null</strong> that mean IF this selected field data is <strong>NULL</strong>, it will be ignored (not) to create record
+
+            </div>
+            <div>
+                <strong>Ignore Zero</strong> that mean IF this selected field data is <strong>0</strong>, it will be ignored (not) to create record
+            </div>
+        </div>
         <table id="showtbl"  style="display:none;width: 100%">
             <tr>
                 <td>
@@ -128,7 +142,17 @@
                     <div id="divSelected">
                         <strong>Fields selected:</strong>
                         <div ng-model="selected_fields" ng-repeat="x in selected_fields">
-                            <label>{{$index +' - '+ x }}</label>
+                            <label style="min-width:300px;border-right:solid 1px;">{{$index +' - '+ x }}</label>
+
+                            <span class="chkContent">
+                                <input type="checkbox" id="ign_null_{{$index}}" class="ign_null" />
+                                <label for="ign_null_{{$index}}">Ignore Null</label>
+                            </span>
+
+                            <span>
+                                <input type="checkbox" id="ign_zero_{{$index}}" class="ign_zero" />
+                                <label for="ign_zero_{{$index}}">Ignore Zero</label>
+                            </span>
                         </div>
                     </div>
                 </td>
@@ -155,10 +179,134 @@
 
     </div>
 
+    <br />
+    <h3>Request Logs:</h3>
+    <table class="table1">
+        <tr>
+            <th>
+                WorkingSetId
+            </th>
+            <th>
+                CreatedBy
+            </th>
+            <th>
+                CreatedDate
+            </th>
+            <th>
+                TimeCost (s)
+            </th>
+            <th>
+                Status
+            </th>
+            <th>
+                IsDeleted
+            </th>
+            <th>
+                Name
+            </th>
+            <th>
+                Detail
+            </th>
+            <th>
+                COMHandle
+            </th>
+            <th>
+                IsReady
+            </th>
+            <th></th>
+        </tr>
 
+        @foreach (var item in reqs)
+        {
+            <tr>
+                <td>
+                    @*@Html.DisplayFor(modelItem => item.WorkingSetId)*@
+                    <a href="@Url.Action("Manage","WorkingSet")?id=@item.WorkingSetId">@item.WorkingSetId</a>
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.CreatedBy)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.CreatedDate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.TimeCost)
+                </td>
+                <td>
+
+                    @if (item.Status == 0)
+                {
+                        <label class="st_@item.Status">In-queue</label>
+                    }
+                    else if (item.Status == 1)
+                    {
+                        <label class="st_@item.Status">Processing</label>
+                    }
+                    else if (item.Status == 2)
+                    {
+                        <label class="st_@item.Status">Success</label>
+                    }
+                    else if (item.Status == 3)
+                    {
+                        <label class="st_@item.Status">FAIL</label>
+                    }
+                    else if (item.Status == 4)
+                    {
+                        <label class="st_@item.Status">Detached</label>
+                    }
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.IsDeleted)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.OutputName)
+                </td>
+                <td width="20%">
+                    @if (!string.IsNullOrEmpty(item.Detail))
+                {
+                    if (item.Detail.Length > num_err_display_char_limit)
+                    {
+                            <div class="show-hidden-detail">
+                                <div>@item.Detail.Substring(0, num_err_display_char_limit) ...</div>
+                                <div class="hidden-content" style="display:none">
+                                    @item.Detail
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            @Html.DisplayFor(modelItem => item.Detail)
+                        }
+                    }
+
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.COMHandle)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.IsReady)
+                </td>
+                <td>
+                    @*@Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
+                        @Html.ActionLink("Details", "Details", new { id = item.Id }) |
+                        @Html.ActionLink("Delete", "Delete", new { id = item.Id })*@
+                    <a style="margin-right:10px" at-href="@Url.Action("IncludeTransferColumnsToRecord","WorkingSet")/?reqid=@item.Id" onclick="IncludeTransferColumnsToRecord(this)" href="#">Include this file</a>
+                    <a href="#" ng-click="loadthis(@item.WorkingSetItemId,[@string.Join(",",item.StrColumns.Split(new string[] { ";];"},StringSplitOptions.None).Select(p=>"\""+p+"\""))],
+                       [@string.Join(",",item.IgnoreOnNull.Split(new string[] { ","},StringSplitOptions.None).Select(p=>"\""+p+"\""))],
+                       [@string.Join(",",item.IgnoreOnZero.Split(new string[] { ","},StringSplitOptions.None).Select(p=>"\""+p+"\""))],'@item.New_Field_Name','@item.OutputName')">Load this request</a>
+
+                </td>
+            </tr>
+        }
+
+    </table>
 </div>
 <script type="text/javascript">
+    
     var app = angular.module('myApp', ["checklist-model"]);
+    app.factory('Position', ['$timeout', function($timeout) {
+        
+        }]);
     app.controller('myCtrl', function($scope,$http) {
         $scope.newFieldName = "new_field_name";
         $scope.newFileName = "FILE_NAME";
@@ -178,18 +326,84 @@
             });
 
         }
+        $scope.loadthis = function (id,columns,arrIgnoreNull,arrIgnoreZero,new_field_name,outputname) {
+            
+            
+            //var item = $('#select_' + id).trigger("click");
+            var currentButton = angular.element('#select_' + id);
+            setTimeout(function () {
+                $scope.newFieldName = new_field_name;
+                //$scope.newFileName = outputname;
+                currentButton.triggerHandler("click");
+                setTimeout(function () {
+                    var divColumns = $('#divFieldsSelect');
+                    
+                    for (var i = 0; i < columns.length; i++) {
+                        var col = columns[i];
+                        $scope.selected_fields.push(col);
+                    }
+
+                    divColumns.find('input[type="checkbox"]:first').trigger('click');
+                    setTimeout(function () {
+                        
+                        var rowdivSelected = $('#divSelected').find('div');
+                        for (var i = 0; i < $(rowdivSelected).length; i++) {
+                            var row = $(rowdivSelected[i]);
+                            console.log(row);
+                            if (arrIgnoreNull[i] == 'true') {
+                                row.find('.ign_null').prop('checked', true);;//.trigger('click');
+                            }else{
+                                row.find('.ign_null').prop('checked', false);;//.trigger('click');
+                            }
+                            if (arrIgnoreZero[i] == 'true') {
+                                row.find('.ign_zero').prop('checked', true);;//.trigger('click');
+                            } else {
+                                row.find('.ign_zero').prop('checked', false);;//.trigger('click');
+                            }
+                        }
+                    }, 100);
+                    
+                },800);
+            }, 100);
+            
+        }
         $scope.save = function () {
             var fields = $('#divFieldsSelect input[type="checkbox"]:checked');
             console.log($scope.fields);
             console.log($scope.newFieldName);
             console.log($scope.newFileName);
             console.log($scope.selected_fields);
+            var strIgnoreNull = "";
+            var strIgnoreZero = "";
+            var objsIgnoreNull = $('.ign_null');
+            var arrObjs = [];
+            for (var i = 0; i < objsIgnoreNull.length; i++) {
+                var obj = objsIgnoreNull[i];
+                arrObjs.push($(obj).is(':checked'));
+            }
+            strIgnoreNull = arrObjs.join();
+
+
+            objsIgnoreNull = $('.ign_zero');
+            arrObjs = [];
+            for (var i = 0; i < objsIgnoreNull.length; i++) {
+                var obj = objsIgnoreNull[i];
+                arrObjs.push($(obj).is(':checked'));
+            }
+            strIgnoreZero = arrObjs.join();
+
+
+            
+            console.log(strIgnoreNull);
+            console.log(strIgnoreZero);
+            console.log(arrObjs);
+            //return;
             if($scope.selected_fields.length==0){
                 alert('Please select at least one or more columns');
                 return;
             }
             //$.colorbox({ html: "<h5>This proccess could run a little longer, please wait</h5>" });
-            $.post('@Url.Action("postTransferColumnsToRecord", "WorkingSet")', { wsiId :$scope.fileid,columns:$scope.selected_fields,newField:$scope.newFieldName,newFile:$scope.newFileName})
+            $.post('@Url.Action("postTransferColumnsToRecord", "WorkingSet")', { wsiId: $scope.fileid, columns: $scope.selected_fields, newField: $scope.newFieldName, newFile: $scope.newFileName, strIgnoreNull: strIgnoreNull, strIgnoreZero: strIgnoreZero })
             .done(function () {
                 //$.colorbox.close();
                 setTimeout(function () {
@@ -204,116 +418,7 @@
     });
 </script>
 
-<br />
-<h3>Request Logs:</h3>
-<table class="table1">
-    <tr>
-        <th>
-            WorkingSetId
-        </th>
-        <th>
-            CreatedBy
-        </th>
-        <th>
-            CreatedDate
-        </th>
-        <th>
-            TimeCost (s)
-        </th>
-        <th>
-            Status
-        </th>
-        <th>
-            IsDeleted
-        </th>
-        <th>
-            Detail
-        </th>
-        <th>
-            COMHandle
-        </th>
-        <th>
-            IsReady
-        </th>
-        <th></th>
-    </tr>
 
-    @foreach (var item in reqs)
-    {
-        <tr>
-            <td>
-                @*@Html.DisplayFor(modelItem => item.WorkingSetId)*@
-                <a href="@Url.Action("Manage","WorkingSet")?id=@item.WorkingSetId">@item.WorkingSetId</a>
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedBy)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.TimeCost)
-            </td>
-            <td>
-
-                @if (item.Status == 0)
-                {
-                    <label class="st_@item.Status">In-queue</label>
-                }
-                else if (item.Status == 1)
-                {
-                    <label class="st_@item.Status">Processing</label>
-                }
-                else if (item.Status == 2)
-                {
-                    <label class="st_@item.Status">Success</label>
-                }
-                else if (item.Status == 3)
-                {
-                    <label class="st_@item.Status">FAIL</label>
-                }
-                else if (item.Status == 4)
-                {
-                    <label class="st_@item.Status">Detached</label>
-                }
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IsDeleted)
-            </td>
-            <td width="20%">
-                @if (!string.IsNullOrEmpty(item.Detail))
-                {
-                    if (item.Detail.Length > num_err_display_char_limit)
-                    {
-                        <div class="show-hidden-detail">
-                            <div>@item.Detail.Substring(0, num_err_display_char_limit) ...</div>
-                            <div class="hidden-content" style="display:none">
-                                @item.Detail
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        @Html.DisplayFor(modelItem => item.Detail)
-                    }
-                }
-
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.COMHandle)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IsReady)
-            </td>
-            <td>
-                @*@Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
-                    @Html.ActionLink("Details", "Details", new { id = item.Id }) |
-                    @Html.ActionLink("Delete", "Delete", new { id = item.Id })*@
-            </td>
-        </tr>
-    }
-
-</table>
 <script type="text/javascript">
     $(document).ready(function () {
         $('.show-hidden-detail').click(function () {
@@ -322,4 +427,18 @@
         });
 
     });
+    function IncludeTransferColumnsToRecord(obj) {
+        if (!confirm('I am sure that i checked the file result, It OK anh include this to current working set'))
+            return;
+        var lnk = $(obj);
+        var url = lnk.attr('at-href');
+        $.get(url, {})
+        .done(function (data) {
+            alert("Done");
+        })
+        .fail(function (err) {
+            alert(err.responseText);
+        })
+        .always();
+    }
 </script>

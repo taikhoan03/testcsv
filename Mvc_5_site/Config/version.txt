@@ -1,4 +1,4 @@
-﻿version=1.0.0.34
+﻿version=1.0.0.35
 root_folder_process=D:\FA_in_out
 input_folder_process=InputFile
 output_folder_process=OutputFile

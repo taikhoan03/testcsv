@@ -8,6 +8,7 @@ using System.Web.Mvc;
 
 using Libs;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace FA_admin_site.Controllers
 {
@@ -23,12 +24,65 @@ namespace FA_admin_site.Controllers
             }
             base.Dispose(disposing);
         }
-        public string test()
+        public ActionResult FixCSV1(int fileid)
+        {
+            var file = db.files.Find(fileid);
+            var package = db.packages.FirstOrDefault(p => p.Id == file.Packageid);
+            ViewBag.name = file.Name;
+            ViewBag.state = package.State;
+            ViewBag.county = package.County;
+            ViewBag.fileid = fileid;
+            return View();
+        }
+        public void RunFixCSV1(int fileid,string delimiter)
+        {
+            var file = db.files.Find(fileid);
+            var package = db.packages.FirstOrDefault(p => p.Id == file.Packageid);
+            var path = Path.Combine("D:\\FA_in_out",
+                                        "InputFile",
+                                        package.State,
+                                        package.County,
+                                        file.Name
+                                        );
+            if (delimiter == "t")
+                delimiter = "\t";
+            var sb = BL.Ulti.Fix_csv(path, delimiter);
+            string text = sb.ToString();
+
+            Response.Clear();
+            Response.ClearHeaders();
+
+            Response.AddHeader("Content-Length", text.Length.ToString());
+            Response.ContentType = "text/plain";
+            Response.AppendHeader("content-disposition", "attachment;filename=\"output.txt\"");
+
+            Response.Write(text);
+            Response.End();
+            //          root_folder_process = D:\FA_in_out
+            //input_folder_process = InputFile
+            //path = path + @"\" + ;
+        }
+        public void test()
         {
             //var db = new BL.DA_Model();
-            var a = db.packages.FirstOrDefault();
-            return a.State;
+            StringBuilder sb = new StringBuilder();
+            string output = "Output";
+            sb.Append(output);
+            sb.Append("\r\n");
+
+            string text = sb.ToString();
+
+            Response.Clear();
+            Response.ClearHeaders();
+
+            Response.AddHeader("Content-Length", text.Length.ToString());
+            Response.ContentType = "text/plain";
+            Response.AppendHeader("content-disposition", "attachment;filename=\"output.txt\"");
+
+            Response.Write(text);
+            Response.End();
         }
+        
         public ActionResult List(int packid)
         {
             //var db = new BL.DA_Model();
@@ -55,6 +109,12 @@ namespace FA_admin_site.Controllers
                 {
                     found = true;
                     wsid = wsi.WorkingSetId;
+                    //db.workingSetItems.Remove(wsi);
+                    //var path= Path.Combine(@"D:\FA_in_out\InputFile",
+                    //                    item.State,
+                    //                    item.County
+                    //                    , wsi.Filename);
+                    //System.IO.File.Delete(path);
                 }
             }
 
@@ -62,6 +122,7 @@ namespace FA_admin_site.Controllers
             if (found)
             {
                 throw new Exception("This file has used in a WorkingSet");
+                
             }
             db.files.Remove(file);
             await db.SaveChangesAsync();

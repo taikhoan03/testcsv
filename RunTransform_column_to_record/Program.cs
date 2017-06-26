@@ -42,7 +42,7 @@ namespace RunTransform_column_to_record
                             var wsItem = db.workingSetItems.Find(req.WorkingSetItemId);
                             var ws = db.workingSets.Find(wsItem.WorkingSetId);
                             var downloadedPath = download(ws.State, ws.County, wsItem.Filename);
-                            var destinationPath = TransferColumnsToRecord(req.WorkingSetItemId, req.StrColumns, req.New_Field_Name, req.OutputName, downloadedPath);
+                            var destinationPath = TransferColumnsToRecord(req.WorkingSetItemId, req.StrColumns, req.New_Field_Name, req.OutputName, downloadedPath, req.IgnoreOnNull,req.IgnoreOnZero);
                             //var destinationPath = TransferColumnsToRecord2(ws.State, ws.County, wsItem.Filename, wsItem.PrimaryKey, req.StrColumns, req.New_Field_Name, req.OutputName);
                             Console.WriteLine(destinationPath);
 
@@ -246,7 +246,7 @@ namespace RunTransform_column_to_record
             var ftp = new Ftp();
             ftp.upload("/" + remotePath,destinationPath);
         }
-        public static string TransferColumnsToRecord(int wsiId, string strcolumns, string toNewName, string newFileName, string downloadedPath)
+        public static string TransferColumnsToRecord(int wsiId, string strcolumns, string toNewName, string newFileName, string downloadedPath, string strIgnoreOnNull, string strIgnoreOnZero)
         {
             var db = new BL.DA_Model();
             var wsItem = db.workingSetItems.Find(wsiId);
@@ -262,6 +262,12 @@ namespace RunTransform_column_to_record
             //path = @"D:\FA_in_out\InputFile\pa4\pa4\File_1.txt";
 
             var columns = strcolumns.Split(new string[] { ";];" }, StringSplitOptions.RemoveEmptyEntries);
+            if (string.IsNullOrEmpty(strIgnoreOnNull))
+                strIgnoreOnNull = "";
+            if (string.IsNullOrEmpty(strIgnoreOnZero))
+                strIgnoreOnZero = "";
+            var arrIgnoreOnNull=strIgnoreOnNull.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+            var arrIgnoreOnZero = strIgnoreOnZero.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
             var numOfColumns = columns.Length;
             columns = columns.Select(p => p.ReplaceUnusedCharacters()).ToArray();
             //var file1 = ReadCSV.ReadAsDictionary(null, path, int.MaxValue);
@@ -315,33 +321,93 @@ namespace RunTransform_column_to_record
                         var linearr = line.Split(seperator, slipOption);
                         for (var j = 0; j < numOfField; j++)
                         {
-                            rec.Add(arrNewFieldName[j], linearr[j]);
+                            try
+                            {
+                                rec.Add(arrNewFieldName[j], linearr[j]);
+                            }
+                            catch (Exception ex)
+                            {
+
+                                rec.Add(arrNewFieldName[j], "");//missing last field
+                            }
                         }
                         //rs[iline] = (myUnderlyingObject);
                         //iline++;
 
-                        
-                        foreach (var item in columns)
+                        if (arrIgnoreOnNull.Length == 0)
                         {
-                            var clone = new Dictionary<string, object>(rec);
+                            foreach (var item in columns)
+                            {
+                                var clone = new Dictionary<string, object>(rec);
 
-                            foreach (var oldCol in columns)
-                            {
+                                foreach (var oldCol in columns)
+                                {
+                                    //rec.Add(toNewName,)
+                                    clone.Remove(oldCol);
+                                }
                                 //rec.Add(toNewName,)
-                                clone.Remove(oldCol);
+                                clone.Add(toNewName, rec[item]);
+                                //write file here
+                                var str = "";
+                                foreach (var col in filteredFields)
+                                {
+                                    str += clone[col] + delimiter;
+                                }
+                                str += ";";
+                                str = str.Replace(delimiter + ";", "");
+                                writetext.WriteLine(str);
                             }
-                            //rec.Add(toNewName,)
-                            clone.Add(toNewName, rec[item]);
-                            //write file here
-                            var str = "";
-                            foreach (var col in filteredFields)
+                        }else {
+                            for (int i = 0; i < columns.Length; i++)
                             {
-                                str += clone[col] + delimiter;
+                                var item = columns[i];
+                                if (arrIgnoreOnNull[i] == "true")
+                                {
+                                    if (string.IsNullOrEmpty(rec[item].ToString()))
+                                        continue;
+                                }
+                                if (arrIgnoreOnZero[i] == "true")
+                                {
+                                    //decimal val = 0;
+                                    //try
+                                    //{
+
+                                    //    val = decimal.Parse(rec[item].ToString());
+                                    //}
+                                    //catch (Exception)
+                                    //{
+
+                                    //    //throw;
+                                    //}
+                                    //if (val==0)
+                                    //    continue;
+                                    if (rec[item].ToString() == "0")
+                                    {
+                                        continue;
+                                    }
+                                }
+
+                                var clone = new Dictionary<string, object>(rec);
+
+                                foreach (var oldCol in columns)
+                                {
+                                    //rec.Add(toNewName,)
+                                    clone.Remove(oldCol);
+                                }
+                                //rec.Add(toNewName,)
+                                clone.Add(toNewName, rec[item]);
+                                //write file here
+                                var str = "";
+                                foreach (var col in filteredFields)
+                                {
+                                    str += clone[col] + delimiter;
+                                }
+                                str += ";";
+                                str = str.Replace(delimiter + ";", "");
+                                writetext.WriteLine(str);
                             }
-                            str += ";";
-                            str = str.Replace(delimiter + ";", "");
-                            writetext.WriteLine(str);
                         }
+                        
                     }
 
                 }

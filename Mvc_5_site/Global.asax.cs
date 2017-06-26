@@ -13,6 +13,7 @@ namespace Mvc_5_site
         {
             FilterConfig.Configure(GlobalFilters.Filters);
             RouteConfig.Configure(RouteTable.Routes);
+            Config.Data.GetKey("..init");
             
         }
 

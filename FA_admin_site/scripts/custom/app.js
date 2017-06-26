@@ -184,7 +184,25 @@ var getUrlParameter = function getUrlParameter(sParam) {
 /*
     
 */
-var default_limit = 10;//num of parameter limited
+function htmlEscape(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+// I needed the opposite function today, so adding here too:
+function htmlUnescape(str) {
+    return str
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&');
+}
+var default_limit = 100;//num of parameter limited
 var at = {//rule accept_type
     number: 'number',
     string: 'string',
@@ -256,11 +274,13 @@ var IRule_IF = function () {
             }
             //add lan 2 => add Value
             if (strval.indexOf('{') < 0) {
-                strval = '"' + strval + '"';
+                //strval = '"' + strval + '"';
+                strval = '"' + htmlEscape(strval) + '"';
             }
         } else {
             if (strval.indexOf('{') < 0) {
-                strval = '"' + strval + '"';
+                //strval = '"' + strval + '"';
+                strval = '"' + htmlEscape(strval) + '"';
             }
         }
         
@@ -427,6 +447,10 @@ var IRule = function (name, str_func, limit, delimiter) {
         return this.result().replace(/\[\[\]\]/gi, ',');
     }
     this.setAcceptTypes = function (acceptTypesArr) {
+        //for (var i = 0; i < acceptTypesArr.length; i++) {
+        //    this.acceptType.push(acceptTypesArr[i]);
+        //    //this.acceptType = acceptTypesArr;
+        //}
         this.acceptType = acceptTypesArr;
     }
     this.setAllAcceptType = function (acceptType) {
@@ -631,7 +655,7 @@ r_NOT.showResult = function () {
 }
 
 var r_NOT_CONTAINS = new IRule("NOT_CONTAINS", "NOT_CONTAINS", default_limit, '[[]]');
-r_NOT_CONTAINS.setAllAcceptType([at.any]);
+r_NOT_CONTAINS.setAllAcceptType(at.any);
 r_NOT_CONTAINS.showResult = function () {
     var str = "";
     var $lbl = '<tr><th class="lbl-arg">Target : </th>';
@@ -793,15 +817,15 @@ r_LEFT_PAD.showResult = function () {
 var r_LEFT_TRIM = new IRule("LEFT_TRIM", "LEFT_TRIM", default_limit, '[[]]');
 r_LEFT_TRIM.setAcceptTypes([at.any, at.any]);
 r_LEFT_TRIM.showResult = function () {
+    
     var str = "";
     var l1 = "";
     var l2 = "";
-    var l3 = "";
     if (this.params.length >= 1) {
-        lp1 = this.params[0].replace(/{|}/g, "");
+        l1 = this.params[0].replace(/{|}/g, "");
     }
     if (this.params.length >= 2) {
-        lp2 = this.params[1].replace(/{|}/g, "");
+        l2 = this.params[1].replace(/{|}/g, "");
     }
     var $lbl = '<tr><th class="lbl-arg">Target : </th>';
     var $arg = '<td class="arg"> ' + l1 + '</td></tr>';
@@ -809,7 +833,7 @@ r_LEFT_TRIM.showResult = function () {
     $lbl = '<tr><th class="lbl-arg">String : </th>';
     $arg = '<td class="arg"> ' + l2 + '</td></tr>';
     str += $lbl + $arg;
-    return 'Example: LEFT_TRIM(Target,String) - this function will remove exact STRING from left of TARGET' + '<table>' + str + '</table>';
+    return 'Example: LEFT_TRIM(Target,character) - this function will trim character from left of TARGET' + '<table>' + str + '</table>';
 }
 
 var r_REMOVE_CHARACTERS = new IRule("REMOVE_CHARACTERS", "REMOVE_CHARACTERS", default_limit, '[[]]');
@@ -933,21 +957,28 @@ r_RIGHT_TRIM.showResult = function () {
     $lbl = '<tr><th class="lbl-arg">String : </th>';
     $arg = '<td class="arg"> ' + r2 + '</td></tr>';
     str += $lbl + $arg;
-    return 'Example: RIGHT_TRIM(Target,String) - this function will remove exact STRING from right of TARGET' + '<table>' + str + '</table>';
+    return 'Example: RIGHT_TRIM(Target,character) - this function will TRIM character from right of TARGET' + '<table>' + str + '</table>';
 }
 var r_TRIM_ALL = new IRule("TRIM_ALL", "TRIM_ALL", default_limit, '[[]]');
-r_TRIM_ALL.setAcceptTypes([at.any]);
+r_TRIM_ALL.setAcceptTypes([at.any, at.any]);
 r_TRIM_ALL.showResult = function () {
     var str = "";
     var r1 = "";
+    var r2 = "";
     if (this.params.length >= 1) {
         r1 = this.params[0].replace(/{|}/g, "");
+    }
+    if (this.params.length >= 2) {
+        r2 = this.params[1].replace(/{|}/g, "");
     }
     var $lbl = '<tr><th class="lbl-arg">Target : </th>';
     var $arg = '<td class="arg"> ' + r1 + '</td></tr>';
     str += $lbl + $arg;
+    $lbl = '<tr><th class="lbl-arg">character : </th>';
+    $arg = '<td class="arg"> ' + r2 + '</td></tr>';
+    str += $lbl + $arg;
     
-    return 'Example: RIGHT_TRIM(Target,String) - this function will remove exact STRING from right of TARGET' + '<table>' + str + '</table>';
+    return 'Example: TRIM_ALL(Target,character) - this function will TRIM character from TARGET' + '<table>' + str + '</table>';
 }
 
 var r_SPLIT = new IRule("SPLIT", "SPLIT", default_limit, '[[]]');
@@ -1249,6 +1280,7 @@ function genUI(value, type) {
         if ($('#rule_right').find('div:last-child').hasClass('op')
             ||
             $('#rule_right').find('div').length == 0)
+            //r_panel.html('').append($('<div>').html(currentRule.showResult()));
             r_panel.append($('<div class="pi ' + type + '">').html('{' + value + '}'));
         return;
     }
@@ -1275,6 +1307,14 @@ function genUI(value, type) {
 }
 function genUI_afterSaveRule(data) {
     console.log(data);
+    //clean
+    if (currentRule) {
+        currentRule.ExpValue = "";
+        currentRule.HTMLBack = "";
+        var r_panel = $('#rule_right');
+        r_panel.html('');
+        
+    }
     var $rules = $('#r_rules');
     if (data.Type == 0) {//number
         $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'number\')">').html(data.Name));
@@ -1306,6 +1346,22 @@ function genUI_afterSaveRule(data) {
     //else if ($("#rules").tabs("option", "active") == 3) {
     //    $rules.append($('<div class="r_item number" _id="' + data.Id + '" onclick="genUI(\'' + data.Name + '\',\'number\')">').html(data.Name));
     //}
+}
+function Clear_F() {
+    currentRule.params = [];
+    $('#rule_right').html();
+    var $display = getDisplay_forRule();
+    $display.html(currentRule.showResult());
+
+    if ($("#rules").tabs("option", "active") == 0) {
+        if (currentRule) {
+            currentRule.ExpValue = "";
+            currentRule.HTMLBack = "";
+            var r_panel = $('#rule_right');
+            r_panel.html('');
+            currentRule = {};
+        }
+    }
 }
 function initTabs() {
     $('#tab-2').tabs();
@@ -1539,6 +1595,15 @@ function genRuleData() {
     }
     return d;
 }
+function htmlEncode(value) {
+    //create a in-memory div, set it's inner text(which jQuery automatically encodes)
+    //then grab the encoded contents back out.  The div never exists on the page.
+    return $('<div/>').text(value).html();
+}
+
+function htmlDecode(value) {
+    return $('<div/>').html(value).text();
+}
 //add text value by click Add button
 function addValue(value) {
     if (currentRule == null) {
@@ -1556,6 +1621,7 @@ function addValue(value) {
     } else {
         if (currentRule.name == 'IF') {
             currentRule.addNodeValue(value);
+            console.log(value);
             console.log(currentRule);
             $display.html('').append($('<div>').html(currentRule.showResult()));
             return;

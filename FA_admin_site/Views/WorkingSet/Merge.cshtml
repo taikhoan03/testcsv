@@ -53,14 +53,93 @@
 <script type="text/javascript">
 
     var pid, state, county, edt, ver;
+    var selectedWS=0;
+    var reqList=[];
     var files = [];
+    var selectedReq = {};
     var currentWs;
+    function loadsession(id) {
+        if (!confirm("Load this session? Please note: make sure the input file is has wellformed header, it not data may not load correctly"))
+            return;
+        for (var i = 0; i < reqList.length; i++) {
+            var req = reqList[i];
+            selectedReq = req;
+            if(req.orginal.Id==id){
+                console.log(req);
+                var arrNames = req.orginal.Filenames.split(",");
+                $('#tSample').find('input[id^="chk"]').prop('checked', false);
+                for (var j = 0; j < arrNames.length; j++) {
+                    console.log('#chk_' + arrNames[j]);
+                    $('#chk_' + arrNames[j].replace(/\./gi,'\\.')).prop('checked', true);
+                }
+                $('#confirm-select').trigger('click');
+                setTimeout(function () {
+                    var appElement = document.querySelector('[ng-app=myApp]');
+                    var $scope = angular.element(appElement).scope();
+                    $scope.$apply(function () {
+                        $scope.field_merge_rs = [];
+                        field_merge_rs = [];
+                        if (selectedReq) {
+                            var details = selectedReq.mergeDetails;
+                            for (var i = 0; i < details.length; i++) {
+                                var o = {};
+                                o.merge_detail = [];//obj has filename+fieldname
+                                o.new_name = '';
+
+                                
+                                var fields = [];
+
+                                for (var j = 0; j < details[i].Fields.length; j++) {
+                                    var field = {};
+                                    field.filename = details[i].Fields[j].FileName;
+                                    field.fieldname = details[i].Fields[j].FieldName;
+                                    //field._class = field.filename;
+                                    
+                                    
+                                    var index = 0;
+                                    var found = false;
+                                    for (var c = 0; c < files.length; c++) {
+                                        var file=files[c];
+                                        if (file.name == field.filename) {
+                                            found = _.contains(file.header, field.fieldname);
+                                            file.header = _.without(file.header, field.fieldname);
+                                            
+                                            field._class = 'file_' + index;
+                                            //if (found==false)
+                                            
+                                            
+                                        }
+                                        index++;
+                                    }
+                                    if (found == false) {
+                                        alert("The input file data was not wellformed, can not load this session");
+                                        return;
+                                    }
+                                    fields.push(field);
+                                    $scope.files = files;
+                                }
+                                o.merge_detail = fields;
+                                o.new_name = details[i].RenameTo;
+                                field_merge_rs.push(o);
+                                
+                            }
+                            $scope.field_merge_rs = field_merge_rs;
+                            fieldadded = [];
+                            $scope.fields_add = fieldadded;
+                        }
+                    });
+                }, 2000);
+                break;
+            }
+        }
+    }
     $(document).ready(function () {
         var url_get_info = '@Config.Get_local_control_site()';
         $('#sel_package tr:gt(0)').click(function () {
             currentWs = $(this);
             var row  = $(this).find('td');
-            pid      = $(row[0]).text();
+            pid = $(row[0]).text();
+            selectedWS = pid;
             state    = $(row[1]).text();
             county   = $(row[2]).text();
             edt      = $(row[3]).text();
@@ -93,6 +172,25 @@
                 }).fail(function (req) {
                     alert(req.status + " : " + req.responseText);
                 });
+            if (selectedWS > 0) {
+                $.get("@Url.Action("getMergeList", "WorkingSet")",{wsid:selectedWS})
+                .done(function(data){
+                    reqList=data;
+                    var arr = [];
+                    for (var i = 0; i < data.length; i++) {
+                        arr.push(data[i].orginal)
+                    }
+                    console.log(arr);
+                    _createTableWithJsonObj_withTemplate(arr, 'tMergeRecords', false, function (d) {
+                        @*for (var i = 0; i < d.length; i++) {
+                            d[i].downloadLink = '<a href="' + '@Config.Get_local_control_site()/File/Download?state=' + state + '&county=' + county + '&filename=' + d[i].Filename + '">Download</a>';
+                        }*@
+                    }, function () { });
+                })
+                .fail(function (req) {
+                    alert(req.status + " : " + req.responseText);
+                });
+            }
         });
         $('#confirm-select').click(function () {
             //verify any item checked
@@ -196,7 +294,7 @@
             }
             d.details = details;
             d.runAfterSave = true;
-            
+
             var url = '@Url.Action("postMerge", "WorkingSet")';
             $.colorbox({ html: "<h3>Merging!!!, please wait...</h3>" });
             $.post(url, d)
@@ -275,7 +373,7 @@
                     {{downloadLink}}
                 </td>
                 <td>
-                    <input type="checkbox" />
+                    <input type="checkbox" id="chk_{{Filename}}" />
                 </td>
             </tr>
         </tbody>
@@ -337,6 +435,23 @@
     </div>
     <input id="reload" style="display:none" type="button" value="reload" ng-click="reload()" />
     <div class="clear"></div>
+    
+</div>
+<div id="tMergeRecords" class="table" style="display:none;width: 100%;overflow: scroll;background-color: #fff;">
+    <table class="table">
+        <tr id="header">
+            <th>Id</th>
+            <th>Filenames</th>
+            <th></th>
+        </tr>
+        <tbody id="tbody">
+            <tr>
+                <td>{{Id}}</td>
+                <td>{{Filenames}}</td>
+                <td><a href="#" onclick="loadsession({{Id}})">Load session</a></td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 @*<div ng-app="myApp" ng-controller="myCtrl">
 
@@ -420,6 +535,7 @@ app.controller("myCtrl", function ($scope) {
         $('#new_field_name').val('');
         fieldadded = [];
         $scope.fields_add = fieldadded;
+        console.log(field_merge_rs);
         
     }
     $scope.clear_selection = function (detail_item) {

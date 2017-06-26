@@ -161,7 +161,7 @@
                 <li><a href="#CONDITIONAL_r">CONDITIONAL</a></li>
                 <li><a href="#FORMATTING_r">FORMATTING</a></li>
                 <li><a href="#MISCELLANEOUS_r">MISCELLANEOUS</a></li>
-                <li><a href="#LOOPUP_r">LOOPUP</a></li>
+                <li><a href="#LOOPUP_r">LOOKUP</a></li>
             </ul>
             @*<span id="btn_ARITHMETICAL">ARITHMETICAL</span>
             <span id="btn_CONDITIONAL">CONDITIONAL</span>
@@ -615,19 +615,7 @@
 
     //    }
     //}
-    function Clear_F(){
-        currentRule.params=[];
-        var $display=$('#CONDITIONAL_r');
-        if($( "#rules" ).tabs( "option", "active" )==1){
-            $display=$('#CONDITIONAL_r');
-        }else if($( "#rules" ).tabs( "option", "active" )==2){
-            $display=$('#FORMATTING_r');
-        }
-        else if($( "#rules" ).tabs( "option", "active" )==3){
-            $display=$('#MISCELLANEOUS_r');
-        }
-        $display.html(currentRule.showResult());
-    }
+    
     function Save(){
         //var str_rs=$('#rule_right').text();
         //var html=$('#rule_right').html();
@@ -656,6 +644,7 @@
         //    }
         //}
         var d=genRuleData();
+        
 
         $.post('@Url.Action("addRuleMath","SortAndAction")',{fileid:@ViewBag.Fileid,rule:d})
         .done(function (data) {
@@ -663,7 +652,7 @@
             _createTableWithJsonObj_withTemplate(rules,'tRules',false,function(){});
             genUI_afterSaveRule(data);
             clean_cbox_selection();
-            
+            currentRule = {};
 
         })
                 .fail(function (request, status, error) {
